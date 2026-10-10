@@ -1,0 +1,106 @@
+/* chapter 6: ten people, two copies each — a frequency is copies with the change ÷ copies examined */
+.tally {
+  display: grid;
+  gap: 10px;
+  padding: var(--wgs-space-content);
+  border: 1px solid var(--wgs-line-soft);
+  background: color-mix(in srgb, var(--wgs-bg-deep) 60%, transparent);
+  justify-items: start;
+}
+.tally-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+/* one label column, text centred in it, so the three names and the three rows of figures line up */
+.tally-lbl {
+  width: 7rem;
+  flex: none;
+  text-align: center;
+  white-space: nowrap;
+  font: 600 var(--wgs-text-data)/1.4 var(--wgs-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--wgs-faint);
+}
+.tally-people {
+  display: flex;
+  gap: 5px;
+}
+/* the silhouette: a faint outline body, and an amber fill rising from the feet
+   by the share of copies that carry the change (none, half, all) */
+.person {
+  display: inline-block;
+  vertical-align: middle;
+  overflow: visible;
+}
+.person .body {
+  fill: color-mix(in srgb, var(--wgs-ink) 22%, transparent);
+}
+.person .fill {
+  fill: var(--wgs-alt);
+}
+.tally-n {
+  font: var(--wgs-text-body) var(--wgs-mono);
+  color: var(--wgs-mut);
+}
+.tally-n b {
+  color: var(--wgs-ink);
+}
+.tally-cap {
+  font-size: var(--wgs-text-small);
+  color: var(--wgs-faint);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.tally-cap .person {
+  width: 12px;
+  height: 20px;
+}
+
+
+/* chapter 6: two people with the same line — same variant, different populations */
+.story {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 14px;
+}
+.story .case-gt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.story .case-gt .fig {
+  font-size: 26px;
+  line-height: 1;
+}
+.story .case-gt small {
+  font: var(--wgs-text-small) var(--wgs-mono);
+  color: var(--wgs-faint);
+  letter-spacing: 0;
+  text-transform: none;
+}
+.story .case-sum b.o1 {
+  color: var(--wgs-alt);
+}
+.story .verdict {
+  font-size: var(--wgs-text-body);
+  color: var(--wgs-ink);
+  border-top: 1px dashed var(--wgs-line-soft);
+  padding-top: 8px;
+}
+/* the per-person answers as a short list: lead word in ink, the rest muted */
+.story ul.verdict {
+  margin: 0;
+  padding: 8px 0 0 1.1em;
+  color: var(--wgs-mut);
+  display: grid;
+  gap: 5px;
+}
+.story ul.verdict li b {
+  color: var(--wgs-ink);
+}
+

@@ -1,0 +1,113 @@
+/* The Mei/Tom comparison is shared by both genome formats. */
+.frequency-comparison {
+  container-type: inline-size;
+  margin: 20px 0 28px;
+  border: 1px solid var(--wgs-line);
+  border-radius: 10px;
+  background: var(--wgs-card);
+  overflow: hidden;
+}
+.frequency-comparison-scroll {
+  overflow-x: auto;
+}
+.frequency-comparison-scroll:focus-visible {
+  outline: 2px solid var(--wgs-pink);
+  outline-offset: -3px;
+}
+.frequency-comparison table {
+  width: 100%;
+  min-width: 690px;
+  table-layout: fixed;
+  border-collapse: collapse;
+  color: var(--wgs-mut);
+  font: var(--wgs-text-small)/1.6 var(--wgs-sans);
+  text-align: left;
+}
+.frequency-comparison-topic { width: 17%; }
+.frequency-comparison th,
+.frequency-comparison td {
+  padding: 18px;
+  vertical-align: top;
+  border-bottom: 1px solid var(--wgs-line-soft);
+}
+.frequency-comparison th { color: var(--wgs-ink); font-weight: 600; }
+.frequency-comparison th + td,
+.frequency-comparison td + td,
+.frequency-comparison thead th {
+  border-left: 1px solid var(--wgs-line-soft);
+}
+.frequency-comparison thead { background: var(--wgs-bg); }
+.frequency-comparison-name {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: var(--wgs-text-body);
+}
+.frequency-comparison-ancestry {
+  display: block;
+  margin-top: 4px;
+  color: var(--wgs-mut);
+  font-weight: 400;
+}
+/* One shared row of the original population silhouettes. */
+.frequency-comparison .frequency-people { margin: 0; }
+.frequency-comparison .frequency-people-list {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 24px 12px;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+}
+.frequency-comparison .frequency-people-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  color: var(--wgs-mut);
+  text-align: center;
+}
+.frequency-person { flex: none; width: 30px; height: 50px; }
+.frequency-person-body { fill: var(--wgs-ink); opacity: .16; }
+.frequency-person-fill { fill: var(--wgs-alt); }
+.frequency-people-group.is-missing .frequency-person-body {
+  fill: none;
+  opacity: .45;
+  stroke: var(--wgs-mut);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+}
+.frequency-people-value {
+  color: var(--wgs-ink);
+  font: 500 var(--wgs-text-small)/1.4 var(--wgs-mono);
+  white-space: nowrap;
+}
+.frequency-people-label { font: var(--wgs-text-label)/1.5 var(--wgs-sans); }
+.frequency-people-group.is-highlighted .frequency-people-label { color: var(--wgs-ink); }
+.frequency-people-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 3px;
+  color: var(--wgs-ink);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.frequency-people-name > span { font-size: 16px; line-height: 1; }
+.frequency-people figcaption {
+  margin-top: 14px;
+  color: var(--wgs-faint);
+  font: var(--wgs-text-label)/1.4 var(--wgs-sans);
+}
+@media (max-width: 760px) {
+  .frequency-comparison th,
+  .frequency-comparison td { padding: 14px 12px; }
+}
+@container (max-width: 840px) {
+  .frequency-comparison .frequency-people-list {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}

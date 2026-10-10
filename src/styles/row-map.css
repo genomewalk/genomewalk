@@ -1,0 +1,462 @@
+/* Annotated real file rows. The connectors belong to the layout, so they
+   stay attached to their examples when text wraps or font sizes change. */
+.file-row-map {
+  container-type: inline-size;
+  --row-map-note-width: 172px;
+  --row-map-check-width: 170px;
+  --row-map-columns: minmax(0, 1.4fr) minmax(0, 1.15fr) minmax(0, 1.2fr)
+    repeat(var(--row-map-allele-columns), minmax(0, 0.9fr));
+  padding-block: 12px;
+  width: 100%;
+}
+.file-row-map figcaption {
+  display: grid;
+  gap: 4px;
+  margin-bottom: var(--wgs-space-card);
+}
+.file-row-map figcaption strong {
+  color: var(--wgs-ink);
+  font-size: var(--wgs-text-heading);
+  font-weight: 600;
+}
+.file-row-map figcaption > span {
+  font-size: var(--wgs-text-small);
+  color: var(--wgs-faint);
+}
+.row-map-layout {
+  min-width: 0;
+}
+.row-map-entries {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+}
+.row-map-entries::before {
+  content: "";
+  position: absolute;
+  inset: 0 var(--row-map-check-width) 0 var(--row-map-note-width);
+  z-index: -1;
+  background: var(--wgs-card);
+  border: 1px solid var(--wgs-line);
+  border-radius: 8px;
+}
+.row-map-head,
+.row-map-group {
+  display: grid;
+  grid-template-columns: var(--row-map-note-width) minmax(0, 1fr) var(--row-map-check-width);
+  align-items: center;
+}
+.row-map-head {
+  font: 500 var(--wgs-text-label)/1.5 var(--wgs-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.row-map-head > span {
+  color: var(--wgs-faint);
+}
+.row-map-head > .row-map-data {
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--wgs-line-soft);
+  color: var(--wgs-accent);
+}
+.row-map-cells {
+  display: grid;
+  grid-template-columns: var(--row-map-columns);
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+}
+.row-map-cells > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.row-map-cells dt {
+  /* Keep column names available to screen readers for every record. */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.row-map-cells dd {
+  margin: 0;
+  color: var(--wgs-ink);
+  font: var(--wgs-text-data)/1.7 var(--wgs-mono);
+}
+.row-map-group {
+  --row-map-color: var(--wgs-accent);
+}
+.row-map-missing {
+  --row-map-color: var(--wgs-pink);
+}
+.row-map-partial,
+.row-map-repeat,
+.row-map-outside {
+  --row-map-color: var(--wgs-ref);
+}
+.row-map-codes {
+  --row-map-color: var(--wgs-alt);
+}
+.step .file-row-map .row-map-note {
+  display: block;
+  position: relative;
+  margin-right: 32px;
+  padding-block: 12px;
+  font-size: var(--wgs-text-small);
+  line-height: var(--wgs-leading-small);
+  color: var(--wgs-mut);
+  text-decoration: none;
+}
+.file-row-map .row-map-note strong {
+  display: block;
+  color: var(--row-map-color);
+  font-size: 14px;
+  font-weight: 600;
+}
+.row-map-note strong span {
+  font-size: 12px;
+}
+.row-map-note:focus-visible {
+  outline: 2px solid var(--row-map-color);
+  outline-offset: 5px;
+  border-radius: 2px;
+}
+.row-map-note p {
+  margin: var(--wgs-space-sm) 0 0;
+}
+.row-map-note::after {
+  content: "";
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  width: 24px;
+  height: 1px;
+  background: var(--row-map-color);
+}
+.row-map-note::before {
+  content: "";
+  position: absolute;
+  left: calc(100% + 27px);
+  top: calc(50% - 3px);
+  width: 7px;
+  height: 7px;
+  border-top: 1px solid var(--row-map-color);
+  border-right: 1px solid var(--row-map-color);
+  transform: rotate(45deg);
+}
+.row-map-records {
+  align-self: stretch;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  align-content: center;
+  gap: 12px;
+  padding: 14px 12px;
+  border-bottom: 1px dashed var(--wgs-line-soft);
+  transition: background-color 180ms ease;
+}
+.row-map-group:hover .row-map-records,
+.row-map-group:focus-within .row-map-records {
+  background: color-mix(in srgb, var(--row-map-color) 4%, transparent);
+}
+.row-map-number {
+  display: block;
+  color: var(--wgs-faint);
+  font: var(--wgs-text-label)/1.5 var(--wgs-mono);
+  overflow-wrap: anywhere;
+}
+.consumer-row-map .row-map-number {
+  margin-bottom: 6px;
+}
+.row-map-record,
+.row-map-data {
+  min-width: 0;
+}
+.row-map-data {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 84px;
+  align-items: center;
+  gap: 12px;
+}
+.row-map-status {
+  font: var(--wgs-text-label)/1.5 var(--wgs-sans);
+  white-space: nowrap;
+}
+.row-map-status > span {
+  font-size: 14px;
+  font-weight: 600;
+}
+.file-row-map .is-matchable {
+  color: var(--wgs-ok);
+}
+.file-row-map .is-omitted {
+  color: var(--wgs-mut);
+}
+.row-map-check-heading,
+.row-map-check {
+  padding-left: 22px;
+}
+.row-map-check {
+  padding-block: 12px;
+  font-size: var(--wgs-text-small);
+  line-height: var(--wgs-leading-small);
+}
+.row-map-check strong {
+  font-size: var(--wgs-text-small);
+  color: var(--wgs-ink);
+  font-weight: 600;
+}
+.row-map-check p {
+  margin: var(--wgs-space-sm) 0 0;
+}
+.row-map-cells mark {
+  color: var(--row-map-color);
+  background: color-mix(in srgb, var(--row-map-color) 9%, transparent);
+  border-radius: 3px;
+  padding: 2px 3px;
+  margin-inline: -3px;
+  box-decoration-break: clone;
+}
+.row-map-end {
+  padding: 12px 14px;
+  margin-left: var(--row-map-note-width);
+  margin-right: var(--row-map-check-width);
+  text-align: center;
+  font-size: var(--wgs-text-heading);
+  line-height: 1;
+  color: var(--wgs-faint);
+}
+.row-map-totals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: var(--wgs-space-card);
+  text-align: center;
+  font-size: var(--wgs-text-small);
+  line-height: 1.5;
+}
+.row-map-totals > div {
+  display: grid;
+  gap: 5px;
+}
+.row-map-totals strong {
+  font: 32px/1.2 var(--wgs-serif);
+}
+.file-row-map .row-map-file-check {
+  margin: var(--wgs-space-content) 0 0;
+  font-size: var(--wgs-text-small);
+  line-height: var(--wgs-leading-small);
+  color: var(--wgs-faint);
+}
+@container (max-width: 760px) {
+  .row-map-entries {
+    --row-map-note-width: 160px;
+    --row-map-check-width: 0px;
+  }
+  .row-map-head,
+  .row-map-group {
+    grid-template-columns: var(--row-map-note-width) minmax(0, 1fr);
+  }
+  .row-map-check-heading {
+    display: none;
+  }
+  .row-map-records {
+    border-bottom: 0;
+    padding-bottom: 6px;
+  }
+  .row-map-check {
+    grid-column: 2;
+    padding: 0 12px 14px;
+    border-bottom: 1px dashed var(--wgs-line-soft);
+  }
+}
+@container (max-width: 540px) {
+  .row-map-head,
+  .row-map-entries::before,
+  .row-map-note::before,
+  .row-map-end {
+    display: none;
+  }
+  .row-map-entries {
+    display: grid;
+    gap: 24px;
+  }
+  .row-map-group {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .step .file-row-map .row-map-note {
+    margin: 0;
+    padding: 0 0 22px;
+  }
+  .row-map-note p {
+    margin-top: 3px;
+  }
+  .row-map-note::after {
+    left: 14px;
+    top: auto;
+    bottom: 0;
+    width: 1px;
+    height: 15px;
+  }
+  .row-map-records {
+    padding: 14px 12px;
+    background: var(--wgs-card);
+    border: 1px solid var(--wgs-line);
+    border-bottom: 0;
+    border-radius: 5px 5px 0 0;
+  }
+  .row-map-check {
+    grid-column: 1;
+    background: var(--wgs-card);
+    border: 1px solid var(--wgs-line);
+    border-top: 0;
+    border-radius: 0 0 5px 5px;
+  }
+  .row-map-cells {
+    gap: 8px;
+  }
+  .row-map-record {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+  }
+  .consumer-row-map .row-map-number {
+    grid-column: 1;
+    grid-row: 1;
+    margin: 0;
+  }
+  .row-map-data {
+    display: contents;
+  }
+  .row-map-status {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .row-map-data > .row-map-cells {
+    grid-column: 1 / -1;
+  }
+  .file-row-map[data-allele-columns="2"] .row-map-cells {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.1fr) minmax(0, 1.2fr);
+    row-gap: 14px;
+  }
+  .row-map-cells dt {
+    position: static;
+    width: auto;
+    height: auto;
+    margin-bottom: 7px;
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+    color: var(--wgs-faint);
+    font: var(--wgs-text-label)/1.4 var(--wgs-mono);
+  }
+  .row-map-cells dd {
+    font-size: 12px;
+  }
+  .row-map-totals {
+    gap: 8px;
+    font-size: var(--wgs-text-label);
+  }
+  .row-map-totals strong {
+    font-size: 27px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .row-map-records {
+    transition: none;
+  }
+}
+
+.file-row-map a.row-map-note strong { text-decoration: underline; text-underline-offset: 4px; }
+
+.vcf-row-map {
+  --row-map-note-width: 160px;
+  --row-map-check-width: 166px;
+  --row-map-columns: minmax(0, .65fr) minmax(0, 88px) minmax(0, 56px) minmax(0, 64px) minmax(0, 1fr) minmax(0, .7fr);
+  font-size: var(--wgs-text-body);
+  color: var(--wgs-mut);
+}
+.vcf-row-map .row-map-cells {
+  gap: 10px;
+  align-items: start;
+}
+.vcf-row-map .row-map-data {
+  align-items: start;
+}
+.vcf-row-map .row-map-meta {
+  margin-bottom: 6px;
+}
+.vcf-row-map .row-map-meta .row-map-cells {
+  min-height: 15px;
+}
+.vcf-row-map .row-map-cells dd {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.vcf-row-map .row-map-allele {
+  display: block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.vcf-row-map .row-map-cells > div:nth-child(3) .row-map-allele {
+  /* REF stays readable in short runs, including inside highlighted cells. */
+  max-width: 4ch;
+}
+.vcf-row-map .row-map-allele mark {
+  display: inline-block;
+  box-sizing: border-box;
+  max-width: 100%;
+  margin-inline: 0;
+  vertical-align: middle;
+}
+
+/* Linked row explanations use the shared collapsible cards. */
+.vcf-count-story {
+  display: grid;
+  gap: var(--wgs-space-content);
+  margin-top: var(--wgs-space-section);
+  color: var(--wgs-mut);
+  font-size: var(--wgs-text-body);
+  line-height: var(--wgs-leading-body);
+}
+.vcf-count-detail {
+  min-width: 0;
+  scroll-margin-top: 32px;
+}
+.kvx.vcf-count-detail > summary {
+  grid-template-columns: minmax(0, 1fr) 32px;
+}
+.vcf-count-detail code {
+  overflow-wrap: anywhere;
+}
+@container (max-width: 540px) {
+  .vcf-row-map .row-map-record {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .vcf-row-map .row-map-meta {
+    display: block;
+    grid-column: 1 / -1;
+    grid-row: 1;
+    margin: 0;
+  }
+  .vcf-row-map .row-map-status {
+    grid-column: 3;
+    justify-self: end;
+    align-self: start;
+  }
+  .vcf-row-map .row-map-cells {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+    row-gap: 14px;
+  }
+}
+@container (max-width: 360px) {
+  .file-row-map[data-allele-columns] .row-map-cells {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 14px;
+  }
+}

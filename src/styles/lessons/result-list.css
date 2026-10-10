@@ -1,0 +1,156 @@
+
+/* chapter 8: the letter a ClinVar claim is about — the theme's muted red, not a bright alarm */
+table.fmt .fd b.flag {
+  color: var(--wgs-bad);
+  font-family: var(--wgs-mono);
+}
+
+/* chapter 8: the condition names of a match, one per line */
+table.fmt ul.conds {
+  margin: 0 0 4px;
+  padding: 0;
+  list-style: none;
+  color: var(--wgs-ink);
+}
+table.fmt ul.conds li {
+  margin: 1px 0;
+}
+table.fmt .fd .mini {
+  display: block;
+  margin-top: 4px;
+  font-size: var(--wgs-text-small);
+  color: var(--wgs-faint);
+}
+
+/* chapter 8's match list: search box, rows, pager — plain controls in the theme */
+.mlist {
+  display: grid;
+  gap: var(--wgs-space-content);
+}
+.ml-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ml-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--wgs-faint);
+  pointer-events: none;
+  display: inline-grid;
+}
+.ml-q {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 9px 12px 9px 36px;
+  font: var(--wgs-text-body) var(--wgs-sans);
+  color: var(--wgs-ink);
+  background: color-mix(in srgb, var(--wgs-bg-deep) 60%, transparent);
+  border: 1px solid var(--wgs-line-soft);
+  border-radius: 0;
+  outline: none;
+}
+.ml-q:focus {
+  border-color: color-mix(in srgb, var(--wgs-accent) 55%, transparent);
+}
+.ml-q:focus ~ .ml-icon,
+.ml-bar:focus-within .ml-icon {
+  color: var(--wgs-accent);
+}
+.ml-q::placeholder {
+  color: var(--wgs-faint);
+}
+.ml-q::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+/* the suggestion panel: a card under the box; the matching part of each name is lit */
+.ml-sug {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 5;
+  background: var(--wgs-card);
+  border: 1px solid var(--wgs-line);
+  box-shadow: 0 10px 30px -12px oklch(0 0 0 / 0.7);
+}
+.ml-sug-h {
+  padding: 8px 12px;
+  font: 600 var(--wgs-text-data)/1 var(--wgs-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--wgs-faint);
+  border-bottom: 1px dashed var(--wgs-line-soft);
+}
+.ml-sug-i {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 8px 12px;
+  font-size: var(--wgs-text-body);
+  color: var(--wgs-ink);
+  cursor: pointer;
+}
+.ml-sug-i:hover,
+.ml-sug-i.on {
+  background: var(--wgs-accent-bg);
+}
+.ml-sug-i > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ml-sug-i mark {
+  background: none;
+  color: var(--wgs-accent);
+  font-weight: 600;
+}
+.ml-sug-k {
+  flex: none;
+  font: 600 var(--wgs-text-data)/1 var(--wgs-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--wgs-faint);
+}
+.ml-count {
+  flex: none;
+  font: var(--wgs-text-small) var(--wgs-mono);
+  color: var(--wgs-mut);
+  white-space: nowrap;
+}
+.ml-rows {
+  display: grid;
+}
+.ml-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--wgs-space-content);
+}
+.ml-pager button {
+  font: 600 var(--wgs-text-small) var(--wgs-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--wgs-accent);
+  background: none;
+  border: 1px solid var(--wgs-line);
+  padding: 7px 12px;
+  cursor: pointer;
+}
+.ml-pager button:hover:not(:disabled) {
+  border-color: var(--wgs-accent);
+}
+.ml-pager button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.ml-page {
+  font: var(--wgs-text-small) var(--wgs-mono);
+  color: var(--wgs-mut);
+}
+

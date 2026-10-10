@@ -1,0 +1,73 @@
+/* Every table in the app shares one look: framed, tinted, roomy cells. */
+table.fmt {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--wgs-text-body);
+  margin: 6px 0 14px;
+  border: 1px solid var(--wgs-line-soft);
+  background: color-mix(in srgb, var(--wgs-bg-deep) 60%, transparent);
+}
+table.fmt th,
+table.fmt td {
+  padding: var(--wgs-space-content);
+  border-bottom: 1px solid var(--wgs-line-soft);
+  vertical-align: top;
+  text-align: left;
+}
+table.fmt tbody tr:last-child td {
+  border-bottom: 0;
+}
+table.fmt thead th {
+  font: 600 var(--wgs-text-data)/1 var(--wgs-sans);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--wgs-pink);
+  background: var(--wgs-bg-deep);
+  border-bottom: 1px solid var(--wgs-line);
+}
+table.fmt .fk {
+  font-family: var(--wgs-mono);
+  font-weight: 600;
+  color: var(--wgs-accent);
+  white-space: nowrap;
+  width: 1%;
+}
+table.fmt .fv {
+  font-family: var(--wgs-mono);
+  white-space: nowrap;
+  width: 1%;
+  color: var(--wgs-ink);
+}
+table.fmt .fd {
+  color: var(--wgs-mut);
+}
+table.fmt .fm {
+  min-width: 11em;
+} /* a per-person answer column: room for a short sentence */
+table.fmt .fx {
+  margin-top: 3px;
+  color: var(--wgs-ink);
+}
+table.fmt .fe {
+  font-family: var(--wgs-mono);
+  font-size: var(--wgs-text-small);
+  color: var(--wgs-ink);
+  word-break: break-all;
+}
+table.fmt .fx b {
+  color: var(--wgs-accent);
+}
+
+.sample-row {
+  border-color: var(--wgs-accent);
+  background: var(--wgs-accent-bg);
+}
+.sample-row .cell-k {
+  color: var(--wgs-accent);
+}
+.fmt-wide .fk {
+  width: 1%;
+}
+.fmt-wide .fv {
+  width: 1%;
+}

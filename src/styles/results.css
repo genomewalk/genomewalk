@@ -1,0 +1,254 @@
+/* Summary columns are independent of expanded content. A long raw VCF line
+   or table must never resize the metadata columns in this or other rows. */
+.mlist {
+  container: match-list / inline-size;
+  min-width: 0;
+}
+.mlist .ml-rows {
+  display: grid;
+  gap: var(--wgs-space-content);
+}
+.ml-rows .match-row {
+  display: block;
+  min-width: 0;
+}
+.ml-rows .match-row > summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 168px 38px 82px 32px;
+  column-gap: 14px;
+  row-gap: 10px;
+  align-items: center;
+  font-size: 16px;
+}
+.ml-rows .match-row > summary > b,
+.ml-rows .match-row > summary b .mh {
+  display: contents;
+  font-size: 13px;
+  font-weight: 400;
+}
+.ml-rows .match-row > summary > span {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+  line-height: 1.5;
+  font-weight: 400;
+}
+.ml-rows .match-row .mh-gene,
+.ml-rows .match-row .mh-condition,
+.ml-rows .match-row .mh-location {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ml-rows .match-row .mh-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+.ml-rows .match-row .mh-id {
+  flex: none;
+  color: var(--wgs-mut);
+  font: 12px/1.5 var(--wgs-mono);
+}
+.ml-rows .match-row .mh-location {
+  color: var(--wgs-mut);
+  font: 12px/1.5 var(--wgs-mono);
+}
+.ml-rows .match-row .mh-gene {
+  color: var(--wgs-ink);
+  font-weight: 500;
+}
+.ml-rows .match-row .mh-condition {
+  font-size: 14px;
+}
+.ml-rows .match-row .mh > code {
+  justify-self: start;
+  min-width: 0;
+  max-width: 100%;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: normal;
+  overflow-wrap: normal;
+}
+.ml-rows .match-row .mh .stars,
+.ml-rows .match-row .mh .mh-z {
+  justify-self: start;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.ml-rows .match-row::details-content,
+.ml-rows .match-row > .kvx-body {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+.ml-rows .match-row .raw pre {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.ml-rows .match-row .fmt-result {
+  display: table;
+  table-layout: fixed;
+  width: 100%;
+  margin: 0;
+}
+.ml-rows .match-row .fmt-result .fk {
+  width: 160px;
+  white-space: normal;
+}
+/* Use the same letterforms for the reported and catalogue alleles. */
+.ml-rows .match-row .fmt-result :is(.o0, .o1, .flag) {
+  font-family: var(--wgs-mono);
+  font-size: 1em;
+  font-weight: 700;
+  line-height: inherit;
+}
+.ml-rows .match-row .match-record-note {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* With less room, give the name its own line above the aligned metadata. */
+@container match-list (max-width: 850px) {
+  .ml-rows .match-row > summary {
+    grid-template-columns: minmax(0, 1fr) 38px 82px 32px;
+    column-gap: 14px;
+  }
+  .ml-rows .match-row > summary > span {
+    grid-column: 1 / -2;
+    grid-row: 1;
+  }
+  .ml-rows .match-row .mh > * {
+    grid-row: 2;
+  }
+  .ml-rows .match-row .kvx-caret {
+    grid-column: -2 / -1;
+    grid-row: 1 / 3;
+  }
+}
+@container match-list (max-width: 540px) {
+  .ml-rows .match-row > summary {
+    grid-template-columns: minmax(0, 1fr) 38px 32px;
+    column-gap: 12px;
+  }
+  .ml-rows .match-row .mh > code {
+    grid-column: 1;
+    max-width: none;
+  }
+  .ml-rows .match-row .mh .stars {
+    grid-column: 2;
+    justify-self: end;
+  }
+  .ml-rows .match-row .mh .mh-z {
+    grid-column: 1 / -2;
+    grid-row: 3;
+  }
+  .ml-rows .match-row .kvx-caret {
+    grid-row: 1 / 4;
+  }
+  .ml-rows .match-row .fmt-result,
+  .ml-rows .match-row .fmt-result tbody,
+  .ml-rows .match-row .fmt-result tr,
+  .ml-rows .match-row .fmt-result td {
+    display: block;
+    width: 100%;
+  }
+  .ml-rows .match-row .fmt-result td {
+    border: 0;
+  }
+  .ml-rows .match-row .fmt-result tr + tr {
+    border-top: 1px solid var(--wgs-line-soft);
+  }
+  .ml-rows .match-row .fmt-result .fk {
+    width: 100%;
+    padding-bottom: 2px;
+  }
+  .ml-rows .match-row .fmt-result .fd {
+    padding-top: 4px;
+  }
+  .mlist .ml-bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 7px;
+  }
+  .mlist .ml-icon {
+    top: 25px;
+  }
+  .mlist .ml-q {
+    width: 100%;
+  }
+  .mlist .ml-count {
+    justify-self: end;
+  }
+  .mlist .ml-pager {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 600px) {
+  .results-output .tiles {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .results-output .tile {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 16px;
+    row-gap: 6px;
+    padding: 16px;
+  }
+  .results-output .tile .tv {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    align-self: center;
+    margin: 0;
+  }
+  .results-output .tile .tn {
+    grid-column: 1;
+    margin: 0;
+  }
+}
+
+/* Evidence stays quiet until a result is opened. Categories filter the same
+   unique variant list, including records with more than one evidence type. */
+.mlist [hidden] { display: none !important; }
+.ml-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 12px;
+}
+.ml-categories button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 7px 12px;
+  border: 1px solid var(--wgs-line-soft);
+  border-radius: 24px;
+  background: transparent;
+  color: var(--wgs-mut);
+  font: 14px/1.4 var(--wgs-sans, inherit);
+  cursor: pointer;
+}
+.ml-categories button span { font: 11px/1.4 var(--wgs-mono); }
+.ml-categories button:hover { border-color: var(--wgs-ink); color: var(--wgs-ink); }
+.ml-categories button[aria-pressed="true"] {
+  color: var(--wgs-ink);
+  background: rgba(50, 103, 87, .08);
+  border-color: var(--wgs-ok);
+}
+.ml-category-description { color: var(--wgs-mut); font-size: 14px; line-height: 1.65; margin: 0 0 var(--wgs-space-content); }
+.match-row .fd p { margin: 0; }
+.match-row .fd p + p { margin-top: var(--wgs-space-sm); }
+.result-source-lines { min-width: 0; overflow-wrap: anywhere; }
+.result-source-lines p { margin: 0; }
+.result-source-lines p + p { margin-top: 5px; }
+.match-row .fd .fpeople.two { margin-top: 0; margin-bottom: 10px; }
+@container match-list (max-width: 540px) {
+  .ml-categories { gap: 7px; }
+  .ml-categories button { font-size: 13px; padding: 7px 10px; }
+}

@@ -1,0 +1,754 @@
+.genome-explorer {
+  container-type: inline-size;
+  --genome-mother: #a5573c;
+  --genome-father: #397868;
+  --genome-gold: #99732e;
+  width: 100%;
+  min-width: 0;
+  max-width: 650px;
+  margin: 24px auto;
+  padding: 0 0 0 18px;
+  outline: none;
+}
+:where(.genome-explorer) :global(.genome-figure-heading) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 43px;
+  margin: 0 3% 6px;
+}
+:where(.genome-explorer) :global(.genome-figure-heading) h2 {
+  font: 36px/1.15 var(--wgs-serif);
+  font-weight: 400;
+  letter-spacing: -0.7px;
+}
+:where(.genome-explorer) :global(.genome-zoom-space) {
+  --genome-pair-label-size: 12px;
+  --genome-sex-box-bottom: calc(var(--genome-sex-label-y) + var(--genome-pair-label-size) + 8px);
+  position: relative;
+  height: clamp(480px, 40vw, 560px);
+  isolation: isolate;
+}
+:where(.genome-explorer) :global(.genome-zoom-paper) {
+  position: absolute;
+  inset: 5% -3%;
+  z-index: -1;
+  background: radial-gradient(ellipse at 55% 47%, #c6cdb422, transparent 65%);
+  pointer-events: none;
+}
+:where(.genome-explorer) :global(.genome-zoom-paper)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--wgs-line-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--wgs-line-soft) 1px, transparent 1px);
+  background-size: 46px 46px;
+  opacity: 0.2;
+  mask-image: radial-gradient(ellipse, black, transparent 65%);
+}
+:where(.genome-explorer) :global(.genome-zoom-canvas),
+:where(.genome-explorer) :global(.genome-zoom-fallback),
+:where(.genome-explorer) :global(.genome-annotations),
+:where(.genome-explorer) :global(.genome-leaders) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+:where(.genome-explorer) :global(.genome-zoom-canvas),
+:where(.genome-explorer) :global(.genome-zoom-fallback) {
+  pointer-events: none;
+}
+:where(.genome-explorer) :global(.genome-zoom-canvas) canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+:where(.genome-explorer) :global(.genome-annotations) {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.25s,
+    visibility 0.25s;
+}
+:where(.genome-explorer) :global(.genome-annotations):global(.is-current) {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 0.55s 0.55s,
+    visibility 0s;
+}
+:where(.genome-explorer) :global(.genome-at-0) :global(.genome-annotations):global(.is-current) {
+  transition-delay: 0.15s;
+}
+:where(.genome-explorer) :global(.genome-annotations) button,
+:where(.genome-explorer) :global(.genome-annotations) a {
+  pointer-events: auto;
+}
+:where(.genome-explorer) :global(.genome-leaders) {
+  fill: none;
+  stroke: var(--wgs-line);
+  stroke-width: 1.2;
+  pointer-events: none;
+}
+:where(.genome-explorer) :global(.genome-leaders) circle {
+  stroke: none;
+  fill: var(--wgs-faint);
+}
+:where(.genome-explorer) :global(.genome-note) {
+  position: absolute;
+  color: var(--wgs-mut);
+  line-height: 1.5;
+}
+:where(.genome-explorer) :global(.genome-note) b {
+  display: block;
+  font: 14px/1.5 var(--wgs-mono);
+  letter-spacing: 1.4px;
+  font-weight: 400;
+  color: var(--wgs-accent);
+  margin-bottom: 6px;
+}
+:where(.genome-explorer) :global(.genome-note) > span {
+  display: block;
+  font-size: 16px;
+}
+:where(.genome-explorer) :global(.genome-total-note) {
+  top: 2%;
+  left: 7%;
+  max-width: 49%;
+}
+:where(.genome-explorer) :global(.genome-inheritance-note) {
+  top: 2%;
+  right: 5%;
+  white-space: nowrap;
+}
+:where(.genome-explorer) :global(.genome-chromosome-note) {
+  top: 86%;
+  left: 20%;
+  width: 37%;
+}
+:where(.genome-explorer) :global(.genome-pair-hotspot) {
+  position: absolute;
+  width: 14.333%;
+  height: 14.84%;
+  border: 0;
+  background: transparent;
+  border-radius: 50%;
+  cursor: zoom-in;
+}
+:where(.genome-explorer) :global(.genome-pair-aura) {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  height: 100%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border: 1px solid #a7573a42;
+  background: radial-gradient(ellipse, transparent 30%, #bd89530a 70%, transparent);
+  border-radius: 50%;
+  animation: genome-invitation 3.5s ease-in-out infinite;
+}
+:where(.genome-explorer) :global(.genome-pair-hotspot):hover :global(.genome-pair-aura) {
+  border-color: var(--wgs-accent);
+  background: #d6aa7720;
+}
+:where(.genome-explorer) :global(.genome-pair-zoom-badge) {
+  position: absolute;
+  right: -4px;
+  bottom: -2px;
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  background: var(--wgs-bg);
+  border: 1px solid var(--wgs-accent);
+  color: var(--wgs-accent);
+  border-radius: 50%;
+  box-shadow: 0 2px 8px #63351b12;
+}
+:where(.genome-explorer) :global(.genome-pair-tooltip) {
+  position: absolute;
+  bottom: calc(100% + 7px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 5px 8px;
+  white-space: nowrap;
+  border: 1px solid var(--wgs-line-soft);
+  border-radius: 4px;
+  background: var(--wgs-bg);
+  color: var(--wgs-ink);
+  font-size: 13px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+:where(.genome-explorer) :global(.genome-pair-hotspot):hover :global(.genome-pair-tooltip),
+:where(.genome-explorer) :global(.genome-pair-hotspot):focus-visible :global(.genome-pair-tooltip) {
+  opacity: 1;
+  visibility: visible;
+}
+:where(.genome-explorer) :global(.genome-pair-number) {
+  position: absolute;
+  transform: translateX(-50%);
+  font: var(--genome-pair-label-size)/1 var(--wgs-mono);
+  color: var(--wgs-faint);
+}
+:where(.genome-explorer) :global(.genome-pair-number):global(.is-featured) {
+  color: var(--wgs-accent);
+  font-weight: 600;
+}
+:where(.genome-explorer) :global(.genome-zoom-out) {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 9px;
+  border: 1px solid var(--wgs-line-soft);
+  border-radius: 20px;
+  background: var(--wgs-bg);
+  color: var(--wgs-mut);
+  font-size: 14px;
+  line-height: 1.4;
+  cursor: zoom-out;
+}
+:where(.genome-explorer) :global(.genome-zoom-out):hover {
+  background: var(--wgs-bg-deep);
+  color: var(--wgs-accent);
+}
+:where(.genome-explorer) :global(.genome-helix-note) {
+  top: 4%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 45%;
+  text-align: center;
+}
+:where(.genome-explorer) :global(.genome-gene-brackets) {
+  stroke: #b89451;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition:
+    stroke 0.2s,
+    stroke-width 0.2s;
+}
+:where(.genome-explorer) :global(.genome-gene-copy) {
+  position: absolute;
+  top: 31.45%;
+  width: 20%;
+  height: 29.04%;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: zoom-in;
+}
+:where(.genome-explorer) :global(.genome-gene-copy-mother) {
+  left: 17.33%;
+}
+:where(.genome-explorer) :global(.genome-gene-copy-father) {
+  left: 62.67%;
+}
+:where(.genome-explorer) :global(.genome-annotations):has(:global(.genome-gene-copy):hover) :global(.genome-gene-brackets),
+:where(.genome-explorer) :global(.genome-annotations):has(:global(.genome-gene-zoom):hover) :global(.genome-gene-brackets) {
+  stroke: var(--wgs-accent);
+  stroke-width: 2.5;
+}
+:where(.genome-explorer) :global(.genome-gene-zoom) {
+  position: absolute;
+  left: 50%;
+  top: 45.968%;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 11px;
+  border: 1px solid var(--genome-gold);
+  border-radius: 24px;
+  color: var(--genome-gold);
+  background: var(--wgs-bg);
+  box-shadow: 0 3px 12px #8c65250c;
+  font-size: 15px;
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: zoom-in;
+}
+:where(.genome-explorer) :global(.genome-gene-zoom):hover {
+  color: var(--wgs-accent);
+  border-color: var(--wgs-accent);
+  background: #f4ecd9;
+}
+:where(.genome-explorer) :global(.genome-gene-note) {
+  width: 30%;
+  left: 50%;
+  top: 66%;
+  transform: translateX(-50%);
+  text-align: center;
+  white-space: normal;
+}
+:where(.genome-explorer) :global(.genome-gene-note) b {
+  color: var(--genome-gold);
+  margin-bottom: 3px;
+}
+:where(.genome-explorer) :global(.genome-parent-note) {
+  position: absolute;
+  top: 89%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  font-size: 14px;
+  color: var(--wgs-mut);
+}
+:where(.genome-explorer) :global(.genome-parent-mother) {
+  left: 32.7%;
+}
+:where(.genome-explorer) :global(.genome-parent-father) {
+  left: 67.3%;
+}
+:where(.genome-explorer) :global(.genome-parent-note) i,
+:where(.genome-explorer) :global(.genome-sequence-parent) i {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--genome-mother);
+  border-radius: 50%;
+}
+:where(.genome-explorer) :global(.genome-parent-father) i,
+:where(.genome-explorer) :global(.genome-sequence-parent-father) i {
+  background: var(--genome-father);
+}
+:where(.genome-explorer) :global(.genome-sequence-gene-note) {
+  left: var(--sequence-variant-x);
+  bottom: calc(100% - var(--sequence-mother-y) + 45px);
+  width: max-content;
+  transform: translateX(-50%);
+  text-align: center;
+  white-space: nowrap;
+}
+:where(.genome-explorer) :global(.genome-sequence-leaders) {
+  stroke: #99732e70;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+:where(.genome-explorer) :global(.genome-sequence-leaders) circle {
+  fill: var(--genome-gold);
+}
+:where(.genome-explorer) :global(.genome-gene-wash) {
+  position: absolute;
+  left: 22%;
+  top: calc(var(--sequence-mother-y) - 22px);
+  width: 68%;
+  height: calc(var(--sequence-father-y) - var(--sequence-mother-y) + 44px);
+  overflow: hidden;
+  border-radius: 50%;
+  background: linear-gradient(90deg, transparent, #d3d9bd22 10%, #d3d9bd22 90%, transparent);
+}
+:where(.genome-explorer) :global(.genome-letter-row) {
+  position: absolute;
+  left: var(--sequence-row-left);
+  width: var(--sequence-row-width);
+  display: grid;
+  grid-template-columns: repeat(13, 1fr);
+  align-items: center;
+  transform: translateY(-50%);
+  isolation: isolate;
+}
+:where(.genome-explorer) :global(.genome-letter-row)::before {
+  content: "";
+  position: absolute;
+  inset: -8px -2%;
+  z-index: -1;
+  background: radial-gradient(
+    ellipse,
+    color-mix(in srgb, var(--wgs-bg) 65%, transparent),
+    transparent 75%
+  );
+  filter: blur(7px);
+  pointer-events: none;
+}
+:where(.genome-explorer) :global(.genome-letter-mother) {
+  top: var(--sequence-mother-y);
+  color: var(--genome-mother);
+}
+:where(.genome-explorer) :global(.genome-letter-father) {
+  top: var(--sequence-father-y);
+  color: var(--genome-father);
+}
+/* Let the sequence read as letters, with open annotation marks at key bases. */
+:where(.genome-explorer) :global(.genome-letter) {
+  position: relative;
+  justify-self: center;
+  width: 100%;
+  min-width: 0;
+  padding: 6px 0;
+  font: 24px/1.2 var(--wgs-mono);
+  text-align: center;
+  background: none;
+  text-shadow:
+    0 0 7px var(--wgs-bg),
+    0 1px 3px var(--wgs-bg);
+}
+:where(.genome-explorer) :global(.genome-letter-variant) {
+  font-weight: 600;
+}
+:where(.genome-explorer) :global(.genome-letter-variant)::before {
+  content: "";
+  position: absolute;
+  inset: -7px -10%;
+  z-index: -1;
+  background: radial-gradient(
+    ellipse,
+    color-mix(in srgb, currentColor 22%, transparent),
+    transparent 72%
+  );
+  filter: blur(3px);
+  pointer-events: none;
+}
+:where(.genome-explorer) :global(.genome-letter-variant)::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto;
+  left: 50%;
+  width: 0.8em;
+  transform: translateX(-50%);
+  border-block: 1px solid currentColor;
+  opacity: 0.7;
+  pointer-events: none;
+}
+:where(.genome-explorer) :global(.genome-letter-example)::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0.7em;
+  height: 1px;
+  transform: translateX(-50%);
+  background: currentColor;
+  opacity: 0.5;
+}
+:where(.genome-explorer) :global(.genome-sequence-parent) {
+  position: absolute;
+  left: 0;
+  right: calc(100% - var(--sequence-row-left) + 8px);
+  text-align: right;
+  font-size: 15px;
+  line-height: 1.35;
+  transform: translateY(-50%);
+  color: var(--genome-mother);
+}
+:where(.genome-explorer) :global(.genome-sequence-parent-mother) {
+  top: var(--sequence-mother-y);
+}
+:where(.genome-explorer) :global(.genome-sequence-parent-father) {
+  top: var(--sequence-father-y);
+  color: var(--genome-father);
+}
+/* Keep the faint horizontal molecules clear of the parental labels. */
+:where(.genome-explorer) :global(.genome-at-2) :global(.genome-zoom-canvas),
+:where(.genome-explorer) :global(.genome-at-2) :global(.genome-zoom-fallback) {
+  mask-image: linear-gradient(90deg, transparent 20%, #000 24%, #000 91%, transparent 96%);
+}
+:where(.genome-explorer) :global(.genome-base-note) {
+  top: calc(var(--sequence-father-y) + 42px);
+  left: 26%;
+  width: 26%;
+}
+:where(.genome-explorer) :global(.genome-base-note) b {
+  margin-bottom: 1px;
+}
+:where(.genome-explorer) :global(.genome-base-note) > span {
+  font-size: 15px;
+}
+:where(.genome-explorer) :global(.genome-allele-note) {
+  top: calc(var(--sequence-father-y) + 42px);
+  left: 54%;
+  width: 42%;
+  text-align: left;
+}
+:where(.genome-explorer) :global(.genome-allele-note) b {
+  color: var(--genome-gold);
+  margin-bottom: 6px;
+}
+:where(.genome-explorer) :global(.genome-allele-note) > span {
+  font-size: 17px;
+  line-height: 1.6;
+}
+:where(.genome-explorer) :global(.genome-allele-note) strong {
+  color: var(--genome-gold);
+  font-weight: 600;
+  font-family: var(--wgs-mono);
+}
+/* Leader origins follow the measured text, including wrapped labels. */
+:where(.genome-explorer) :global(.genome-label-leader) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  fill: none;
+  stroke: var(--wgs-line);
+  stroke-width: 1.2;
+}
+:where(.genome-explorer) :global(.genome-label-leader) circle {
+  fill: var(--wgs-faint);
+  stroke: none;
+}
+:where(.genome-explorer) :global(.genome-total-note) a {
+  text-decoration: underline;
+  text-decoration-color: var(--wgs-line);
+  text-underline-offset: 4px;
+  white-space: nowrap;
+}
+:where(.genome-explorer) :global(.genome-total-note) a:hover {
+  color: var(--wgs-accent);
+}
+:where(.genome-explorer) :global(.genome-at-0) {
+  min-height: 520px;
+}
+:where(.genome-explorer) :global(.genome-sex-alternatives) {
+  position: absolute;
+  left: 66%;
+  top: 68.4%;
+  width: 28%;
+  height: calc(var(--genome-sex-box-bottom) - 68.4%);
+  border: 1px dotted var(--wgs-line);
+  border-radius: 7px;
+}
+:where(.genome-explorer) :global(.genome-sex-or) {
+  position: absolute;
+  left: 80%;
+  top: 74.516%;
+  transform: translate(-50%, -50%);
+  color: var(--wgs-faint);
+  font-size: 13px;
+  font-style: italic;
+}
+:where(.genome-explorer) :global(.genome-sex-note) {
+  left: 80%;
+  top: calc(var(--genome-sex-box-bottom) + 18px);
+  width: max-content;
+  transform: translateX(-50%);
+}
+:where(.genome-explorer) :global(.genome-sex-note) > span {
+  font-size: 15px;
+  white-space: nowrap;
+}
+:where(.genome-explorer) :global(.genome-sex-note) > span > span[aria-hidden="true"] {
+  opacity: 0.65;
+}
+:where(.genome-explorer) :global(.genome-chromosome-note) b {
+  margin-bottom: 4px;
+}
+:where(.genome-explorer) :global(.genome-screen-reader) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+@keyframes genome-invitation {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+@media (max-width: 1100px) {
+  .genome-explorer {
+    padding-left: 0;
+  }
+  :where(.genome-explorer) :global(.genome-figure-heading) h2 {
+    font-size: 30px;
+  }
+  :where(.genome-explorer) :global(.genome-note) > span {
+    font-size: 15px;
+  }
+  :where(.genome-explorer) :global(.genome-note) b {
+    font-size: 13px;
+    letter-spacing: 1px;
+  }
+  :where(.genome-explorer) :global(.genome-parent-note) {
+    font-size: 13px;
+  }
+  :where(.genome-explorer) :global(.genome-letter) {
+    font-size: 18px;
+  }
+}
+@media (max-width: 800px) {
+  .genome-explorer {
+    max-width: 600px;
+    margin: 10px auto 36px;
+  }
+  :where(.genome-explorer) :global(.genome-zoom-space) {
+    height: 520px;
+  }
+}
+@media (max-width: 450px) {
+  :where(.genome-explorer) :global(.genome-zoom-space) {
+    height: 480px;
+  }
+  :where(.genome-explorer) :global(.genome-figure-heading) {
+    margin-inline: 1%;
+    gap: 8px;
+  }
+  :where(.genome-explorer) :global(.genome-figure-heading) h2 {
+    font-size: 28px;
+    letter-spacing: -0.7px;
+  }
+  :where(.genome-explorer) :global(.genome-zoom-out) {
+    font-size: 13px;
+    padding: 6px 8px;
+    gap: 4px;
+  }
+  :where(.genome-explorer) :global(.genome-total-note) {
+    max-width: 43%;
+  }
+  :where(.genome-explorer) :global(.genome-parent-note) {
+    font-size: 12px;
+    gap: 4px;
+  }
+  :where(.genome-explorer) :global(.genome-parent-mother) {
+    left: 32.7%;
+  }
+  :where(.genome-explorer) :global(.genome-parent-father) {
+    left: 67.3%;
+  }
+  :where(.genome-explorer) :global(.genome-gene-zoom) {
+    padding: 8px 9px;
+    gap: 5px;
+    font-size: 14px;
+  }
+  :where(.genome-explorer) :global(.genome-letter) {
+    font-size: 16px;
+  }
+  :where(.genome-explorer) :global(.genome-sequence-parent) {
+    font-size: 14px;
+  }
+  :where(.genome-explorer) :global(.genome-allele-note) > span {
+    font-size: 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(.genome-explorer) :global(.genome-annotations),
+  :where(.genome-explorer) :global(.genome-annotations):global(.is-current) {
+    transition: none;
+  }
+  :where(.genome-explorer) :global(.genome-pair-aura) {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+@container (max-width: 330px) {
+  :where(.genome-explorer) :global(.genome-total-note) {
+    max-width: none;
+  }
+  :where(.genome-explorer) :global(.genome-inheritance-note) {
+    top: 13%;
+    left: 7%;
+    right: auto;
+  }
+  :where(.genome-explorer) :global(.genome-inheritance-note) b {
+    display: none;
+  }
+  :where(.genome-explorer) :global(.genome-chromosome-note) {
+    left: 20%;
+    width: 41%;
+  }
+}
+
+/* This closer view needs only enough height for the aligned excerpt and labels. */
+:where(.genome-explorer) :global(.genome-zoom-space):global(.genome-at-2) {
+  height: 420px;
+}
+
+:where(.genome-explorer) :global(.genome-helix-shadow) {
+  fill: #496d58;
+  fill-opacity: 0.06;
+  stroke: none;
+  filter: blur(3px);
+}
+
+/* Keep all three zoom levels legible when the illustration sits on forest green. */
+.genome-explorer[data-appearance="dark"] {
+  --genome-mother: #edb798;
+  --genome-father: #a8d7bf;
+  --genome-gold: #e8cd90;
+  --wgs-bg: #29483f;
+  --wgs-bg-deep: #35574a;
+  --wgs-ink: #f3efdb;
+  --wgs-mut: #d0dcc9;
+  --wgs-faint: #bdceb7;
+  --wgs-accent: #e9ba92;
+  --wgs-line: #bccfad66;
+  --wgs-line-soft: #bccfad38;
+  color: var(--wgs-ink);
+}
+.genome-explorer[data-appearance="dark"] :global(.genome-zoom-paper) {
+  background: none;
+}
+.genome-explorer[data-appearance="dark"] :global(.genome-zoom-paper)::after {
+  opacity: 0.08;
+}
+.genome-explorer[data-appearance="dark"] :global(.genome-pair-aura) {
+  border-color: #e9ba9280;
+  background: radial-gradient(ellipse, #ddbf7620, transparent 70%);
+}
+.genome-explorer[data-appearance="dark"] :global(.genome-pair-hotspot):hover :global(.genome-pair-aura) {
+  border-color: #e9ba92;
+  background: #e9ba921c;
+}
+.genome-explorer[data-appearance="dark"] :global(.genome-gene-brackets) {
+  stroke: #d9bb7d;
+}
+.genome-explorer[data-appearance="dark"] :global(.genome-gene-zoom):hover {
+  background: var(--wgs-bg-deep);
+}
+.genome-explorer[data-appearance="dark"] :global(.genome-gene-wash) {
+  background: linear-gradient(90deg, transparent, #b4c9950b 10%, #b4c9950b 90%, transparent);
+}
+.genome-explorer[data-appearance="dark"] :global(.genome-helix-shadow) {
+  fill: #c2d0aa;
+  fill-opacity: 0.09;
+}
+
+/* Peach and mint stay distinct against the forest backdrop at sequence scale. */
+.genome-explorer[data-appearance="dark"] :global(.genome-at-2) {
+  --genome-mother: #ffd3b5;
+  --genome-father: #b8edd8;
+  --genome-gold: #f3d699;
+  --wgs-mut: #e0e8da;
+  --wgs-accent: #eed4ac;
+  --wgs-line: #d6e3cd80;
+}
+.genome-explorer[data-appearance="dark"] :global(.genome-letter) {
+  text-shadow:
+    0 0 9px #29483f,
+    0 1px 4px #29483f;
+  font-weight: 500;
+}
+.genome-explorer[data-appearance="dark"] :global(.genome-letter-variant) {
+  font-weight: 600;
+}
+.genome-explorer[data-appearance="dark"] :global(.genome-allele-note) strong:first-of-type {
+  color: var(--genome-mother);
+}
+.genome-explorer[data-appearance="dark"] :global(.genome-allele-note) strong:last-of-type {
+  color: var(--genome-father);
+}
+.genome-explorer[data-appearance="dark"] :global(.genome-sequence-leaders) {
+  stroke: #edd6ae99;
+}

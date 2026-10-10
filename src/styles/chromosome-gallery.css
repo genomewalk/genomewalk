@@ -1,0 +1,87 @@
+.chromosome-gallery {
+  container-type: inline-size;
+  margin: 24px 0 12px;
+}
+.chromosome-gallery .chromosome-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 26px 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.chromosome-gallery-item {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  text-align: center;
+}
+.chromosome-gallery-stage {
+  --chromosome-max-height: 96px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  height: var(--chromosome-max-height);
+  margin-bottom: 12px;
+  color: var(--wgs-accent);
+}
+.chromosome-gallery-shape {
+  display: block;
+  flex: none;
+  height: calc(var(--chromosome-max-height) * var(--chromosome-scale));
+  width: auto;
+  aspect-ratio: 60 / 108;
+}
+.chromosome-gallery-shape.is-mitochondrial {
+  aspect-ratio: 1;
+}
+.chromosome-gallery-label {
+  color: var(--wgs-ink);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.chromosome-gallery-count {
+  color: var(--wgs-mut);
+  font-family: var(--wgs-mono);
+  font-size: .74rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.65;
+}
+.chromosome-gallery-empty {
+  color: var(--wgs-line);
+  line-height: 1;
+}
+.chromosome-gallery .is-empty .chromosome-gallery-count {
+  color: var(--wgs-faint);
+}
+.chromosome-gallery figcaption {
+  margin-top: 24px;
+  color: var(--wgs-faint);
+  font-size: .82rem;
+}
+@container (min-width: 460px) {
+  .chromosome-gallery .chromosome-gallery-grid {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+@container (min-width: 640px) {
+  .chromosome-gallery .chromosome-gallery-grid {
+    grid-template-columns: repeat(9, minmax(0, 1fr));
+  }
+  .chromosome-gallery-stage {
+    --chromosome-max-height: 124px;
+  }
+  .chromosome-gallery-count {
+    font-size: .78rem;
+  }
+}
+@container (min-width: 900px) {
+  .chromosome-gallery .chromosome-gallery-grid {
+    grid-template-columns: repeat(13, minmax(0, 1fr));
+    row-gap: 32px;
+  }
+}

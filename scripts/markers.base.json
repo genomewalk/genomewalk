@@ -1,0 +1,276 @@
+[
+  {
+    "cat": "trait",
+    "rs": "rs4988235",
+    "gene": "MCM6/LCT",
+    "title": "Lactase persistence",
+    "read": [
+      "this lactase-persistence variant is absent",
+      "variant associated with lactase persistence",
+      "variant associated with lactase persistence"
+    ],
+    "cite": [
+      {
+        "label": "Enattah et al., Nature Genetics 2002",
+        "url": "https://doi.org/10.1038/ng826"
+      },
+      {
+        "label": "Tishkoff et al., Nature Genetics 2007",
+        "url": "https://doi.org/10.1038/ng1946"
+      }
+    ],
+    "studyNote": "This variant is associated with continued lactase production, especially in European populations. Other variants can produce the same trait, so its absence does not establish lactose intolerance.",
+    "targets": {
+      "GRCh37": {
+        "variant": "2-136608646-G-A",
+        "effectAllele": "A"
+      },
+      "GRCh38": {
+        "variant": "2-135851076-G-A",
+        "effectAllele": "A"
+      }
+    }
+  },
+  {
+    "cat": "trait",
+    "rs": "rs671",
+    "gene": "ALDH2",
+    "title": "Alcohol flush",
+    "read": [
+      "this ALDH2-related flush variant is absent",
+      "reduced ALDH2 activity; alcohol flushing is more likely",
+      "very low ALDH2 activity; strong alcohol flushing is more likely"
+    ],
+    "cite": {
+      "label": "Brooks et al., PLoS Medicine 2009",
+      "url": "https://doi.org/10.1371/journal.pmed.1000050"
+    },
+    "studyNote": "The linked review describes increased oesophageal cancer risk among people with one copy of this variant who drink alcohol.",
+    "targets": {
+      "GRCh37": {
+        "variant": "12-112241766-G-A",
+        "effectAllele": "A"
+      },
+      "GRCh38": {
+        "variant": "12-111803962-G-A",
+        "effectAllele": "A"
+      }
+    }
+  },
+  {
+    "cat": "trait",
+    "rs": "rs17822931",
+    "gene": "ABCC11",
+    "title": "Earwax & body odor",
+    "read": [
+      "wet earwax associated with this genotype",
+      "wet earwax; one dry-earwax allele",
+      "dry earwax and reduced underarm odour associated with this genotype"
+    ],
+    "cite": [
+      {
+        "label": "Yoshiura et al., Nature Genetics 2006",
+        "url": "https://doi.org/10.1038/ng1733"
+      },
+      {
+        "label": "Martin et al., Journal of Investigative Dermatology 2010",
+        "url": "https://doi.org/10.1038/jid.2009.254"
+      }
+    ],
+    "studyNote": "The earwax study links two copies of this allele to dry earwax. The second study links the same genotype to reduced secretion of key underarm odour precursors.",
+    "targets": {
+      "GRCh37": {
+        "variant": "16-48258198-C-T",
+        "effectAllele": "T"
+      },
+      "GRCh38": {
+        "variant": "16-48224287-C-T",
+        "effectAllele": "T"
+      }
+    }
+  },
+  {
+    "cat": "trait",
+    "rs": "rs12913832",
+    "gene": "HERC2/OCA2",
+    "title": "Eye color (major locus)",
+    "read": [
+      "brown eyes more likely in the study",
+      "brown or intermediate eye colour more likely in the study",
+      "blue eyes more likely in the study"
+    ],
+    "cite": {
+      "label": "Sturm et al., American Journal of Human Genetics 2008",
+      "url": "https://doi.org/10.1016/j.ajhg.2007.11.005"
+    },
+    "studyNote": "The study mainly involved people of northern European ancestry. Other variants also influence eye colour; this is an association, not a definite prediction.",
+    "targets": {
+      "GRCh37": {
+        "variant": "15-28365618-A-G",
+        "effectAllele": "G"
+      },
+      "GRCh38": {
+        "variant": "15-28120472-A-G",
+        "effectAllele": "G"
+      }
+    }
+  },
+  {
+    "cat": "trait",
+    "rs": "rs1815739",
+    "gene": "ACTN3",
+    "title": "“Sprinter” gene",
+    "eff": "T",
+    "read": [
+      "fast-twitch (power/sprint) profile",
+      "mixed muscle profile",
+      "endurance-leaning (α-actinin-3 absent)"
+    ],
+    "chrom": "11",
+    "pos": 66560624,
+    "alleles": "C/A/T",
+    "verified": false
+  },
+  {
+    "cat": "trait",
+    "rs": "rs762551",
+    "gene": "CYP1A2",
+    "title": "Caffeine metabolism",
+    "eff": "A",
+    "read": ["slow caffeine metabolizer", "intermediate", "fast caffeine metabolizer"],
+    "chrom": "15",
+    "pos": 74749576,
+    "alleles": "C/A/G",
+    "verified": true
+  },
+  {
+    "cat": "trait",
+    "rs": "rs9939609",
+    "gene": "FTO",
+    "title": "Obesity-associated",
+    "eff": "A",
+    "read": [
+      "lower FTO-associated weight risk",
+      "intermediate",
+      "higher FTO-associated weight tendency"
+    ],
+    "chrom": "16",
+    "pos": 53786615,
+    "alleles": "T/A",
+    "verified": false
+  },
+  {
+    "cat": "trait",
+    "rs": "rs4680",
+    "gene": "COMT",
+    "title": "Dopamine (“warrior/worrier”)",
+    "eff": "A",
+    "read": [
+      "“warrior” (Val/Val) — steadier under stress",
+      "balanced (Val/Met)",
+      "“worrier” (Met/Met) — better focus, more stress-sensitive"
+    ],
+    "chrom": "22",
+    "pos": 19963748,
+    "alleles": "G/A",
+    "verified": false
+  },
+  {
+    "cat": "pgx",
+    "rs": "rs4244285",
+    "gene": "CYP2C19*2",
+    "title": "Clopidogrel / PPIs",
+    "eff": "A",
+    "read": ["normal function", "one loss-of-function allele (intermediate)", "poor metabolizer"],
+    "chrom": "10",
+    "pos": 94781859,
+    "alleles": "G/A/C/T",
+    "verified": false
+  },
+  {
+    "cat": "pgx",
+    "rs": "rs12248560",
+    "gene": "CYP2C19*17",
+    "title": "Rapid-metabolizer allele",
+    "eff": "T",
+    "read": ["normal", "one increased-function allele", "ultrarapid metabolizer"],
+    "chrom": "10",
+    "pos": 94761900,
+    "alleles": "C/A/T",
+    "verified": true
+  },
+  {
+    "cat": "pgx",
+    "rs": "rs1057910",
+    "gene": "CYP2C9*3",
+    "title": "Warfarin / NSAIDs",
+    "eff": "C",
+    "read": ["normal function", "reduced function (intermediate)", "markedly reduced function"],
+    "chrom": "10",
+    "pos": 94981296,
+    "alleles": "A/C/G",
+    "verified": true
+  },
+  {
+    "cat": "pgx",
+    "rs": "rs9923231",
+    "gene": "VKORC1",
+    "cite": {
+      "label": "Sconce et al., Blood 2005",
+      "url": "https://doi.org/10.1182/blood-2005-03-1108"
+    },
+    "title": "Warfarin dose sensitivity",
+    "read": [
+      "lower warfarin sensitivity than T carriers in the study",
+      "increased warfarin sensitivity in the study",
+      "highest warfarin sensitivity in the study"
+    ],
+    "studyNote": "Warfarin dose requirements also depended on other genes, age and body size in this study. This variant alone does not determine a dose.",
+    "targets": {
+      "GRCh37": {
+        "variant": "16-31107689-C-T",
+        "effectAllele": "T"
+      },
+      "GRCh38": {
+        "variant": "16-31096368-C-T",
+        "effectAllele": "T"
+      }
+    }
+  },
+  {
+    "cat": "pgx",
+    "rs": "rs4149056",
+    "gene": "SLCO1B1",
+    "title": "Statin myopathy risk",
+    "eff": "C",
+    "read": ["normal statin transport", "increased myopathy risk", "high myopathy risk"],
+    "chrom": "12",
+    "pos": 21178615,
+    "alleles": "T/A/C",
+    "verified": false
+  },
+  {
+    "cat": "pgx",
+    "rs": "rs3892097",
+    "gene": "CYP2D6*4",
+    "title": "Codeine / many drugs",
+    "eff": "T",
+    "read": ["normal function", "one non-functional allele", "poor metabolizer"],
+    "chrom": "22",
+    "pos": 42128945,
+    "alleles": "C/A/G/T",
+    "verified": true
+  },
+  {
+    "cat": "blood",
+    "rs": "rs8176719",
+    "gene": "ABO",
+    "title": "ABO — O allele",
+    "eff": "D",
+    "read": ["no O-deletion here", "one O allele", "blood group O (both O alleles)"],
+    "chrom": "9",
+    "pos": 133257522,
+    "alleles": "-/C",
+    "verified": true
+  }
+]

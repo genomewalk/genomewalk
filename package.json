@@ -1,0 +1,73 @@
+{
+  "name": "genomewalk",
+  "private": true,
+  "sideEffects": false,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "node scripts/preview-static.ts",
+    "test": "node scripts/test.ts",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.tools.json && tsc -p tsconfig.tests.json",
+    "lint": "eslint --flag unstable_native_nodejs_ts_config .",
+    "format": "prettier --write src scripts tests docs README.md CONTRIBUTING.md vite.config.ts package.json eslint.config.ts \"tsconfig*.json\"",
+    "check": "npm run test && npm run typecheck && npm run lint && npm run build",
+    "data:build": "node scripts/build-all.ts",
+    "data:download": "node scripts/download-inputs.ts",
+    "data:citations": "node scripts/download-citations.ts",
+    "data:publications": "node scripts/build-publications.ts",
+    "data:frequencies": "node scripts/build-freqs.ts",
+    "data:catalog": "node scripts/build-catalog.ts",
+    "data:markers": "node scripts/build-marker-freqs.ts",
+    "data:check": "node scripts/check-reference-data.ts",
+    "test:data": "node scripts/test.ts --scope data",
+    "test:vcf": "node scripts/test.ts --scope vcf",
+    "data": "node scripts/data-help.ts",
+    "data:plan": "node scripts/build-all.ts --dry-run",
+    "data:inputs": "node scripts/check-inputs.ts",
+    "data:rebuild": "node scripts/build-all.ts --offline",
+    "data:refresh": "node scripts/build-all.ts --fresh",
+    "data:consumer": "node scripts/build-consumer.ts",
+    "data:ranges": "node scripts/build-catalog-ranges.ts",
+    "test:consumer": "node scripts/test.ts --scope consumer",
+    "check:release": "npm run check && npm run data:check && npm run check:deploy",
+    "check:deploy": "node scripts/check-deployment.ts"
+  },
+  "overrides": {
+    "rolldown": "1.2.1"
+  },
+  "dependencies": {
+    "@tanstack/react-router": "1.170.18",
+    "@tanstack/react-start": "1.168.32",
+    "fflate": "0.8.3",
+    "lucide-react": "^0.575.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "three": "^0.186.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.32.0",
+    "@tailwindcss/vite": "^4.2.1",
+    "@types/node": "^22.16.5",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@types/three": "^0.186.0",
+    "@vitejs/plugin-react": "^5.2.0",
+    "eslint": "^9.32.0",
+    "eslint-config-prettier": "^10.1.1",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^15.15.0",
+    "prettier": "^3.7.3",
+    "saxes": "^6.0.0",
+    "tailwindcss": "^4.2.1",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.56.1",
+    "vite": "8.1.5"
+  },
+  "version": "0.1.0",
+  "license": "MIT",
+  "engines": {
+    "node": ">=24"
+  }
+}

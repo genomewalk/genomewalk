@@ -1,0 +1,293 @@
+/* One reading hierarchy at every breakpoint. Keep display titles and dense
+   DNA data distinct; ordinary explanations should not resize by container. */
+.s-why {
+  font-size: var(--wgs-text-lead);
+  line-height: var(--wgs-leading-body);
+}
+.privacy-note p,
+.chapter-row-copy p,
+.file-description,
+.drop-hint,
+.change-file {
+  font-size: var(--wgs-text-body);
+}
+.kvx-body,
+.note,
+.s-out .note {
+  font-size: var(--wgs-text-body);
+  line-height: var(--wgs-leading-body);
+}
+.s-out .s-why,
+.case-sum,
+.sexcase .chromo-strand > span {
+  font-size: var(--wgs-text-body);
+  line-height: var(--wgs-leading-body);
+}
+.kvx summary {
+  font-size: var(--wgs-text-body);
+  line-height: var(--wgs-leading-small);
+}
+.kvx summary b {
+  font-size: var(--wgs-text-small);
+}
+.raw pre,
+.cell-v {
+  font-size: var(--wgs-text-data);
+}
+table.fmt {
+  font-size: var(--wgs-text-body);
+}
+table.fmt tbody th,
+table.fmt td {
+  font-size: var(--wgs-text-body);
+  line-height: var(--wgs-leading-body);
+}
+table.fmt .fk,
+table.fmt .fv,
+table.fmt .fe {
+  font-size: var(--wgs-text-small);
+  line-height: var(--wgs-leading-small);
+}
+table.fmt thead th {
+  font-size: var(--wgs-text-label);
+  line-height: var(--wgs-leading-small);
+}
+.case,
+.note,
+.raw pre,
+.rawline,
+.mk-zoom {
+  border-color: var(--wgs-line-soft);
+}
+.ml-sug {
+  box-shadow: 0 12px 28px oklch(0.28 0.03 165 / 0.12);
+}
+.chapter-open {
+  min-width: 44px;
+  min-height: 44px;
+  justify-content: center;
+}
+.curriculum-meta p {
+  font-size: 14px;
+}
+.part-label h3 {
+  font-size: 16px;
+}
+.chapter-row-copy h3 {
+  font-size: 23px;
+}
+.sidebar-chapter {
+  font-size: var(--wgs-text-small);
+}
+.sidebar-privacy {
+  font-size: 13px;
+}
+.site-header {
+  min-height: 100px;
+  height: auto;
+  padding-block: 25px;
+}
+
+@media (max-width: 1100px) {
+  .reading-layout {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+  .chapter-row-copy h3 {
+    font-size: 21px;
+  }
+}
+@media (max-width: 1000px) {
+  .reading-layout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .chapter-sidebar {
+    position: static;
+  }
+  .sidebar-heading {
+    margin-top: 20px;
+  }
+  .reading-progress {
+    margin-bottom: 0;
+  }
+  .sidebar-chapters {
+    display: flex;
+    gap: 6px;
+    margin-top: 16px;
+  }
+  .sidebar-part,
+  .sidebar-privacy,
+  .sidebar-chapter > span:nth-child(2),
+  .sidebar-chapter > svg {
+    display: none;
+  }
+  .sidebar-chapter {
+    flex: 1;
+    justify-content: center;
+    min-height: 44px;
+    padding: 10px 2px;
+    border-color: var(--wgs-line-soft);
+  }
+  .reading-main {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+@media (max-width: 800px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+  .hero h1 {
+    font-size: clamp(48px, 8vw, 65px);
+  }
+  .specimen-section {
+    grid-template-columns: 1fr;
+  }
+  .privacy-note {
+    max-width: 620px;
+  }
+  .specimen-loader {
+    width: 100%;
+  }
+}
+@media (max-width: 600px) {
+  .site-header {
+    min-height: 80px;
+    padding-block: 18px;
+    gap: 15px;
+  }
+  .wordmark {
+    font-size: 25px;
+    white-space: nowrap;
+  }
+  .header-nav {
+    flex-direction: column;
+    align-items: flex-end;
+    font-size: 14px;
+    gap: 5px;
+  }
+  .step a.results-shortcut {
+    margin-left: 0;
+  }
+  .hero h1 {
+    font-size: clamp(42px, 11.2vw, 62px);
+  }
+  .s-why {
+    font-size: var(--wgs-text-lead);
+  }
+  .hero-actions .btn,
+  .btn {
+    font-size: 16px;
+  }
+  .loader-top {
+    font-size: 11px;
+    letter-spacing: 0.4px;
+    padding-inline: 14px;
+  }
+  .sample-choice {
+    padding-inline: 14px;
+  }
+  .curriculum-meta {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .curriculum-meta p {
+    font-size: 14px;
+  }
+  .chapter-row {
+    grid-template-columns: 25px minmax(0, 1fr) 30px;
+    column-gap: 10px;
+  }
+  .chapter-row-copy h3 {
+    font-size: 21px;
+  }
+  .chapter-row-copy p {
+    font-size: var(--wgs-text-body);
+  }
+  .chapter-open {
+    min-width: 30px;
+  }
+  .kvx summary {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) 15px;
+    font-size: 16px;
+  }
+  .kvx summary b {
+    font-size: 14px;
+  }
+  .kvx-body {
+    font-size: 16px;
+  }
+  .s-out .note {
+    font-size: 16px;
+  }
+  .tag {
+    font-size: 12px;
+  }
+  .sidebar-chapter {
+    padding-inline: 0;
+  }
+  .reading-breadcrumb {
+    font-size: 11px;
+  }
+  .chapter-kicker {
+    font-size: 12px;
+    letter-spacing: 1px;
+  }
+  .s-out table.fmt {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .s-out table.fmt th,
+  .s-out table.fmt td {
+    padding: var(--wgs-space-md);
+  }
+  .ml-bar {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .ml-q {
+    flex: 1 1 calc(100% - 100px);
+    font-size: 16px;
+  }
+  .ml-count {
+    font-size: 12px;
+  }
+  .ml-pager {
+    gap: 10px;
+  }
+  .ml-pager button {
+    font-size: 12px;
+    padding: 10px;
+  }
+  .fpeople {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .fp {
+    flex: 1 0 26%;
+  }
+  .fp-l {
+    font-size: 13px;
+  }
+  .fp-n {
+    font-size: 14px;
+  }
+  .fpeople.two .fp {
+    width: 7em;
+  }
+  .site-footer > div > span {
+    font-size: 12px;
+  }
+}
+@media (max-width: 420px) {
+  .site-header {
+    gap: 12px;
+  }
+  .header-nav {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+    font-size: 13px;
+  }
+}

@@ -1,0 +1,16 @@
+services:
+  site:
+    build:
+      context: .
+      target: site
+    ports:
+      - "127.0.0.1:5283:5283"
+
+  tools:
+    profiles: [tools]
+    build:
+      context: .
+      target: tools
+    volumes:
+      - ./data:/app/data
+      - ./public/ref:/app/public/ref

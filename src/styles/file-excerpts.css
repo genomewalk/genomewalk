@@ -1,0 +1,39 @@
+/* Shared excerpt surfaces for both file experiences and public catalogues. */
+.raw,
+.raw-first .raw {
+  padding: var(--wgs-space-content);
+  border: 2px dotted color-mix(in srgb, var(--wgs-faint) 65%, transparent);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--wgs-bg-deep) 60%, transparent);
+}
+/* File lines use the same quiet strip as the header-definition examples. */
+.raw:not(.catalogue-preview) {
+  min-width: 0;
+  border: 0;
+  border-left: 2px solid var(--wgs-line);
+  border-radius: 0;
+  background: var(--wgs-pink-bg);
+}
+/* Retain the source description for assistive technology without a second column. */
+.raw > .raw-k {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.raw > pre {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--wgs-ink);
+  font: var(--wgs-text-data)/1.8 var(--wgs-mono);
+  overflow-x: auto;
+}

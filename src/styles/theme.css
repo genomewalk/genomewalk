@@ -1,0 +1,140 @@
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--wgs-bg);
+  --color-foreground: var(--wgs-ink);
+  --color-card: var(--wgs-card);
+  --color-card-foreground: var(--wgs-ink);
+  --color-popover: var(--wgs-card);
+  --color-popover-foreground: var(--wgs-ink);
+  --color-primary: var(--wgs-accent);
+  --color-primary-foreground: var(--wgs-bg-deep);
+  --color-secondary: var(--wgs-card);
+  --color-secondary-foreground: var(--wgs-ink);
+  --color-muted: var(--wgs-card);
+  --color-muted-foreground: var(--wgs-mut);
+  --color-accent: var(--wgs-accent-bg);
+  --color-accent-foreground: var(--wgs-accent);
+  --color-destructive: var(--wgs-bad);
+  --color-border: var(--wgs-line-soft);
+  --color-input: var(--wgs-line);
+  --color-ring: var(--wgs-accent);
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 8px;
+}
+:root {
+  color-scheme: light;
+  --wgs-bg: oklch(0.975 0.01 85);
+  --wgs-bg-deep: oklch(0.945 0.015 85);
+  --wgs-card: oklch(0.993 0.004 85);
+  --wgs-ink: oklch(0.285 0.03 165);
+  --wgs-mut: oklch(0.435 0.024 165);
+  --wgs-faint: oklch(0.5 0.02 165);
+  --wgs-line: oklch(0.38 0.03 165 / 0.28);
+  --wgs-line-soft: oklch(0.38 0.03 165 / 0.18);
+  --wgs-accent: oklch(0.49 0.115 35);
+  --wgs-accent-bg: oklch(0.49 0.115 35 / 0.065);
+  --wgs-pink: oklch(0.46 0.063 169);
+  --wgs-pink-bg: oklch(0.46 0.063 169 / 0.07);
+  --wgs-ref: oklch(0.46 0.083 235);
+  --wgs-alt: oklch(0.49 0.094 77);
+  --wgs-ok: oklch(0.46 0.063 169);
+  --wgs-bad: oklch(0.48 0.155 26);
+  --wgs-serif: "Instrument Serif", Georgia, serif;
+  --wgs-sans: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --wgs-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  /* Reading roles shared by the landing page, both lessons and policy pages.
+     Display titles and illustration geometry keep their own scales. */
+  --wgs-text-body: 1rem;
+  --wgs-text-lead: 1.125rem;
+  --wgs-text-heading: 1.25rem;
+  --wgs-text-small: 0.875rem;
+  --wgs-text-data: 0.8125rem;
+  --wgs-text-label: 0.75rem;
+  --wgs-leading-body: 1.8;
+  --wgs-leading-small: 1.6;
+  --wgs-leading-heading: 1.4;
+  --wgs-space-xs: 4px;
+  --wgs-space-sm: 8px;
+  --wgs-space-md: 12px;
+  --wgs-space-content: 16px;
+  --wgs-space-card: 24px;
+  --wgs-space-section: 32px;
+  --wgs-space-page: 48px;
+}
+* {
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--wgs-line) var(--wgs-bg);
+}
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 36px;
+}
+body {
+  margin: 0;
+  background: var(--wgs-bg);
+  color: var(--wgs-ink);
+  font-family: var(--wgs-sans);
+  font-size: var(--wgs-text-body);
+  font-weight: 400;
+  line-height: var(--wgs-leading-body);
+  -webkit-font-smoothing: antialiased;
+}
+::selection {
+  color: var(--wgs-bg-deep);
+  background: var(--wgs-accent);
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+button,
+input {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: wait;
+  opacity: 0.5;
+}
+button,
+a,
+summary {
+  -webkit-tap-highlight-color: transparent;
+}
+:focus-visible {
+  outline: 2px solid var(--wgs-accent);
+  outline-offset: 5px;
+}
+button,
+.btn,
+a {
+  transition:
+    color 0.2s,
+    background 0.2s,
+    border-color 0.2s,
+    transform 0.2s;
+}
+code {
+  font-family: var(--wgs-mono);
+  font-size: 0.84em;
+  color: var(--wgs-accent);
+  padding: 2px 5px;
+  background: var(--wgs-accent-bg);
+  border: 1px solid var(--wgs-line-soft);
+  border-radius: 3px;
+}
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+button svg,
+a svg {
+  flex-shrink: 0;
+}

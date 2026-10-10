@@ -1,0 +1,213 @@
+/* The original curriculum's output structures, re-skinned together. */
+.kvx {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border-bottom-style: solid;
+}
+.kvx summary {
+  padding: var(--wgs-space-content);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 24px;
+  font-size: var(--wgs-text-body);
+  gap: 12px;
+}
+.kvx summary > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.kvx summary b {
+  font-size: 16px;
+}
+.kvx[open] {
+  /* Chapter output already supplies its own gap between children. */
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+}
+.kvx-body {
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  font-size: var(--wgs-text-body);
+  line-height: var(--wgs-leading-body);
+  padding: var(--wgs-space-xs) var(--wgs-space-content) var(--wgs-space-content);
+  gap: var(--wgs-space-content);
+}
+.kvx-body > * {
+  min-width: 0;
+  max-width: 100%;
+}
+.kvx-body .fd {
+  overflow-wrap: anywhere;
+}
+.note {
+  border-radius: 5px;
+  box-shadow: none;
+  border-color: var(--wgs-line-soft);
+  border-left: 2px solid var(--wgs-pink);
+  padding: var(--wgs-space-content);
+  font-size: var(--wgs-text-body);
+  line-height: var(--wgs-leading-body);
+}
+.kv {
+  font-size: 16px;
+  padding-block: 12px;
+}
+.tiles {
+  gap: 12px;
+}
+.tile {
+  background: var(--wgs-card);
+  border-radius: 5px;
+  padding: var(--wgs-space-card);
+}
+.tv {
+  font-size: 35px;
+}
+.tk {
+  font: 12px var(--wgs-mono);
+  letter-spacing: 1px;
+}
+.tn {
+  font-size: 13px;
+}
+.case,
+.raw pre,
+.rawline,
+.mk-zoom,
+.primer pre.align {
+  border-radius: 4px;
+}
+.raw pre {
+  color: var(--wgs-mut);
+  font-size: 13px;
+  padding: 16px;
+}
+.raw-k,
+.cell-k {
+  font-size: 12px;
+}
+.vcf-column-link {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.vcf-column-link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+.vcf-column-detail {
+  scroll-margin-top: var(--wgs-space-section);
+}
+.gt-copies-figure {
+  width: 243px;
+  max-width: 100%;
+}
+.gt-copies-figure .copies {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.gt-reading-diagram {
+  margin: 0;
+  min-width: 0;
+  border: 1px solid var(--wgs-line-soft);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--wgs-bg-deep) 60%, transparent);
+}
+.gt-reading-key,
+.gt-reading-options {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+}
+.gt-reading-key {
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--wgs-line-soft);
+  font: var(--wgs-text-small)/var(--wgs-leading-small) var(--wgs-mono);
+}
+.gt-reading-options > span,
+.gt-reading-order {
+  white-space: nowrap;
+}
+.gt-reading-order {
+  color: var(--wgs-mut);
+}
+.gt-reading-diagram > .cases {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+}
+.gt-reading-diagram .case {
+  min-width: 0;
+  padding: 16px;
+  gap: 8px;
+  background: none;
+  border: 0;
+  border-radius: 0;
+}
+.gt-reading-diagram .case + .case {
+  border-left: 1px solid var(--wgs-line-soft);
+}
+.gt-reading-diagram .case-gt,
+.gt-reading-diagram .case-sum {
+  font-size: var(--wgs-text-small);
+  line-height: var(--wgs-leading-small);
+}
+.gt-reading-diagram .case-gt b {
+  font-size: var(--wgs-text-body);
+}
+.gt-reading-diagram .case-sum {
+  padding: 0;
+  border: 0;
+}
+@media (max-width: 600px) {
+  .gt-reading-diagram > .cases {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .gt-reading-diagram .case + .case {
+    border-left: 0;
+    border-top: 1px solid var(--wgs-line-soft);
+  }
+}
+table.fmt {
+  font-size: 16px;
+}
+table.fmt th,
+table.fmt td {
+  padding: var(--wgs-space-md) var(--wgs-space-content);
+}
+table.fmt thead th {
+  font: 12px var(--wgs-mono);
+}
+.sub {
+  font-size: var(--wgs-text-lead);
+  line-height: var(--wgs-leading-heading);
+  margin: 0;
+}
+/* A new subsection gets 32px of separation: the content gap plus 16px.
+   Its heading stays close to its own paragraph, table or diagram. */
+.step .s-out > .sub:not(:first-child),
+.step .s-out > div:not([class]) > .sub:not(:first-child),
+.step .s-out > .meaning-chapter > .sub:not(:first-child),
+.primer > .sub:not(:first-child),
+.kvx-body > .sub:not(:first-child) {
+  padding-top: var(--wgs-space-content);
+}
+.ml-q {
+  border-radius: 4px;
+  padding-block: 12px;
+}
+.ml-pager button {
+  border-radius: 3px;
+  font-size: 13px;
+}
+.tag {
+  font-size: 12px;
+}
+.step a > *,
+.kvx-body a > *,
+.note a > *,
+.s-why a > *,
+.mini a > * {
+  color: inherit;
+}

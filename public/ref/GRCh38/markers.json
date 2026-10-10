@@ -1,0 +1,193 @@
+{
+ "build": "GRCh38",
+ "dataset": "gnomad_r4",
+ "pops": {
+  "afr": "African",
+  "amr": "Latino/Admixed American",
+  "asj": "Ashkenazi Jewish",
+  "eas": "East Asian",
+  "fin": "Finnish",
+  "mid": "Middle Eastern",
+  "nfe": "European (non-Finnish)",
+  "sas": "South Asian"
+ },
+ "markers": [
+  {
+   "rs": "rs4988235",
+   "cat": "trait",
+   "gene": "MCM6/LCT",
+   "title": "Lactase persistence",
+   "read": [
+    "this lactase-persistence variant is absent",
+    "variant associated with lactase persistence",
+    "variant associated with lactase persistence"
+   ],
+   "chrom": "2",
+   "pos": 135851076,
+   "ref": "G",
+   "alt": "A",
+   "effIsAlt": true,
+   "af": 0.3968,
+   "pops": {
+    "amr": 0.2275,
+    "fin": 0.5775,
+    "eas": 0.0021,
+    "mid": 0.0612,
+    "sas": 0.1635,
+    "asj": 0.1303,
+    "afr": 0.1211,
+    "nfe": 0.6353
+   },
+   "source": "genomes",
+   "cite": [
+    {
+     "label": "Enattah et al., Nature Genetics 2002",
+     "url": "https://doi.org/10.1038/ng826"
+    },
+    {
+     "label": "Tishkoff et al., Nature Genetics 2007",
+     "url": "https://doi.org/10.1038/ng1946"
+    }
+   ],
+   "studyNote": "This variant is associated with continued lactase production, especially in European populations. Other variants can produce the same trait, so its absence does not establish lactose intolerance."
+  },
+  {
+   "rs": "rs671",
+   "cat": "trait",
+   "gene": "ALDH2",
+   "title": "Alcohol flush",
+   "read": [
+    "this ALDH2-related flush variant is absent",
+    "reduced ALDH2 activity; alcohol flushing is more likely",
+    "very low ALDH2 activity; strong alcohol flushing is more likely"
+   ],
+   "chrom": "12",
+   "pos": 111803962,
+   "ref": "G",
+   "alt": "A",
+   "effIsAlt": true,
+   "af": 0.0078,
+   "pops": {
+    "amr": 0.0009,
+    "fin": 0.0001,
+    "eas": 0.2249,
+    "mid": 0,
+    "sas": 0.0008,
+    "asj": 0,
+    "afr": 0.0002,
+    "nfe": 0
+   },
+   "source": "genomes",
+   "cite": {
+    "label": "Brooks et al., PLoS Medicine 2009",
+    "url": "https://doi.org/10.1371/journal.pmed.1000050"
+   },
+   "studyNote": "The linked review describes increased oesophageal cancer risk among people with one copy of this variant who drink alcohol."
+  },
+  {
+   "rs": "rs17822931",
+   "cat": "trait",
+   "gene": "ABCC11",
+   "title": "Earwax & body odor",
+   "read": [
+    "wet earwax associated with this genotype",
+    "wet earwax; one dry-earwax allele",
+    "dry earwax and reduced underarm odour associated with this genotype"
+   ],
+   "chrom": "16",
+   "pos": 48224287,
+   "ref": "C",
+   "alt": "T",
+   "effIsAlt": true,
+   "af": 0.1416,
+   "pops": {
+    "amr": 0.1125,
+    "fin": 0.2432,
+    "eas": 0.8388,
+    "mid": 0.0748,
+    "sas": 0.4262,
+    "asj": 0.1132,
+    "afr": 0.0285,
+    "nfe": 0.1281
+   },
+   "source": "genomes",
+   "cite": [
+    {
+     "label": "Yoshiura et al., Nature Genetics 2006",
+     "url": "https://doi.org/10.1038/ng1733"
+    },
+    {
+     "label": "Martin et al., Journal of Investigative Dermatology 2010",
+     "url": "https://doi.org/10.1038/jid.2009.254"
+    }
+   ],
+   "studyNote": "The earwax study links two copies of this allele to dry earwax. The second study links the same genotype to reduced secretion of key underarm odour precursors."
+  },
+  {
+   "rs": "rs12913832",
+   "cat": "trait",
+   "gene": "HERC2/OCA2",
+   "title": "Eye color (major locus)",
+   "read": [
+    "brown eyes more likely in the study",
+    "brown or intermediate eye colour more likely in the study",
+    "blue eyes more likely in the study"
+   ],
+   "chrom": "15",
+   "pos": 28120472,
+   "ref": "A",
+   "alt": "G",
+   "effIsAlt": true,
+   "af": 0.4865,
+   "pops": {
+    "amr": 0.2429,
+    "fin": 0.8855,
+    "eas": 0.0017,
+    "mid": 0.2109,
+    "sas": 0.091,
+    "asj": 0.572,
+    "afr": 0.1261,
+    "nfe": 0.7636
+   },
+   "source": "genomes",
+   "cite": {
+    "label": "Sturm et al., American Journal of Human Genetics 2008",
+    "url": "https://doi.org/10.1016/j.ajhg.2007.11.005"
+   },
+   "studyNote": "The study mainly involved people of northern European ancestry. Other variants also influence eye colour; this is an association, not a definite prediction."
+  },
+  {
+   "rs": "rs9923231",
+   "cat": "pgx",
+   "gene": "VKORC1",
+   "cite": {
+    "label": "Sconce et al., Blood 2005",
+    "url": "https://doi.org/10.1182/blood-2005-03-1108"
+   },
+   "title": "Warfarin dose sensitivity",
+   "read": [
+    "lower warfarin sensitivity than T carriers in the study",
+    "increased warfarin sensitivity in the study",
+    "highest warfarin sensitivity in the study"
+   ],
+   "chrom": "16",
+   "pos": 31096368,
+   "ref": "C",
+   "alt": "T",
+   "effIsAlt": true,
+   "af": 0.319,
+   "pops": {
+    "amr": 0.3914,
+    "fin": 0.3909,
+    "eas": 0.8917,
+    "mid": 0.5342,
+    "sas": 0.1781,
+    "asj": 0.4994,
+    "afr": 0.0998,
+    "nfe": 0.3779
+   },
+   "source": "genomes",
+   "studyNote": "Warfarin dose requirements also depended on other genes, age and body size in this study. This variant alone does not determine a dose."
+  }
+ ]
+}

@@ -1,0 +1,175 @@
+/* chapter 4: the two possible sex-chromosome pairs, side by side; the one that
+   matches this file is framed; both explanations remain readable */
+.sexcases {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 14px;
+}
+.sexcase {
+  border: 1px solid var(--wgs-line-soft);
+  padding: var(--wgs-space-content);
+  display: grid;
+  gap: 10px;
+}
+.sexcase.on {
+  border-color: color-mix(in srgb, var(--wgs-accent) 55%, transparent);
+  background: color-mix(in srgb, var(--wgs-accent) 5%, transparent);
+}
+.sexcase-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sexcase-head .fig {
+  font-size: 26px;
+  line-height: 1;
+}
+.sexcase-head .fig.you {
+  width: 40px;
+  height: 40px;
+}
+.sexcase-head b {
+  font-family: var(--wgs-mono);
+  font-size: var(--wgs-text-lead);
+  letter-spacing: 0.12em;
+  color: var(--wgs-ink);
+}
+.sexcase-head span {
+  font-size: var(--wgs-text-small);
+  color: var(--wgs-faint);
+}
+.sexcase .strand .who {
+  width: 6.5em;
+}
+.sexcase .chromo-strand code {
+  font-size: var(--wgs-text-body);
+  letter-spacing: 0.08em;
+}
+.sexcase .chromo-strand code.dim {
+  color: var(--wgs-faint);
+  letter-spacing: 0;
+  font-style: italic;
+}
+.sexcase .chromo-strand > span {
+  margin-top: 4px;
+  font-size: var(--wgs-text-small);
+  color: var(--wgs-mut);
+  white-space: normal;
+}
+.sexcase .chromo-strand > span code {
+  font-size: var(--wgs-text-small);
+  letter-spacing: 0;
+  color: var(--wgs-accent);
+}
+
+/* chromosomes to scale: 25 bars, height ∝ length, labels in a matching row */
+.karyo {
+  margin: 4px 0 14px;
+}
+.karyo-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 144px;
+  border-bottom: 1px solid var(--wgs-line-soft);
+}
+.karyo-bars i {
+  flex: 1 1 0;
+  min-width: 0;
+  display: block;
+  background: var(--wgs-accent);
+  opacity: 0.8;
+  min-height: 2px;
+  transition: opacity 0.15s;
+}
+.karyo-bars i:hover {
+  opacity: 1;
+}
+.karyo-labels {
+  display: flex;
+  gap: 4px;
+  margin-top: 5px;
+}
+.karyo-labels span {
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+  font-family: var(--wgs-mono);
+  font-size: var(--wgs-text-data);
+  color: var(--wgs-mut);
+}
+/* X + Y boxed together as pair 23, with "you" (once known) sitting above the bars */
+.karyo-pair {
+  flex: 2 1 0;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 0 3px;
+  box-sizing: border-box;
+  position: relative;
+  border: 1px dashed color-mix(in srgb, var(--wgs-accent) 60%, transparent);
+  border-bottom: 0;
+}
+.karyo-pair-tag {
+  position: absolute;
+  top: 12px;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  pointer-events: none;
+}
+.karyo-pair-tag .fig {
+  font-size: 15px;
+  line-height: 18px;
+}
+/* the emoji that belongs to this DNA gets a ring; the placeholder is faded */
+/* Emoji inherit the ALPHA of `color` even though they ignore its hue, and the
+   label rules above use a translucent colour — so give the figures a solid one. */
+.fig,
+.sex .fig,
+.karyo-pair-tag .fig {
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--wgs-ink);
+  opacity: 1;
+}
+.fig.you {
+  box-shadow:
+    0 0 0 2px var(--wgs-accent),
+    0 0 12px color-mix(in srgb, var(--wgs-accent) 55%, transparent);
+  background: color-mix(in srgb, var(--wgs-accent) 14%, transparent);
+}
+.karyo-pair-tag .fig.you {
+  width: 22px;
+  height: 22px;
+  line-height: 22px;
+}
+.sex .fig.you {
+  width: 50px;
+  height: 50px;
+}
+.karyo-pair-tag b {
+  font-family: var(--wgs-mono);
+  font-size: var(--wgs-text-body);
+  color: var(--wgs-faint);
+  line-height: 18px;
+}
+.karyo-pair-tag span {
+  font-family: var(--wgs-mono);
+  font-size: var(--wgs-text-data);
+  color: var(--wgs-mut);
+}
+.karyo-pair-labels {
+  flex: 2 1 0;
+  min-width: 0;
+  display: flex;
+  gap: 4px;
+  padding: 0 3px;
+  box-sizing: border-box;
+}

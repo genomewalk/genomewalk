@@ -1,0 +1,101 @@
+/* a marker's spot: the chromosome row with one lit, then that chromosome zoomed
+   in — two strands with the letter at the position highlighted and an arrow */
+.mk-spot {
+  display: grid;
+  gap: 6px;
+}
+.mk-spot .chromos {
+  margin: 0 0 8px;
+}
+.mk-lbl {
+  font: 600 var(--wgs-text-data)/1.4 var(--wgs-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--wgs-faint);
+}
+.mk-lbl b {
+  color: var(--wgs-mut);
+  font-weight: 600;
+}
+.mk-zoom {
+  padding: 10px 14px;
+  border: 1px solid var(--wgs-line-soft);
+  background: color-mix(in srgb, var(--wgs-bg-deep) 60%, transparent);
+}
+.mk-zoom .strand .who {
+  width: 9em;
+}
+/* the strands and the arrow line share one monospace grid, so the ↑ lands under the letter */
+.mk-zoom.chromo-strand code {
+  font-size: var(--wgs-text-lead);
+  letter-spacing: 0.04em;
+  white-space: pre;
+} /* pre: the arrow's leading spaces must count */
+.mk-zoom code i.o0 {
+  color: var(--wgs-ref);
+}
+.mk-zoom code i.o1 {
+  color: var(--wgs-alt);
+}
+.mk-arrow code {
+  color: var(--wgs-accent);
+}
+/* the file line shown at the top of a marker row: no divider above it */
+.raw-first .raw {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+/* how common, per ancestry: one figure per group, coloured by frequency, wrapping in centred rows */
+/* one line: the nine groups share the width equally and never wrap */
+.fpeople {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+.fp {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  text-align: center;
+}
+.fp .person {
+  width: 22px;
+  height: 38px;
+}
+.fp-n {
+  font: 600 var(--wgs-text-small) var(--wgs-mono);
+  color: var(--wgs-ink);
+}
+.fp-l {
+  font-size: var(--wgs-text-data);
+  line-height: 1.25;
+  color: var(--wgs-mut);
+  overflow-wrap: anywhere;
+}
+.fp.all .fp-l {
+  color: var(--wgs-ink);
+  font-weight: 600;
+}
+/* two figures only (a match row): keep them at the left, sized like the chapter 6 ones */
+.fpeople.two {
+  justify-content: flex-start;
+  gap: 28px;
+  margin: 10px 0 6px;
+}
+.fpeople.two .fp {
+  flex: none;
+  width: 8em;
+}
+.fp-l small {
+  display: block;
+  font-size: var(--wgs-text-data);
+  color: var(--wgs-faint);
+}
+.fp.all .person .fill {
+  fill: var(--wgs-accent);
+}

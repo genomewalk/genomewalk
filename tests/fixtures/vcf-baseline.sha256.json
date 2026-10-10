@@ -1,0 +1,8 @@
+{
+  "src/experiences/vcf/engine/condition-links.ts": "33ccd161c120e9f0a4c5a0567305f5a80507536b6f8651bb359a707e26dbacf1",
+  "src/experiences/vcf/engine/match-identity.ts": "81471100c2a594e69970954ac6e9d0666239ba9d40704a7e63bf4287e929e6e5",
+  "src/experiences/vcf/engine/session.ts": "1449d6e56a693d592cf3ee387d1ba37d731296a1ae77a706a850feea25711bff",
+  "src/experiences/vcf/engine/study-evidence.ts": "f1b1a7cc5afbed21ddefc4e5d2dd38cc028347dc9c43872c85ae04beaf1ac49e",
+  "src/styles/lessons.css": "468ed42bbecd9ad09cf3c1cb31dd67934e5855371f4df52b246f7c2baf4e1f67",
+  "src/styles/results.css": "6320fb3d1bf7d3711afacf0c40e8fe973d99f6efd6d3d8c805ad27e5dc2c6e03"
+}

@@ -1,0 +1,101 @@
+# Logs
+logs
+*.log
+*-debug.log*
+*-error.log*
+
+# Installed dependencies and generated application output
+node_modules
+dist
+dist-ssr
+.output
+.vinxi
+.tanstack/
+.nitro
+.cache/
+*.tsbuildinfo
+
+# Local scratch work, test reports and document exports
+/tmp/
+/output/
+/coverage/
+*.tmp
+*.part
+*.bak
+*.orig
+*.rej
+
+# LaTeX intermediates; keep manuscript source and any deliberately published PDF
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.xdv
+
+# Genome data — never commit. Sensitive personal data.
+/data/
+# Includes ClinVar XML, citation caches and PubMed metadata.
+*.vcf
+*.vcf.gz
+*.vcf.gzip
+*.vcf.bgz
+*.gvcf
+*.gvcf.gz
+*.gvcf.bgz
+*.gvcf.gzip
+*.gvcf.bgzf
+*.vcf.bgzf
+*.bcf
+*.bcf.gz
+*.tbi
+*.csi
+*.bam
+*.bai
+*.cram
+*.crai
+*.sam
+*.sam.gz
+*.fastq
+*.fastq.gz
+*.fq
+*.fq.gz
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Local-only inputs and credentials. Only explicitly public/synthetic assets belong in source.
+private-data/
+.env
+.env.*
+!.env.example
+*.local
+*.zip
+*.txt.gz
+*.txt.gzip
+sample_dna*
+genome_*.txt
+AncestryDNA*.txt
+23andme*.txt
+!tests/fixtures/*-synthetic.txt
+!src/experiences/consumer-dna/fixtures/*-synthetic.txt
+
+# Public release assets and synthetic fixtures must remain versioned.
+# public/ref/ is intentionally not ignored: the site and release checks use it.
+!public/samples/HG002_GRCh38.vcf.gz

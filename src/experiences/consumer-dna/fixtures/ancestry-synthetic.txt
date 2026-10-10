@@ -1,0 +1,9 @@
+# Synthetic test data, not a person's genome.
+# AncestryDNA raw data download (illustrative format).
+# human reference build 37.1; forward strand
+rsid	chromosome	position	allele1	allele2
+rs121908073	9	72694578	C	T
+rs671	12	112241766	A	G
+rsSynthetic1	1	100	0	0
+rsSynthetic2	23	200	A	A
+rsSynthetic3	24	300	0	0

@@ -1,0 +1,236 @@
+% Neutral conference-style manuscript; apply the chosen venue's template before submission.
+% Replace the collective author with the final author list and affiliations.
+\documentclass[10pt,twocolumn,letterpaper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{newtxtext,newtxmath,microtype}
+\usepackage[margin=0.75in,columnsep=0.27in]{geometry}
+\usepackage{xcolor,graphicx,booktabs,tabularx,array,enumitem}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc}
+\usepackage{titlesec,caption,balance}
+\usepackage[hidelinks]{hyperref}
+\definecolor{accent}{HTML}{244D40}
+\definecolor{tint}{HTML}{EDF2EF}
+\definecolor{midgray}{HTML}{626B66}
+\hypersetup{pdftitle={Genomewalk: A Privacy-First Static Web Application for Genomic Education},pdfauthor={Genomewalk Project},colorlinks=true,allcolors=accent}
+\urlstyle{same}
+\setlength{\parindent}{1em}
+\setlength{\parskip}{0pt}
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.16}
+\setlength{\textfloatsep}{11pt plus 2pt minus 2pt}
+\setlength{\floatsep}{9pt plus 2pt minus 2pt}
+\setlength{\intextsep}{10pt plus 2pt minus 2pt}
+\titleformat{\section}{\large\bfseries}{\thesection}{0.55em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.55em}{}
+\titlespacing*{\section}{0pt}{11pt plus 2pt minus 2pt}{5pt}
+\titlespacing*{\subsection}{0pt}{7pt plus 2pt minus 1pt}{3pt}
+\captionsetup{font=small,labelfont=bf,skip=5pt}
+\captionsetup[table]{position=top}
+\setcounter{topnumber}{3}
+\renewcommand{\topfraction}{0.85}
+\renewcommand{\textfraction}{0.1}
+\emergencystretch=0.8em
+\newcommand{\code}[1]{\texttt{\small #1}}
+\newcommand{\doi}[1]{\href{https://doi.org/#1}{doi:\,#1}}
+\pagestyle{plain}
+\raggedbottom
+\begin{document}
+\twocolumn[{
+\begin{center}
+{\LARGE\bfseries Genomewalk: A Privacy-First Static Web Application\\[3pt]
+for Genomic Education\par}
+\vspace{8pt}
+{\large Genomewalk Project\par}
+\end{center}
+\vspace{2pt}
+\begin{center}
+\begin{minipage}{0.94\textwidth}
+\small
+\noindent\textbf{Abstract.}
+Personal genomic reports can present findings without making the transformation from file to evidence clear. Genomewalk is a browser-based educational application that exposes this process while keeping personal genomic files local. An offline pipeline prepares selected ClinVar records, population-frequency annotations and indexed, block-compressed catalogues. A static host serves these public artifacts and the application; parsing, eligibility checks and exact variant matching run in the browser. After downloading a public variant-key index, the client uses HTTP byte-range requests to retrieve the catalogue blocks needed for matched annotations. In a preliminary comparison using the public HG002 GRCh38 sample, selective retrieval preserved 399 result objects while reducing accounted catalogue payload from 26.64 to 7.90\,MB, a 70.3\% reduction. A nine-chapter guide explains file structure, exclusions, population frequencies and catalogue evidence before or alongside results. We describe the architecture, retrieval protocol, matching policies and privacy boundary. The design avoids genome uploads but does not conceal catalogue access patterns from the host. The reported evidence establishes engineering feasibility and parity for one workload; clinical validity, general performance and educational effectiveness remain unevaluated.
+\par\vspace{5pt}
+\noindent\textbf{Keywords:} genomic literacy; local processing; static web applications; HTTP range requests; variant annotation; privacy.
+\end{minipage}
+\end{center}
+\vspace{10pt}
+}]
+
+\section{Introduction}
+A variant file and an interpretation are different objects. Connecting them requires decisions about file format, reference assembly, genotype eligibility, variant identity and the meaning of public annotations. A report that foregrounds findings can leave these intermediate decisions implicit. Genomewalk treats their explanation as a primary interface function: readers inspect what their file contains, why records are retained or omitted, and what a catalogue match can establish.
+
+This goal creates an architectural constraint. Personal genomic data should not need to leave the device to support an educational walkthrough. At the same time, downloading a complete annotation database for every visit wastes bandwidth when only a subset contributes to the displayed results. Genomewalk separates public reference preparation from local personal computation and retrieves relevant annotations from ordinary static files.
+
+This paper describes three implementation choices: (1) a static application with local genome processing; (2) a block-indexed catalogue protocol combining local matching with selective HTTP retrieval; and (3) an educational presentation separating file quality, population frequency and submitted classifications. These are combined design choices, not claims of a new compression standard, clinical interpretation method or demonstrated learning benefit. The implementation snapshot is version 0.1.0, reviewed on 30 September 2026.
+
+\subsection{Related work and positioning}
+Browser-based genomic processing has established precedents. \emph{igv.js} provides an embeddable genome viewer that runs without a backend; IGV-Web supports local files without uploading them~\cite{igv,igvweb}. OpenCRAVAT provides modular annotation, configurable analysis and interactive exploration; its local installation also supports analysis without exposing private inputs to a hosted service~\cite{opencravat}. Genomewalk complements these approaches with a focused teaching sequence, a selected evidence catalogue and static deployment. We do not claim that existing tools lack explanation or privacy features, and we have not conducted a systematic feature comparison.
+
+\section{System architecture}
+The system has three execution contexts (Figure~\ref{fig:architecture}). The offline build operates only on public scientific inputs. The deployed host serves application assets, indexes and compressed catalogues. The browser reads a user-selected file through the File API~\cite{fileapi}, performs personal computation and renders the guide and results.
+
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}[font=\small,box/.style={draw=black!45,rounded corners=2pt,fill=tint,align=center,inner sep=6pt,text width=3.8cm,minimum height=1.0cm},arr/.style={-{Stealth[length=2mm]},semithick,draw=accent}]
+\node[font=\small\bfseries] at (0,1.05) {OFFLINE BUILD};
+\node[font=\small\bfseries] at (5.7,1.05) {STATIC HOST};
+\node[font=\small\bfseries] at (11.4,1.05) {LOCAL BROWSER};
+\node[box] (public) at (0,0) {Public ClinVar, gnomAD\\and citation inputs};
+\node[box] (build) at (0,-1.75) {Select, annotate, index\\and validate};
+\node[box] (host) at (5.7,-1.75) {HTML, CSS, JavaScript\\Public index and BGZF files};
+\node[box,fill=white] (file) at (11.4,0) {Personal genomic file\\User-selected on device};
+\node[box] (browser) at (11.4,-1.75) {Parse and match locally\\Explain and display results};
+\draw[arr] (public)--(build);
+\draw[arr] (build)--node[above,font=\scriptsize]{publish}(host);
+\draw[arr] (file)--node[right,font=\scriptsize]{local read}(browser);
+\draw[arr] ([yshift=3mm]browser.west)--node[above,font=\scriptsize]{request}([yshift=3mm]host.east);
+\draw[arr] ([yshift=-3mm]host.east)--node[below,font=\scriptsize]{public bytes}([yshift=-3mm]browser.west);
+\node[font=\small,align=center,text=midgray] at (5.7,-2.8) {Static file serving only\\No upload or analysis API};
+\node[font=\small,align=center,text=midgray] at (11.4,-2.8) {Genome-file bytes and result lists\\stay on the device};
+\end{tikzpicture}
+\caption{Execution and data boundaries. The deployed site consists of static files; personal analysis runs in the browser. Requested public-file offsets remain observable to the host.}
+\label{fig:architecture}
+\end{figure*}
+
+VCFs and consumer genotyping exports have separate parsing, eligibility and presentation modules, with shared transport and catalogue utilities. This prevents consumer lessons from implying that sequencing depth or VCF quality fields exist in simpler exports. Browser runtime modules do not import offline build scripts.
+
+The VCF reader processes bounded compressed chunks and BGZF blocks rather than materialising the complete decoded file. Counting chapters share pending and completed statistics; matching is a separate task and can require another full local pass. Progress reflects reading and decompression. Streaming bounds the input buffer, not total memory: indexes, annotations and results remain resident. Consumer archives instead unpack into a browser Blob subject to explicit limits.
+
+Application builds prerender the home page, nine chapters, privacy and terms. The contents of \code{dist/client/} are deployable static files; server artifacts produced during prerendering are not a production runtime. Deployment requires HTTPS, directory-style URLs and unchanged byte-range delivery, but no database, Node process or genome-analysis API.
+
+\section{Offline reference preparation}
+\subsection{Selection and annotation}
+The build downloads or reuses public inputs, applies a shared selection policy, prepares GRCh38 and GRCh37 artifacts, generates teaching examples and consumer rsID indexes, and validates the outputs. Node.js orchestrates the stages; UCSC's \code{bigBedToBed} supports bulk frequency extraction.
+
+The selected ClinVar catalogue retains configured pathogenic, likely pathogenic, conflicting, drug-response, risk, association, protective and related categories. Benign and uncertain-significance records are excluded. Supported source rows contain a single alternate allele and literal A/C/G/T/N strings of at most 50 bases; unsupported symbolic or multiallelic records are not arbitrarily decomposed. The catalogue is therefore not a comprehensive clinical screen.
+
+ClinVar aggregates submitted classifications and evidence~\cite{clinvar}. The generated 24-column records preserve exact identity, raw classification and review labels, conditions, gene annotation, ClinVar VariationID and AlleleID, rsIDs, HGVS, frequencies, publication identifiers and source dates. The gene field retains the first source annotation rather than every potentially affected gene. Publication links are joined through exact VariationID. A linked paper may describe a method or classification guideline; inclusion is not proof of a personal finding. Condition links use aligned MedGen identifiers only when one unambiguous concept is available.
+
+\subsection{Frequency joins and release integrity}
+Bulk frequencies use gnomAD v4.1 public resources~\cite{gnomad}. When both exome and genome observations exist, the pipeline chooses the observation with the larger allele number, with genomes winning a tie. This project policy does not calculate gnomAD joint frequency. GRCh37 records receive frequencies through a ClinVar AlleleID join to the GRCh38 gnomAD record, whose coordinate is retained as provenance. Cited teaching markers use a separate genome-preferred, exome-fallback policy and are not merged into general results.
+
+The command interface distinguishes planning, cache reuse and refresh. \code{data:plan} prints the sequence; \code{data:build} fetches missing inputs; \code{data:rebuild} requires cached inputs and makes no network fallback; \code{data:refresh} updates sources; and \code{data:check} validates artifacts. Application and data builds are independent. Downloads and generated outputs avoid publishing partial files, with atomic replacement per artifact. Deployments must still keep each index and its catalogue from the same release together. Reproduction requires the same source snapshots, tool versions and policies; refreshing sources is expected to change results.
+
+\section{Selective catalogue retrieval}
+BGZF stores data in independently decompressible gzip-compatible blocks, enabling indexed access~\cite{bgzf}. Genomewalk combines this format with HTTP range semantics~\cite{http}; the host does not execute a personal query.
+
+\subsection{Index, request planning and validation}
+A compressed JSON index maps each exact variant key to its starting block, decoded offset and row length. Block metadata specifies compressed offsets and lengths, decoded lengths and SHA-256 hashes; source metadata binds the index to the catalogue size and hash.
+
+The browser downloads the index, scans the genome locally, and intersects eligible keys with the index. Matched locators identify required annotation blocks, including those for rows crossing boundaries. Selected adjacent blocks are coalesced, and at most four requests run concurrently. Responses must have status \code{206}, the expected Content-Range and length, and no incompatible content encoding. The client verifies block hashes, decoded lengths and reconstructed variant keys, then caches decoded annotations.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[font=\small,arr/.style={-{Stealth[length=1.8mm]},semithick,draw=accent}]
+\node[draw=black!40,rounded corners=2pt,fill=tint,text width=7.25cm,align=center,inner sep=5pt] (match) at (3.75,0) {Local variant match $\rightarrow$ public index locator};
+\node[anchor=west,font=\small\bfseries] at (0,-0.85) {Public BGZF file};
+\foreach \i in {0,1,2,3,4} {
+  \draw[draw=black!45,fill=black!3] (1.5*\i,-1.6) rectangle +(1.5,0.5);
+  \ifnum\i=2\else
+  \node[font=\scriptsize] at (1.5*\i+0.75,-1.35) {block \i};
+  \fi
+}
+\draw[draw=accent,fill=accent!18,thick] (3,-1.6) rectangle +(1.5,0.5);
+\node[font=\scriptsize\bfseries] at (3.75,-1.35) {block 2};
+\draw[arr] (match.south)--(3.75,-1.1);
+\node[font=\scriptsize,align=center] at (3.75,-2.03) {offset 12,000; length 6,000 bytes};
+\node[draw=black!40,rounded corners=2pt,text width=7.25cm,align=center,inner sep=5pt] (request) at (3.75,-2.88) {\texttt{Range: bytes=12000-17999}\\HTTP selects compressed bytes, not rows};
+\draw[arr] (3.75,-2.22)--(request.north);
+\node[draw=black!40,rounded corners=2pt,fill=tint,text width=7.25cm,align=center,inner sep=5pt] (decode) at (3.75,-4.05) {Verify $\rightarrow$ decompress $\rightarrow$ extract row\\Display annotation in the browser};
+\draw[arr] (request.south)--(decode.north);
+\end{tikzpicture}
+\caption{Illustrative byte-range lookup. The browser requests a whole BGZF block containing a matched row. Neighbouring records also arrive. A row spanning blocks requires each relevant block.}
+\label{fig:range}
+\end{figure}
+
+Figure~\ref{fig:range} illustrates a block beginning at compressed offset 12,000 and containing 6,000 bytes. The inclusive HTTP interval is 12,000--17,999. For a 26,640,645-byte file, the response declares \code{Content-Range:} \code{bytes 12000-17999/26640645}. Extraction uses the row's decoded locator only after decompression. The host must not apply HTTP \code{Content-Encoding: gzip} to BGZF bytes, because it would invalidate compressed offsets. A transformed response or whole-file \code{200} fallback stops lookup with a compatibility error.
+
+\subsection{Cost and scope}
+For a cold lookup, the principal catalogue payload is
+\begin{equation}
+B_{\mathrm{catalogue}}=B_{\mathrm{index}}+\sum_{b\in\mathcal{B}_{\mathrm{needed}}}|b|,
+\label{eq:payload}
+\end{equation}
+where $\mathcal{B}_{\mathrm{needed}}$ contains the required compressed blocks. The full index is still downloaded, and its decoded objects exceed its compressed size in memory. Small marker files and consumer sidecars are fetched whole. Dense matches approach full-catalogue transfer; dispersed matches increase requests and latency.
+
+This optimisation concerns public annotations. Complete statistics or matching still require examining the local input. The optional public HG002 sample is a separate network source: a complete sample scan retrieves that public file in bounded chunks.
+
+\section{Variant identity and input policies}
+Matching uses chromosome, position, reference and alternate allele within the declared assembly. Chromosome aliases can be normalised; assemblies cannot be interchanged. GRCh37 and GRCh38 are supported without runtime liftover or general indel-equivalence resolution.
+
+\textbf{VCF.} The sequencing path accepts BGZF VCF/gVCF and reads the first sample. It checks block integrity, truncation and text boundaries. A result requires a carried alternate allele and \code{FILTER=PASS} or \code{.}; the latter is a missing filter declaration, not clinical-quality assurance. Incomplete calls remain flagged when matched. Records sharing an exact normalised key are merged while contradictory calls retain warnings. A literal insertion such as \code{T}$\rightarrow$\code{TC} can match at the same build and coordinate. Differently represented but biologically equivalent indels can be missed because left-normalisation is not implemented.
+
+\textbf{Consumer exports.} Supported 23andMe and AncestryDNA text formats, including supported ZIP/gzip wrappers, have provider, build and strand checks. Interpretation is restricted to complete diploid autosomal A/C/G/T single-base calls. Indexed rsIDs are cross-checked against coordinates; an rsID alone does not establish an allele. Conflicting repeated sites are omitted. Sex-chromosome, unsupported-ploidy, missing and I/D-coded calls are excluded from this interpretation path. Unlike literal VCF alleles, I/D codes do not identify the inserted or deleted sequence. Archives require one text payload and enforce a 128\,MiB decoded limit and two-million-row limit.
+
+\section{Privacy boundary and threat model}
+The intended protection is against routine collection of genome contents by the application service. The implementation has no genome-upload endpoint, remote matching API, analytics SDK or runtime language model processing personal genomes. It does not submit the filename, genome or result list. File handles and derived state remain in memory for the visit; refresh requires reselection, and source changes cancel associated work. This is not secure erasure from browser or operating-system internals.
+
+The threat model distinguishes content from access patterns. A host can observe IP address, timing and public-file ranges. Since offsets map to known records, requests can suggest candidate matched variants despite including unrelated rows. The design does not provide private information retrieval or anonymity. Asset requests, currently including Google Fonts, expose connection metadata; clicking an external evidence link discloses the visited public page.
+
+HTTPS protects transport, and hashes detect corruption or mixed artifacts relative to the downloaded index. Neither prevents a malicious publisher from replacing both code and metadata. A trusted browser, device and delivered application remain prerequisites. Open source supports inspection but is not an independent security audit. Offline reference preparation also does not imply disconnected operation: the application still needs public assets unless they are otherwise available.
+
+\section{Educational interface and evidence}
+The nine chapters follow two stages. Five examine the file: headers, row anatomy, variant types, a full counting pass and a summary. Four introduce public interpretation, gnomAD frequency, ClinVar and matched results. Navigation is optional and non-linear, including direct access to results.
+
+File-specific examples and visible exclusions expose intermediate decisions. The guide distinguishes rows from sites, reference/alternate options from genotypes, and unsupported records from absent evidence. Fixed teaching examples remain separate from personal results. Result categories distinguish disease evidence, drug response, traits and associations without duplicating variants in the overall list.
+
+The presentation separates evidence dimensions. Genotype and quality describe the file; identity determines the match; classification records a submitted claim; review stars describe support for that classification, not confidence in a personal genotype~\cite{review}. Population frequency describes sampled observations and is not an individual risk estimate; missing data are not shown as zero. Identifiers and publication links support inspection, not automatic confirmation. A match cannot establish or exclude disease; this is an educational application.
+
+\section{Preliminary engineering evaluation}
+\subsection{Workload and payload accounting}
+We report a developer comparison using the public NIST Genome in a Bottle HG002 GRCh38 v5.0q sample~\cite{hg002}. Full-catalogue and range-based access produced 399 identical result objects, including annotations. The baseline accounts for one complete compressed catalogue; selective access accounts for one compressed index plus requested annotation blocks, with neither assumed already cached (Table~\ref{tab:transfer}).
+
+\begin{table}[t]
+\caption{Catalogue payload for HG002. Figures exclude the sample, application assets, other reference files and HTTP overhead.}
+\label{tab:transfer}
+\centering\small
+\begin{tabularx}{\columnwidth}{@{}Xr@{}}
+\toprule
+\textbf{Component} & \textbf{Bytes}\\
+\midrule
+Complete catalogue (baseline) & 26,640,645\\
+Index (selective path) & 5,154,640\\
+Annotation blocks, 203 requests & 2,745,473\\
+\textbf{Total selective payload} & \textbf{7,900,113}\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The accounted reduction is 70.3\%. This demonstrates parity and lower catalogue payload for one workload, not a measured end-to-end speedup. Round trips, match density, caching and network conditions determine elapsed time. No latency distribution or statistical performance claim is made.
+
+\subsection{Snapshot, validation and reproducibility}
+The reviewed GRCh38 catalogue contains 511,197 records in 2,524 blocks; GRCh37 contains 511,193 records in 2,457 blocks. Compressed sizes are 26.64 and 25.49\,MB respectively, with approximately 5.15\,MB indexes (decimal units). The companion engineering snapshot retains exact sizes and hashes.
+
+Reviewed developer validation recorded 182 passing tests plus passing type, lint, build and deployment checks. Tests cover parsing, malformed input, eligibility, consumer policies, reference relationships, range reconstruction and cancellation. These checks do not establish biological correctness, clinical sensitivity or an exhaustive security guarantee. The HG002 comparison evaluates application parity, not variant-call accuracy against benchmark regions.
+
+\balance
+\section{Discussion and limitations}
+The main trade-off is between bandwidth and observable access patterns: retrieving fewer public blocks reduces transfer while revealing which catalogue regions were useful. A future full-catalogue option could reduce variant-dependent retrieval at higher transfer cost; stronger query privacy needs a separate design. Self-hosted fonts and documented hosting logs would further clarify the privacy surface.
+
+Scientific scope is constrained by catalogue selection, exact representation matching and consumer eligibility. There is no imputation, ancestry inference, polygenic score, parental-origin inference or diagnostic decision service. Future indel normalisation and consumer I/D mapping require validated assembly-, strand- and provider-specific handling.
+
+Evaluation is preliminary and developer-conducted. It uses one public workload, lacks controlled cross-device performance measurements and has no user-comprehension study, independent security audit or clinical validation. The educational premise should be tested directly: do readers better understand why a record was omitted, what a match establishes and how frequency differs from personal risk? General performance claims require broader inputs and measured memory, responsiveness and transfer distributions.
+
+\section{Conclusion}
+Genomewalk combines local genomic processing, offline public-evidence preparation and selective static-file retrieval with an explanatory field guide. A preliminary public-sample comparison preserves application results while reducing catalogue payload. The design provides an inspectable basis for genomic education without a genome-upload service, subject to explicit limits on query privacy, catalogue coverage and interpretation. Further work should evaluate comprehension, broader performance and reproducible releases.
+
+\section*{Artifact availability}
+The manuscript accompanies the Genomewalk 0.1.0 source tree. Architecture, privacy, pipeline and deployment documentation are in \code{docs/} and \code{scripts/README.md}; the whitepaper directory contains the dated engineering snapshot. Source code is MIT-licensed; upstream data retain their terms. A public repository URL, immutable release identifier and reproducible evaluation harness have not yet been supplied with this draft. No private genomic file was used in the reported comparison.
+
+\begin{thebibliography}{10}
+\small
+\setlength{\itemsep}{3pt}
+\setlength{\parskip}{0pt}
+\bibitem{igv} J.~T. Robinson, H. Thorvaldsd\'{o}ttir, D. Turner, and J.~P. Mesirov. igv.js: an embeddable JavaScript implementation of the Integrative Genomics Viewer (IGV). \emph{Bioinformatics}, 39(1):btac830, 2023. \doi{10.1093/bioinformatics/btac830}.
+\bibitem{igvweb} IGV Team. \emph{IGV-Web App documentation}. \url{https://igv.org/doc/webapp/}. Accessed September 2026.
+\bibitem{opencravat} K.~A. Pagel et al. Integrated informatics analysis of cancer-related variants. \emph{JCO Clinical Cancer Informatics}, 4:310--317, 2020. \doi{10.1200/CCI.19.00132}.
+\bibitem{fileapi} World Wide Web Consortium. \emph{File API}. \url{https://www.w3.org/TR/FileAPI/}. Accessed September 2026.
+\bibitem{clinvar} NCBI. \emph{ClinVar: Introduction}. \url{https://www.ncbi.nlm.nih.gov/clinvar/intro/}. Accessed September 2026.
+\bibitem{gnomad} gnomAD Production Team. \emph{gnomAD v4.1}, April 2024. \url{https://gnomad.broadinstitute.org/news/2024-04-gnomad-v4-1}.
+\bibitem{bgzf} HTSlib / SAMtools. \emph{bgzip manual}. \url{https://www.htslib.org/doc/bgzip.html}. Accessed September 2026.
+\bibitem{http} R. Fielding, M. Nottingham, and J. Reschke, eds. \emph{HTTP Semantics}. RFC 9110, June 2022, sections 14 and 15.3.7. \doi{10.17487/RFC9110}.
+\bibitem{review} NCBI. \emph{Review status in ClinVar}. \url{https://www.ncbi.nlm.nih.gov/clinvar/docs/review_status/}. Accessed September 2026.
+\bibitem{hg002} NIST / Genome in a Bottle Consortium. \emph{HG002 GRCh38 v5.0q small-variant release}. \href{https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/release/AshkenazimTrio/HG002_NA24385_son/v5.0q/}{Public release directory}. Release files, checksums and terms.
+\end{thebibliography}
+\end{document}

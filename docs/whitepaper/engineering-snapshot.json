@@ -1,0 +1,38 @@
+{
+  "reviewDate": "2026-09-30",
+  "packageVersion": "0.1.0",
+  "status": "Developer implementation snapshot; no immutable Git release identifier available at authoring.",
+  "catalogues": {
+    "GRCh37": {
+      "entries": 511193,
+      "blocks": 2457,
+      "catalogueBytes": 25494801,
+      "catalogueSha256": "6671c124de3d74a7e69b1391962a7fa3b0a2f7fd87a21cd1b7aebdae4dd7acb4",
+      "indexBytes": 5152502
+    },
+    "GRCh38": {
+      "entries": 511197,
+      "blocks": 2524,
+      "catalogueBytes": 26640645,
+      "catalogueSha256": "1932741f4a9d2eceb3a31b13f0363929f7b61425c14403a834f8666a1404a911",
+      "indexBytes": 5154640
+    }
+  },
+  "publicSampleComparison": {
+    "identicalResults": 399,
+    "catalogueBytes": 26640645,
+    "indexBytes": 5154640,
+    "annotationBytes": 2745473,
+    "rangeRequests": 203,
+    "combinedPayloadBytes": 7900113,
+    "payloadReductionPercent": 70.34563915400696,
+    "scope": "Public HG002 GRCh38 teaching sample; application-result parity, not clinical accuracy benchmarking. Full compressed catalogue alone versus one index plus annotation-block payloads; excludes application/sample/other assets and HTTP overhead. No latency or cache-performance claim."
+  },
+  "validation": {
+    "tests": 182,
+    "passed": 182,
+    "failed": 0,
+    "checks": ["tests", "typecheck", "lint", "application build", "static deployment check"],
+    "basis": "Recorded developer validation from the completed scan-refactor task, reviewed for this manuscript; not a new test run or independent audit."
+  }
+}

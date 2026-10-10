@@ -1,0 +1,19 @@
+@import "tailwindcss" source(none);
+@source "./";
+
+/* Order matters: base lesson structures, theme, page layouts, then responsive overrides. */
+@import "./styles/lessons.css";
+@import "./styles/results.css";
+@import "./styles/theme.css";
+@import "./styles/site.css";
+@import "./styles/workspace.css";
+@import "./styles/lesson-layout.css";
+@import "./styles/responsive.css";
+@import "./styles/typography.css";
+@import "./styles/file-excerpts.css";
+@import "./styles/chromosome-gallery.css";
+@import "./styles/charts.css";
+@import "./styles/row-map.css";
+@import "./styles/header-map.css";
+@import "./styles/collapsible-cards.css";
+@import "./styles/frequency-comparison.css";

@@ -1,0 +1,166 @@
+/* the two-copies diagram */
+.copies .guide {
+  stroke: var(--wgs-line);
+  stroke-dasharray: 3 3;
+}
+.copies .strand {
+  stroke-width: 2.5;
+}
+.copies .strand.m,
+.copies .dot.m {
+  stroke: var(--wgs-accent);
+}
+.copies .strand.f,
+.copies .dot.f {
+  stroke: var(--wgs-pink);
+}
+.copies .dot {
+  fill: var(--wgs-card);
+  stroke-width: 2;
+}
+.copies .lbl {
+  font: 600 9.5px var(--wgs-mono);
+}
+.copies .lbl.m {
+  fill: var(--wgs-accent);
+}
+.copies .lbl.f {
+  fill: var(--wgs-pink);
+}
+.copies .letter {
+  font: 700 10px var(--wgs-mono);
+  fill: var(--wgs-ink);
+  text-anchor: middle;
+}
+.copies .cap {
+  font: 8.5px var(--wgs-mono);
+  fill: var(--wgs-faint);
+  text-anchor: middle;
+}
+
+/* Three genotype examples: GT and the reported alleles. */
+.cases {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+.case {
+  display: grid;
+  align-content: start;
+  gap: 9px;
+  padding: var(--wgs-space-content);
+  border: 1px solid var(--wgs-line-soft);
+  background: color-mix(in srgb, var(--wgs-bg-deep) 60%, transparent);
+}
+/* one modest size throughout the card; weight and colour do the emphasis, not size */
+.case-gt {
+  font-family: var(--wgs-mono);
+  font-size: var(--wgs-text-body);
+  color: var(--wgs-mut);
+}
+.case-gt b {
+  font-size: var(--wgs-text-lead);
+  color: var(--wgs-accent);
+  margin-left: 4px;
+}
+/* option colours: REF (option 0) vs ALT (option 1), used on letters, tags and inline mentions */
+.o0 {
+  color: var(--wgs-ref);
+}
+.o1 {
+  color: var(--wgs-alt);
+}
+.o0 b,
+.o1 b {
+  color: inherit;
+}
+.case-sum {
+  padding-top: 9px;
+  border-top: 1px dashed var(--wgs-line-soft);
+  font-size: var(--wgs-text-body);
+  color: var(--wgs-mut);
+}
+.case-sum b {
+  color: var(--wgs-ink);
+}
+
+.case.on {
+  border-color: var(--wgs-accent);
+  box-shadow: inset 0 0 0 1px var(--wgs-accent);
+}
+/* a card can also carry a raw value chip (INFO · FORMAT · YOU); let long ones wrap inside the card */
+.case > code {
+  justify-self: start;
+  white-space: normal;
+  word-break: break-all;
+  font-size: var(--wgs-text-body);
+}
+.case-gt .mut {
+  color: var(--wgs-mut);
+  font-size: var(--wgs-text-body);
+  margin-left: 2px;
+}
+
+/* small diagrams used by the column-by-column rows in chapter 2 */
+/* a row of little chromosomes, to scale; the one this line is about is lit, the rest dimmed */
+.chromos {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 6px 0 14px;
+}
+.chromos .ch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--wgs-accent);
+}
+/* Dim the illustration without fading its readable chromosome label. */
+.chromos .ch svg {
+  opacity: 0.3;
+}
+.chromos .ch.on svg {
+  opacity: 1;
+}
+.chromos .ch span {
+  font: var(--wgs-text-data) var(--wgs-mono);
+  color: var(--wgs-mut);
+}
+.chromos .ch.on span {
+  color: var(--wgs-ink);
+  font-weight: 700;
+}
+/* the strand-with-arrow position diagram */
+/* (class is "posline", not "strand" — .strand is the flex row used by the chromosome illustration) */
+.align.posline {
+  letter-spacing: 0.08em;
+}
+.align.posline i {
+  font-weight: 400;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 6px 0 12px;
+}
+.chip {
+  border: 1px solid var(--wgs-line-soft);
+  padding: 6px 10px;
+  font-size: var(--wgs-text-body);
+  color: var(--wgs-mut);
+}
+.chip b {
+  font-family: var(--wgs-mono);
+  margin-right: 8px;
+}
+.chip.ok b {
+  color: var(--wgs-ok);
+}
+.chip.bad b {
+  color: var(--wgs-bad);
+}

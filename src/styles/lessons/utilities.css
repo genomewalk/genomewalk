@@ -1,0 +1,93 @@
+/* small inline tags and star ratings (chapters 6 & 8) */
+.tag {
+  font: 600 var(--wgs-text-data)/1 var(--wgs-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 6px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+}
+.tag.bad {
+  color: var(--wgs-bad);
+}
+.tag.good {
+  color: var(--wgs-ok);
+}
+.tag.warn {
+  color: var(--wgs-alt);
+}
+.tag.mut {
+  color: var(--wgs-mut);
+}
+b.good {
+  color: var(--wgs-ok);
+}
+b.warn {
+  color: var(--wgs-alt);
+}
+b.bad {
+  color: var(--wgs-bad);
+}
+b.mut {
+  color: var(--wgs-ink);
+}
+.stars,
+.kvx summary span.stars,
+.kvx[open] summary span.stars {
+  font-family: var(--wgs-mono);
+  color: var(--wgs-alt);
+  letter-spacing: 0.05em;
+}
+.mini {
+  font-size: var(--wgs-text-small);
+  line-height: var(--wgs-leading-small);
+  color: var(--wgs-faint);
+}
+/* Every link in the app is accent green, including bold or code text inside it.
+   Buttons and the chapter pager set their own colours and win by specificity. */
+a {
+  color: var(--wgs-accent);
+}
+a > b,
+a > code,
+a > i,
+a > span,
+a > em {
+  color: inherit;
+}
+.kvx summary .mut {
+  color: var(--wgs-mut);
+  font-weight: 400;
+}
+
+/* proportion bar with labelled parts (chapter 3) */
+.split {
+  display: flex;
+  height: 12px;
+  margin: 6px 0 6px;
+  border: 1px solid var(--wgs-line-soft);
+}
+.split i {
+  display: block;
+  height: 100%;
+  background: currentColor;
+  min-width: 2px;
+}
+/* labels sit under the bar, spread across its full width so they line up with the ends */
+/* more than three labels wrap onto a second row: centre every row with even spacing */
+.c1 {
+  color: var(--wgs-accent);
+}
+.c2 {
+  color: var(--wgs-pink);
+}
+.c3 {
+  color: var(--wgs-mut);
+}
+.c4 {
+  color: var(--wgs-ref);
+}
+.c5 {
+  color: var(--wgs-alt);
+}
+

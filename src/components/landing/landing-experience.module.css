@@ -1,0 +1,672 @@
+/* Reversible home-page experiment. All selectors are scoped to its wrapper. */
+.landing-experiment {
+  --hero-scroll: 0;
+  position: relative;
+  isolation: isolate;
+}
+.landing-experiment > :global(.site-header) {
+  position: absolute;
+  inset: 0 auto auto 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  color: #f5f0df;
+  border-color: #d6e5d029;
+}
+.landing-experiment > :global(.site-header) :global(.wordmark) > svg,
+.landing-experiment > :global(.site-header) :global(.brand-period),
+.landing-experiment > :global(.site-header) :global(.header-nav) :global(.nav-superscript) {
+  color: #e6c19a;
+}
+.landing-experiment > :global(.site-header) :global(.header-nav) a:hover {
+  color: #e6c19a;
+}
+.landing-experiment :global(.observatory) {
+  position: relative;
+  height: auto;
+  background: #142c28;
+  color: #f6f0df;
+}
+.landing-experiment :global(.observatory-stage) {
+  position: relative;
+  min-height: max(800px, 100svh);
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse at 77% 43%, #42635765, transparent 58%),
+    radial-gradient(ellipse at 95% 85%, #72827030, transparent 54%), #142c28;
+}
+.landing-experiment :global(.observatory-stage)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.16;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.88' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath fill='%23fff' filter='url(%23n)' opacity='.4' d='M0 0h180v180H0z'/%3E%3C/svg%3E");
+}
+.landing-experiment :global(.observatory-halo) {
+  position: absolute;
+  width: 70vw;
+  height: 70vw;
+  max-height: 950px;
+  max-width: 950px;
+  left: 46%;
+  top: -17%;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(ellipse, #9caf8340, #78998810 45%, transparent 67%);
+}
+.landing-experiment :global(.observatory-contours) {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.landing-experiment :global(.observatory-contours) i {
+  position: absolute;
+  width: 850px;
+  height: 850px;
+  top: -11%;
+  left: 39%;
+  border: 1px solid #c1d4bb14;
+  border-radius: 50%;
+  transform: rotate(-25deg) scaleX(0.68);
+}
+.landing-experiment :global(.observatory-contours) i:nth-child(2) {
+  transform: rotate(-25deg) scaleX(0.91) scaleY(1.2);
+}
+.landing-experiment :global(.observatory-contours) i:nth-child(3) {
+  transform: rotate(-25deg) scaleX(1.15) scaleY(1.45);
+}
+.landing-experiment :global(.observatory-sequence) {
+  position: absolute;
+  top: 30%;
+  right: 23px;
+  writing-mode: vertical-rl;
+  font: 11px var(--wgs-mono);
+  letter-spacing: 10px;
+  color: #d7dfc743;
+}
+.landing-experiment :global(.observatory-content) {
+  position: relative;
+  z-index: 3;
+  min-height: max(800px, 100svh);
+  padding-block: 160px 110px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(28px, 4vw, 64px);
+  align-items: center;
+  pointer-events: none;
+}
+.landing-experiment :global(.observatory-copy) {
+  min-width: 0;
+  pointer-events: auto;
+}
+.landing-experiment :global(.observatory-copy) :global(.section-eyebrow) {
+  color: #bdcbbd;
+  font-size: 11px;
+  letter-spacing: 2px;
+}
+.landing-experiment :global(.observatory-signal) {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin: 0 9px 2px 0;
+  background: #dfc498;
+  border-radius: 50%;
+  box-shadow: 0 0 18px #dfc49880;
+}
+.landing-experiment :global(.observatory) h1 {
+  margin: 28px 0;
+  font: 400 clamp(56px, 5.7vw, 84px)/1.035 var(--wgs-sans);
+  letter-spacing: -0.065em;
+}
+.landing-experiment :global(.observatory) h1 em {
+  font-family: var(--wgs-serif);
+  font-weight: 400;
+  color: #eaca9f;
+  letter-spacing: -0.025em;
+  font-size: 1.13em;
+}
+.landing-experiment :global(.observatory-copy) > p {
+  color: #c6d0c5;
+  font-size: var(--wgs-text-lead);
+  line-height: 1.8;
+  max-width: 415px;
+}
+.landing-experiment :global(.observatory) :global(.hero-actions) {
+  margin-top: var(--wgs-space-section);
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.landing-experiment :global(.observatory) :global(.btn) {
+  color: #203d33;
+  background: #e8d5ac;
+  border: 1px solid #e8d5ac;
+  border-radius: 100px;
+  padding: 15px 25px;
+  font-size: var(--wgs-text-body);
+}
+.landing-experiment :global(.observatory) :global(.btn):hover {
+  background: #f4e8cd;
+  border-color: #f4e8cd;
+  transform: translateY(-2px);
+}
+.landing-experiment :global(.hero-privacy-promise) {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 215px;
+  max-width: 100%;
+  color: #dce5d8;
+}
+.landing-experiment :global(.hero-privacy-promise) > svg {
+  flex: none;
+  color: #eaca9f;
+}
+.landing-experiment :global(.hero-privacy-promise) p {
+  margin: 0;
+  font-size: var(--wgs-text-body);
+  line-height: 1.5;
+}
+.landing-experiment :global(.hero-privacy-promise) strong {
+  color: #f3d8ac;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.landing-experiment :global(.observatory-footer) {
+  position: absolute;
+  bottom: 26px;
+  left: 0;
+  right: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.landing-experiment :global(.observatory-scroll) {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  font: 10px var(--wgs-mono);
+  letter-spacing: 1.6px;
+  color: #c9d2bf;
+}
+.landing-experiment :global(.observatory-scroll) > span {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #bbc7ad50;
+  border-radius: 50%;
+}
+.landing-experiment :global(.observatory-scroll):hover > span {
+  background: #bbc7ad20;
+}
+
+.landing-experiment :global(.observatory) :focus-visible {
+  outline-color: #eaca9f;
+}
+.landing-experiment :global(.landing-molecule) {
+  position: absolute;
+  right: 18%;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.055;
+  mask-image: linear-gradient(90deg, transparent, black 45%);
+  pointer-events: none;
+}
+.landing-experiment :global(.landing-molecule-canvas),
+.landing-experiment :global(.landing-molecule-canvas) canvas,
+.landing-experiment :global(.landing-molecule-fallback) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.landing-experiment :global(.landing-molecule-canvas) {
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+.landing-experiment :global(.landing-molecule):global(.is-ready) :global(.landing-molecule-canvas) {
+  opacity: 1;
+}
+.landing-experiment :global(.landing-molecule-fallback) {
+  opacity: 0.8;
+  transition: opacity 0.8s ease;
+}
+.landing-experiment :global(.landing-molecule):global(.is-ready) :global(.landing-molecule-fallback) {
+  opacity: 0;
+}
+
+/* A faint sage tint and softly fading rim separate the diagram from the scene. */
+.landing-experiment :global(.observatory-explorer) {
+  min-width: 0;
+  pointer-events: auto;
+  scroll-margin-top: var(--wgs-space-section);
+}
+.landing-experiment :global(.observatory-plate) {
+  position: relative;
+  isolation: isolate;
+  padding: 24px 16px 12px;
+}
+.landing-experiment :global(.observatory-plate)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 26px;
+  background: linear-gradient(150deg, #b4c4990f, #a4bc9108 42%, #102d2717);
+  box-shadow: inset 0 1px 22px #cadaaf06;
+  mask-image: linear-gradient(135deg, #000, #000 58%, #0009);
+}
+.landing-experiment :global(.observatory-plate)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: 26px;
+  pointer-events: none;
+  background: linear-gradient(
+    140deg,
+    #e2c69a47,
+    #c6d8ad12 17%,
+    transparent 32%,
+    transparent 75%,
+    #b8cdaa30
+  );
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+}
+.landing-experiment :global(.observatory-plate) :global(.genome-explorer) {
+  padding: 0;
+  margin: 0;
+  max-width: none;
+}
+.landing-experiment :global(.observatory-plate) :global(.genome-figure-heading) h2 {
+  font-size: clamp(26px, 2.6vw, 36px);
+}
+.landing-experiment :global(.observatory-plate) :global(.genome-zoom-space) {
+  height: clamp(390px, 34vw, 470px);
+  min-height: 0;
+}
+.landing-experiment :global(.observatory-plate) :global(.genome-note) > span {
+  font-size: clamp(11px, 1.15vw, 15px);
+}
+.landing-experiment :global(.observatory-plate) :global(.genome-note) b {
+  font-size: clamp(10px, 1vw, 13px);
+}
+.landing-experiment :global(.observatory-plate) :global(.genome-letter) {
+  font-size: clamp(16px, 1.7vw, 23px);
+  min-width: 0;
+}
+.landing-experiment :global(.observatory-plate) :global(.genome-sequence-parent) {
+  font-size: clamp(11px, 1.1vw, 15px);
+}
+.landing-experiment :global(.observatory-plate) :focus-visible {
+  outline-color: var(--wgs-accent);
+}
+.landing-experiment :global(.observatory-explorer-hint) {
+  margin: 16px 6px 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #becdbd;
+  text-align: center;
+}
+.landing-experiment :global(.observatory-explorer-hint) span {
+  color: #eaca9f;
+  margin-right: 5px;
+}
+
+.landing-experiment :global(.specimen-section) {
+  position: relative;
+  display: block;
+  padding-top: 70px;
+  padding-bottom: 110px;
+}
+/* Share the existing responsive columns/gap, then zoom both columns as one scene. */
+.landing-experiment :global(.specimen-content) {
+  display: grid;
+  grid-template-columns: inherit;
+  gap: inherit;
+  align-items: inherit;
+}
+.landing-experiment :global(.specimen-section)::before {
+  content: "";
+  position: absolute;
+  inset: -35% -15%;
+  background: radial-gradient(ellipse at 75% 50%, #b7c5a428, transparent 48%);
+  pointer-events: none;
+  z-index: -1;
+}
+.landing-experiment :global(.privacy-note) {
+  max-width: 400px;
+  border-top: 1px solid var(--wgs-line-soft);
+  padding-top: 8px;
+}
+.landing-experiment :global(.privacy-note) :global(.specimen-policy-links) {
+  margin-top: 17px;
+  font-size: 13px;
+}
+.landing-experiment :global(.specimen-loader) {
+  border-radius: 22px;
+  box-shadow: 0 24px 90px -40px #284f4330;
+  background: linear-gradient(145deg, #fffdf8e0, #f3f0e4d0);
+}
+.landing-experiment :global(.curriculum) {
+  position: relative;
+}
+.landing-experiment :global(.curriculum-heading) {
+  padding-top: 36px;
+}
+.landing-experiment :global(.chapter-row) {
+  transition:
+    background 0.25s,
+    padding 0.25s;
+}
+.landing-experiment :global(.chapter-row):hover {
+  background: #becbb21a;
+}
+
+/* A short, native sticky scene hands off to the cream page below. */
+.landing-experiment :global(.landing-body) {
+  position: relative;
+  z-index: 4;
+  background: var(--wgs-bg);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .landing-experiment :global(.observatory) {
+    height: calc(var(--hero-stage-height, max(800px, 100svh)) + 32svh);
+  }
+  .landing-experiment :global(.observatory-stage) {
+    position: sticky;
+    top: min(0px, calc(100svh - var(--hero-stage-height, 800px)));
+  }
+  .landing-experiment :global(.landing-body) {
+    margin-top: -56px;
+    box-shadow: 0 -22px 70px -35px #081d2660;
+  }
+  .landing-experiment:global(.landing-motion-ready) :global(.observatory-content) {
+    transform-origin: 50% 44%;
+    transform: translateY(calc(var(--hero-scroll) * -32px))
+      scale(calc(1 - var(--hero-scroll) * 0.16));
+  }
+  .landing-experiment:global(.landing-motion-ready) :global(.landing-molecule) {
+    transform-origin: 45% 60%;
+    transform: translateY(calc(var(--hero-scroll) * 70px))
+      scale(calc(1 + var(--hero-scroll) * 0.55));
+    opacity: calc(0.055 + var(--hero-scroll) * 0.12);
+  }
+  .landing-experiment:global(.landing-motion-ready) :global(.observatory-halo) {
+    transform: translateY(calc(var(--hero-scroll) * 100px))
+      scale(calc(1 + var(--hero-scroll) * 0.35));
+  }
+  .landing-experiment:global(.landing-motion-ready) :global(.observatory-contours) {
+    transform: scale(calc(1 + var(--hero-scroll) * 0.18));
+  }
+  .landing-experiment:global(.landing-motion-ready) :global(.observatory-footer) {
+    transform: translateY(calc(var(--hero-scroll) * 18px));
+  }
+  .landing-experiment:global(.landing-motion-ready) :global(.specimen-content) {
+    transform-origin: center 25%;
+    transform: translateY(calc(var(--arrival, 0) * 72px - var(--departure, 0) * 32px))
+      scale(calc(1 - var(--arrival, 0) * 0.18 - var(--departure, 0) * 0.08));
+  }
+  .landing-experiment:global(.landing-motion-ready) [data-landing-reveal] {
+    opacity: 0;
+    transform: translate(24px, 48px);
+    transition:
+      opacity 0.7s ease,
+      transform 0.95s cubic-bezier(0.16, 1, 0.3, 1),
+      background 0.25s,
+      padding 0.25s;
+  }
+  .landing-experiment:global(.landing-motion-ready) :global(.curriculum-heading) {
+    transform: translateY(76px) scale(0.94);
+    transform-origin: left center;
+  }
+  .landing-experiment:global(.landing-motion-ready) :global(.chapter-row):nth-child(2) {
+    transition-delay: 65ms, 65ms, 0s, 0s;
+  }
+  .landing-experiment:global(.landing-motion-ready) :global(.chapter-row):nth-child(3) {
+    transition-delay: 130ms, 130ms, 0s, 0s;
+  }
+  .landing-experiment:global(.landing-motion-ready) :global(.chapter-row):nth-child(4) {
+    transition-delay: 195ms, 195ms, 0s, 0s;
+  }
+  .landing-experiment:global(.landing-motion-ready) [data-landing-reveal]:global(.is-revealed),
+  .landing-experiment:global(.landing-motion-ready) [data-landing-reveal]:focus-within,
+  .landing-experiment:global(.landing-motion-ready) [data-landing-arrival]:focus-within {
+    opacity: 1;
+    transform: none;
+  }
+  .landing-experiment:global(.landing-motion-ready) [data-landing-reveal]:focus-within {
+    transition-delay: 0s;
+    transition-duration: 0s;
+  }
+  .landing-experiment :global(.observatory-copy) {
+    animation: observatory-arrive 1.1s 0.1s both;
+  }
+  @keyframes observatory-arrive {
+    from {
+      opacity: 0;
+      translate: 0 18px;
+    }
+    to {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+  @media (max-width: 850px), (max-height: 620px) {
+    .landing-experiment :global(.observatory) {
+      height: auto;
+    }
+    .landing-experiment :global(.observatory-stage) {
+      position: relative;
+      top: auto;
+    }
+    .landing-experiment :global(.landing-body) {
+      margin-top: -24px;
+    }
+    .landing-experiment:global(.landing-motion-ready) :global(.observatory-content),
+    .landing-experiment:global(.landing-motion-ready) :global(.observatory-footer) {
+      transform: none;
+      opacity: 1;
+    }
+    .landing-experiment:global(.landing-motion-ready) :global(.observatory-footer) {
+      bottom: 44px;
+    }
+    .landing-experiment:global(.landing-motion-ready) :global(.landing-molecule) {
+      opacity: 0.065;
+    }
+    .landing-experiment:global(.landing-motion-ready) :global(.specimen-content) {
+      transform-origin: center top;
+      transform: translateY(calc(var(--arrival, 0) * 40px))
+        scale(calc(1 - var(--arrival, 0) * 0.08));
+    }
+    .landing-experiment:global(.landing-motion-ready) [data-landing-arrival]:focus-within {
+      transform: none;
+    }
+  }
+}
+@media (max-width: 1100px) {
+  .landing-experiment :global(.observatory) h1 {
+    font-size: clamp(49px, 5.8vw, 64px);
+  }
+  .landing-experiment :global(.observatory-content) {
+    gap: 28px;
+  }
+  .landing-experiment :global(.observatory) :global(.hero-actions) {
+    gap: 20px;
+  }
+  .landing-experiment :global(.observatory) :global(.hero-actions) :global(.btn) {
+    padding-inline: 20px;
+  }
+  .landing-experiment :global(.observatory-copy) > p {
+    font-size: var(--wgs-text-lead);
+  }
+  .landing-experiment :global(.observatory-plate) {
+    padding: 20px 10px 12px;
+  }
+}
+@media (max-width: 850px) {
+  .landing-experiment :global(.observatory-content) {
+    grid-template-columns: 1fr;
+    gap: 42px;
+    padding-block: 150px 110px;
+    min-height: 0;
+  }
+  .landing-experiment :global(.observatory-copy) {
+    max-width: 600px;
+    transform: none;
+  }
+  .landing-experiment :global(.observatory) h1 {
+    font-size: 68px;
+    margin-block: 24px;
+  }
+  .landing-experiment :global(.observatory-explorer) {
+    max-width: 600px;
+    width: 100%;
+    margin-inline: auto;
+  }
+  .landing-experiment :global(.observatory-plate) {
+    padding: 24px 14px 12px;
+  }
+  .landing-experiment :global(.observatory-plate) :global(.genome-zoom-space) {
+    height: 490px;
+  }
+  .landing-experiment :global(.observatory-plate) :global(.genome-note) > span {
+    font-size: 14px;
+  }
+  .landing-experiment :global(.observatory-plate) :global(.genome-note) b {
+    font-size: 12px;
+  }
+  .landing-experiment :global(.observatory-plate) :global(.genome-letter) {
+    font-size: 20px;
+  }
+  .landing-experiment :global(.observatory-plate) :global(.genome-sequence-parent) {
+    font-size: 14px;
+  }
+  .landing-experiment :global(.landing-molecule) {
+    width: 100%;
+    height: 750px;
+    right: 8%;
+    opacity: 0.065;
+  }
+  .landing-experiment :global(.observatory-halo) {
+    top: 10%;
+    left: 6%;
+    width: 100%;
+    height: 700px;
+  }
+  .landing-experiment :global(.observatory-contours) {
+    opacity: 0.6;
+  }
+  .landing-experiment :global(.observatory-contours) i {
+    top: 0;
+    left: 0;
+    width: 700px;
+    height: 700px;
+  }
+
+  .landing-experiment :global(.specimen-section) {
+    padding-top: var(--wgs-space-page);
+    padding-bottom: 64px;
+  }
+}
+@media (max-width: 480px) {
+  .landing-experiment :global(.observatory-content) {
+    padding-top: 140px;
+    gap: 34px;
+  }
+  .landing-experiment :global(.observatory) h1 {
+    font-size: clamp(42px, 12.3vw, 59px);
+  }
+  .landing-experiment :global(.observatory-copy) :global(.section-eyebrow) {
+    font-size: var(--wgs-text-label);
+    letter-spacing: 1.2px;
+  }
+  .landing-experiment :global(.observatory-copy) > p {
+    font-size: var(--wgs-text-lead);
+  }
+  .landing-experiment :global(.observatory) :global(.hero-actions) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--wgs-space-content);
+    margin-top: 24px;
+  }
+  .landing-experiment :global(.observatory-plate) {
+    padding: 18px 8px 6px;
+    margin-inline: -8px;
+  }
+  .landing-experiment :global(.observatory-plate) :global(.genome-figure-heading) h2 {
+    font-size: 25px;
+  }
+  .landing-experiment :global(.observatory-plate) :global(.genome-zoom-space) {
+    height: 450px;
+  }
+  .landing-experiment :global(.observatory-plate) :global(.genome-note) > span {
+    font-size: 12px;
+  }
+  .landing-experiment :global(.observatory-plate) :global(.genome-note) b {
+    font-size: 11px;
+  }
+  .landing-experiment :global(.observatory-plate) :global(.genome-letter) {
+    font-size: var(--wgs-text-body);
+  }
+  .landing-experiment :global(.observatory-plate) :global(.genome-sequence-parent) {
+    font-size: 12px;
+  }
+  .landing-experiment :global(.observatory-explorer-hint) {
+    font-size: 11px;
+  }
+  .landing-experiment :global(.observatory-footer) {
+    bottom: 19px;
+    gap: 10px;
+  }
+  .landing-experiment :global(.observatory-scroll) {
+    font-size: 8px;
+    letter-spacing: 1px;
+    gap: 8px;
+  }
+  .landing-experiment :global(.observatory-scroll) > span {
+    width: 30px;
+    height: 30px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-experiment :global(.observatory-copy),
+  .landing-experiment :global(.observatory-halo) {
+    transform: none;
+  }
+}
+
+@container (max-width: 330px) {
+  .landing-experiment :global(.observatory-plate) :global(.genome-total-note) {
+    top: 0;
+    max-width: 44%;
+  }
+  .landing-experiment :global(.observatory-plate) :global(.genome-inheritance-note) {
+    top: 0;
+    left: auto;
+    right: 5%;
+    width: 43%;
+    white-space: normal;
+  }
+  .landing-experiment :global(.observatory-plate) :global(.genome-total-note) b,
+  .landing-experiment :global(.observatory-plate) :global(.genome-inheritance-note) b {
+    display: block;
+    margin-bottom: 3px;
+    font-size: 10px;
+    letter-spacing: 1px;
+  }
+  .landing-experiment :global(.observatory-plate) :global(.genome-total-note) > span,
+  .landing-experiment :global(.observatory-plate) :global(.genome-inheritance-note) > span {
+    font-size: 10px;
+  }
+}

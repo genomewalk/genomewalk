@@ -1,0 +1,130 @@
+/* Shared collapsible cards for lessons and results in both file experiences. */
+.kvx {
+  --kvx-card-padding: clamp(16px, 2vw, 24px);
+}
+.kvx,
+.kvx[open] {
+  border: 1px solid var(--wgs-line-soft);
+  border-radius: 10px;
+  background: var(--wgs-card);
+  box-shadow: 0 2px 4px oklch(0.28 0.03 165 / 0.025);
+  transition: border-color 160ms, box-shadow 160ms;
+}
+.kvx:hover {
+  border-color: color-mix(in srgb, var(--wgs-pink) 40%, transparent);
+  box-shadow: 0 3px 12px oklch(0.28 0.03 165 / 0.06);
+}
+.kvx[open] {
+  border-color: color-mix(in srgb, var(--wgs-pink) 45%, transparent);
+  box-shadow: 0 4px 16px oklch(0.28 0.03 165 / 0.045);
+}
+.kvx > summary {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) 32px;
+  min-height: 80px;
+  padding: 20px var(--kvx-card-padding);
+  gap: var(--wgs-space-content);
+  border-radius: 9px;
+}
+.kvx.clinvar-field-section > summary {
+  grid-template-columns: minmax(0, 1fr) 32px;
+}
+.kvx > summary > span,
+.kvx > summary:hover > span {
+  color: var(--wgs-ink);
+  font-weight: 600;
+}
+.kvx > summary > b {
+  color: var(--wgs-mut);
+  font-size: var(--wgs-text-small);
+  line-height: var(--wgs-leading-small);
+}
+.kvx > summary > b > code {
+  display: inline-block;
+  padding: 3px 8px;
+  border: 1px solid var(--wgs-line-soft);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--wgs-bg-deep) 45%, var(--wgs-card));
+  color: var(--wgs-mut);
+  font-size: inherit;
+  white-space: normal;
+}
+.kvx > summary > .kvx-caret {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--wgs-line-soft);
+  border-radius: 50%;
+  background: var(--wgs-bg);
+  color: var(--wgs-pink);
+  font-size: 0;
+  position: relative;
+  transform: none;
+  transition: color 160ms, background 160ms, border-color 160ms;
+}
+.kvx > summary > .kvx-caret::before,
+.kvx > summary > .kvx-caret::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 1.5px;
+  border-radius: 1px;
+  background: currentColor;
+}
+.kvx > summary > .kvx-caret::after {
+  transform: rotate(90deg);
+  transition: transform 160ms;
+}
+.kvx[open] > summary > .kvx-caret {
+  color: var(--wgs-card);
+  background: var(--wgs-pink);
+  border-color: var(--wgs-pink);
+  transform: none;
+}
+.kvx[open] > summary > .kvx-caret::after {
+  transform: rotate(0);
+}
+.kvx[open] > summary > span {
+  color: var(--wgs-pink);
+}
+.kvx > summary:focus-visible {
+  outline: 2px solid var(--wgs-pink);
+  outline-offset: 3px;
+}
+.kvx > .kvx-body {
+  margin: 0 var(--kvx-card-padding);
+  padding: var(--wgs-space-card) 0;
+  border-top: 1px solid var(--wgs-line-soft);
+}
+/* Public catalogue previews retain their labelled card treatment. */
+.kvx-body .catalogue-preview {
+  border: 1px solid color-mix(in srgb, var(--wgs-pink) 20%, transparent);
+  background: color-mix(in srgb, var(--wgs-pink) 5%, var(--wgs-card));
+}
+@media (max-width: 600px) {
+  .kvx:not(.match-row) > summary {
+    grid-template-columns: minmax(0, 1fr) 32px;
+    gap: var(--wgs-space-sm) var(--wgs-space-content);
+    padding-block: var(--wgs-space-content);
+  }
+  .kvx:not(.match-row) > summary > b {
+    grid-column: 1;
+    text-align: left;
+  }
+  .kvx:not(.match-row) > summary > .kvx-caret {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .kvx:not(.match-row) > summary:has(> b) > .kvx-caret {
+    grid-row: 1 / 3;
+  }
+  .kvx > .kvx-body {
+    padding-block: var(--wgs-space-content);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kvx,
+  .kvx[open],
+  .kvx > summary > .kvx-caret,
+  .kvx > summary > .kvx-caret::after {
+    transition: none;
+  }
+}

@@ -1,0 +1,122 @@
+.kvx-body ul.plain li {
+  margin: 2px 0;
+}
+.kvx-body code {
+  color: var(--wgs-accent);
+}
+.kvx-body b {
+  color: var(--wgs-ink);
+}
+.reference-detail {
+  display: grid;
+  gap: 12px;
+}
+.reference-detail p {
+  margin: 0;
+}
+.align {
+  margin: 2px 0 10px 1ch;
+  padding: 0;
+  background: none;
+  border: 0;
+  font-family: var(--wgs-mono);
+  font-size: var(--wgs-text-body);
+  line-height: 1.7;
+  color: var(--wgs-ink);
+  white-space: pre;
+  overflow-x: auto;
+}
+.align i {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--wgs-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.note {
+  font-size: var(--wgs-text-body);
+  color: var(--wgs-mut);
+  background: var(--wgs-card);
+  border: 1px solid var(--wgs-line);
+  border-radius: 10px;
+  padding: 14px 16px;
+  line-height: 1.6;
+  box-shadow:
+    0 1px 0 oklch(1 0 0 / 0.03) inset,
+    0 6px 18px -12px oklch(0 0 0 / 0.6);
+}
+.note code {
+  color: var(--wgs-accent);
+}
+.note b {
+  color: var(--wgs-ink);
+  font-weight: 600;
+}
+/* section labels inside a chapter ("A line from a genome file:") — must be easy to read */
+.sub {
+  font-size: var(--wgs-text-lead);
+  font-weight: 600;
+  color: var(--wgs-ink);
+  margin-top: 6px;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+.tile {
+  background: oklch(0.955 0.032 150 / 0.04);
+  border: 1px solid var(--wgs-line-soft);
+  padding: var(--wgs-space-content);
+}
+.tk {
+  font: 600 var(--wgs-text-data)/1 var(--wgs-sans);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--wgs-faint);
+}
+.tv {
+  font-family: var(--wgs-serif);
+  font-size: 2.28rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  margin-top: 6px;
+  color: var(--wgs-accent);
+}
+.tn {
+  font-size: var(--wgs-text-small);
+  color: var(--wgs-mut);
+  margin-top: 2px;
+}
+
+.rawline {
+  background: var(--wgs-bg-deep);
+  border: 1px solid var(--wgs-line-soft);
+  padding: var(--wgs-space-content);
+  overflow-x: auto;
+}
+.rawline-cells {
+  display: flex;
+  gap: var(--wgs-space-content);
+  min-width: max-content;
+}
+.cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cell-k {
+  font: 600 var(--wgs-text-data)/1 var(--wgs-sans);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--wgs-pink);
+}
+.cell-v {
+  font-family: var(--wgs-mono);
+  font-size: var(--wgs-text-body);
+  white-space: nowrap;
+  color: var(--wgs-ink);
+}
+

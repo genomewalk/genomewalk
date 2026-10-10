@@ -1,0 +1,17 @@
+node_modules
+dist
+.output
+.vinxi
+package-lock.json
+routeTree.gen.ts
+data
+private-data
+tmp
+output
+coverage
+.cache
+.tanstack
+
+# Existing presentation and evidence snapshots; intentional edits require review.
+**/*.css
+src/experiences/vcf/chapter-page.tsx

@@ -1,0 +1,47 @@
+.consumer-experience .consumer-example-row .rawline-cells {
+  gap: clamp(24px, 4vw, 64px);
+}
+.consumer-experience .consumer-example-row .cell-k {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.consumer-experience [id^="variant-"] {
+  scroll-margin-top: var(--wgs-space-section);
+}
+.consumer-experience .consumer-example-location {
+  margin: 0;
+  gap: 12px;
+}
+.consumer-experience .consumer-example-location .chromos .ch svg {
+  width: 20px;
+  height: 32px;
+}
+.consumer-experience .consumer-example-location .strand .who {
+  width: 5em;
+}
+.consumer-experience .consumer-example-location .strand code i {
+  color: var(--wgs-accent);
+}
+.consumer-experience .consumer-example-location figcaption {
+  margin: 0;
+  color: var(--wgs-faint);
+}
+
+.consumer-experience .consumer-count-story {
+  display: grid;
+  gap: var(--wgs-space-content);
+  color: var(--wgs-mut);
+  font-size: var(--wgs-text-body);
+  line-height: var(--wgs-leading-body);
+}
+.consumer-experience .consumer-count-story > * {
+  min-width: 0;
+  margin: 0;
+}
+.consumer-count-detail {
+  min-width: 0;
+  scroll-margin-top: 32px;
+}
+.kvx.consumer-count-detail > summary {
+  grid-template-columns: minmax(0, 1fr) 32px;
+}

@@ -1,0 +1,122 @@
+/* ── Step output primitives ────────────────────────────────────────── */
+.kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 9px 0;
+  border-bottom: 1px dashed var(--wgs-line-soft);
+  font-size: var(--wgs-text-lead);
+}
+.kv span {
+  color: var(--wgs-mut);
+}
+.kv b {
+  font-family: var(--wgs-mono);
+  font-weight: 500;
+  text-align: right;
+  color: var(--wgs-ink);
+}
+
+/* expandable key/value row */
+.kvx {
+  border-bottom: 1px dashed var(--wgs-line-soft);
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+/* Keep the selection highlight inside the row. */
+.kvx[open] {
+  background: color-mix(in srgb, var(--wgs-accent) 5%, transparent);
+  box-shadow: inset 3px 0 var(--wgs-accent);
+}
+.kvx[open] > summary > span {
+  color: var(--wgs-accent);
+}
+.kvx summary {
+  display: grid;
+  /* label keeps at least 9em and never gets covered; a wide value (a row of
+     chips, a long code) wraps inside its own column instead of pushing into it */
+  grid-template-columns: minmax(9em, 1fr) minmax(0, max-content) 1.2em;
+  align-items: center;
+  gap: 14px;
+  padding: 9px 0;
+  font-size: var(--wgs-text-lead);
+  cursor: pointer;
+  list-style: none;
+}
+.kvx summary::-webkit-details-marker {
+  display: none;
+}
+.kvx > summary:hover > span {
+  color: var(--wgs-accent);
+}
+.kvx summary span {
+  color: var(--wgs-mut);
+  transition: color 0.15s;
+  min-width: 0;
+}
+.kvx summary b {
+  font-family: var(--wgs-mono);
+  font-weight: 500;
+  text-align: right;
+  color: var(--wgs-ink);
+}
+/* The +/× sign sits in its own square box, centred, so rotating it keeps it
+   on the row's midline instead of drifting up from its text baseline. */
+.kvx-caret {
+  font-style: normal;
+  font-family: var(--wgs-mono);
+  color: var(--wgs-accent);
+  display: inline-grid;
+  place-items: center;
+  width: 1.2em;
+  height: 1.2em;
+  line-height: 1;
+  justify-self: center;
+  transition: transform 0.18s;
+}
+.kvx[open] > summary > .kvx-caret {
+  transform: rotate(45deg);
+}
+/* One rhythm for everything inside an expanded row: the body is a column with
+   a single uniform gap, and no child brings its own top/bottom margin. Any
+   block type (paragraph, table, cards, code, chips, bar) gets the same air. */
+.kvx-body {
+  font-size: var(--wgs-text-body);
+  color: var(--wgs-mut);
+  line-height: 1.55;
+  padding: 4px 0 14px 0;
+  display: grid;
+  gap: var(--wgs-space-content);
+}
+/* (prefixed with .step so this outranks each block's own margin rule further down) */
+.step .kvx-body > * {
+  margin: 0;
+}
+.step .kvx-body > pre.align {
+  margin-left: 1ch;
+}
+/* a bar and its label row belong together — pull the labels back up under the bar */
+.kvx-body p {
+  margin: 0;
+}
+.kvx-body ul.plain {
+  margin: 0;
+  padding-left: 1.2em;
+}
+/* text on the left, a small diagram on the right — used wherever a figure explains a sentence */
+.aside {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.aside > p {
+  flex: 1 1 320px;
+  min-width: 0;
+  margin: 0;
+}
+.aside-fig {
+  flex: none;
+  margin: 0;
+}
