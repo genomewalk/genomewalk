@@ -1,7 +1,7 @@
 import { ensureHeader } from "../runtime.ts";
 import { buildGuard } from "../view/file.ts";
 import { loadMarkers } from "../markers.ts";
-import { hasStudyEvidence } from "../study-evidence.ts";
+import { hasStudyEvidence } from "../../../../lib/catalogues/study-evidence.ts";
 import { storyBlock, studyLinks, featuredMarkers, markerRow } from "../view/markers.ts";
 import { el, ext, SOURCES, note } from "../view/html.ts";
 import { frequencyExampleIntro } from "../../../../lib/genetics/frequency-example.ts";

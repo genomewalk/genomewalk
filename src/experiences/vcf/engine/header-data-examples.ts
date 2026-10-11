@@ -17,7 +17,7 @@ export interface HeaderDataExamples {
   unfiltered: DataRow | null;
   scanned: number;
 }
-import { streamBlocks } from "./bgzf.ts";
+import { streamBlocks } from "../../../lib/io/bgzf.ts";
 
 // Resolve a declared field by its name, not by assuming a fixed FORMAT order.
 export function fieldInRow(fields: string[], definition: HeaderDefinition) {

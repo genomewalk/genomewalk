@@ -1,7 +1,7 @@
 import type { VcfMatch } from "../../types.ts";
 import { resultSources } from "../../../../lib/results/sources.ts";
 import { ext, escape, kvx, fmt, rawBlock, SOURCES } from "./html.ts";
-import { condList, condTitle } from "./conditions.ts";
+import { condList, condTitle } from "../../../../lib/view/conditions.ts";
 import { variantLocation, matchKey } from "../match-identity.ts";
 import {
   resultSummary,
@@ -12,7 +12,7 @@ import {
 } from "../../../../lib/results/evidence.ts";
 import { personDefs, personFigure, pct } from "./population.ts";
 import { ctx } from "../context.ts";
-import { conditionUrl } from "../condition-links.ts";
+import { conditionUrl } from "../../../../lib/results/condition-links.ts";
 
 export function matchRow(h: VcfMatch) {
   const v = resultSummary(h),

@@ -1,4 +1,4 @@
-import type { CatalogEntry } from "../../../lib/catalogues/types.ts";
+import type { CatalogEntry } from "../catalogues/types.ts";
 const MEDGEN_ID = /^(?:C|CN)\d+$/;
 
 export function conditionUrl(

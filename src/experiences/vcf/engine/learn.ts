@@ -10,7 +10,7 @@ import { clinvarChapter } from "./chapters/clinvar.ts";
 import { resultsChapter } from "./chapters/results.ts";
 
 export { ctx } from "./context.ts";
-export { FileSource } from "./bgzf.ts";
+export { FileSource } from "../../../lib/io/bgzf.ts";
 export { detectBuild } from "./reference.ts";
 
 export const STEPS = [

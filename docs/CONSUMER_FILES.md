@@ -2,18 +2,26 @@
 
 `src/experiences/consumer-dna/` contains the complete optional experience:
 
-| File                                    | Purpose                                                             |
-| --------------------------------------- | ------------------------------------------------------------------- |
-| `index.ts`                              | Reader registration, own session initialization and page loading    |
-| `reader.ts`, `reader/`, `containers.ts` | Provider profiles and bounded TXT, ZIP and gzip reading             |
-| `chapter-page.tsx`, `results-panel.tsx` | Independent chapter and results pages                               |
-| `chapters.ts`                           | Consumer chapter dispatch and teaching content                      |
-| `engine/`                               | Own nine-chapter registry, state, matching, counts and result views |
-| `consumer.css`                          | Scoped consumer-only styling                                        |
-| `consumer.test.ts`, `fixtures/`         | Synthetic tests and browser fixtures                                |
+| File                                    | Purpose                                                          |
+| --------------------------------------- | ---------------------------------------------------------------- |
+| `index.ts`                              | Reader registration, own session initialization and page loading |
+| `reader.ts`, `reader/`, `containers.ts` | Provider profiles and bounded TXT, ZIP and gzip reading          |
+| `chapter-page.tsx`, `results-panel.tsx` | Independent chapter and results pages                            |
+| `chapters.ts`                           | Consumer chapter dispatch and teaching content                   |
+| `engine/`                               | Own chapter registry, state, matching, counts and result views   |
+| `consumer.css`                          | Scoped consumer-only styling                                     |
+| `consumer.test.ts`, `fixtures/`         | Synthetic tests and browser fixtures                             |
 
-All nine titles match the VCF chapters. The pages and processing are separate;
+Chapter titles match the VCF experience. The pages and processing are separate;
 consumer support cannot override a VCF chapter function.
+
+## Synthetic fixtures
+
+The tiny [23andMe fixture](../src/experiences/consumer-dna/fixtures/23andme-synthetic.txt)
+and [AncestryDNA fixture](../src/experiences/consumer-dna/fixtures/ancestry-synthetic.txt)
+exercise reader and browser flows. They contain invented calls and do not describe
+a real person. Never replace them with personal exports. Keep these files with
+the optional experience so removing it also removes its browser fixtures.
 
 ## Supported profiles
 

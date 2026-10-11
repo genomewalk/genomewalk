@@ -3,7 +3,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { findMatches } from "../../src/experiences/vcf/engine/matching.ts";
 import { resultSummary as verdictOf } from "../../src/lib/results/evidence.ts";
-import { condList } from "../../src/experiences/vcf/engine/view/conditions.ts";
+import { condList } from "../../src/lib/view/conditions.ts";
 import { matchKey, variantLocation } from "../../src/experiences/vcf/engine/match-identity.ts";
 import { vcfSource } from "../helpers/vcf.ts";
 

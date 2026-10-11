@@ -1,6 +1,6 @@
 import type { VcfMatch } from "../../types.ts";
 import { resultList } from "../../../../lib/results/list.ts";
-import { condList } from "./conditions.ts";
+import { condList } from "../../../../lib/view/conditions.ts";
 import { matchKey, variantLocation } from "../match-identity.ts";
 import {
   SIG_LABEL,

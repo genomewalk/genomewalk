@@ -160,6 +160,26 @@ test("streaming BGZF round trips chunk boundaries, UTF-8 and empty EOF", async (
   assert.deepEqual(await lines(file), []);
 });
 
+test("offline BGZF reads reject corrupted checksums, oversized blocks and truncated input", async (t) => {
+  const file = path.join(temporary(t), "invalid.bgz");
+  bgzfWrite("synthetic\n", file);
+  const bytes = fs.readFileSync(file);
+  const blockSize = bytes.readUInt16LE(16) + 1;
+
+  const corrupted = Buffer.from(bytes);
+  corrupted[blockSize - 8]! ^= 1;
+  fs.writeFileSync(file, corrupted);
+  await assert.rejects(lines(file), /integrity check/);
+
+  const oversized = Buffer.from(bytes);
+  oversized.writeUInt32LE(65537, blockSize - 4);
+  fs.writeFileSync(file, oversized);
+  await assert.rejects(lines(file), /maximum decoded size/);
+
+  fs.writeFileSync(file, bytes.subarray(0, blockSize - 1));
+  await assert.rejects(lines(file), /truncated/);
+});
+
 test("aborted output leaves the previous artifact and removes partial files", (t) => {
   const directory = temporary(t),
     file = path.join(directory, "output");

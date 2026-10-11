@@ -3,7 +3,7 @@ import type { ResolvedOptions } from "./types.ts";
 import fs from "node:fs";
 import { createHash } from "node:crypto";
 import { gzipSync, gunzipSync } from "node:zlib";
-import { streamBlocks } from "./reference/bgzf.ts";
+import { streamBlocks } from "./io/bgzf.ts";
 import { writeAtomic } from "./io/atomic.ts";
 import { CATALOG_HEADER } from "./clinvar.ts";
 import { log } from "./log.ts";

@@ -4,7 +4,7 @@ import type { Progress } from "../../../lib/io/types.ts";
 import { loadLookup, createCandidates } from "../lookup/index.ts";
 import { streamCalls, callSignature, calledLetters } from "./calls.ts";
 import { ctx } from "./context.ts";
-import { hasStudyEvidence } from "./study-evidence.ts";
+import { hasStudyEvidence } from "../../../lib/catalogues/study-evidence.ts";
 import { refUrl } from "./view/file.ts";
 
 const FEATURED = ["rs671", "rs12913832", "rs17822931", "rs9923231", "rs4988235"];

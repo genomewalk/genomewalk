@@ -1,5 +1,5 @@
 import type { Marker, MarkerData } from "../../../../lib/catalogues/types.ts";
-import { hasStudyEvidence } from "../study-evidence.ts";
+import { hasStudyEvidence } from "../../../../lib/catalogues/study-evidence.ts";
 import { escape, kvx } from "./html.ts";
 import { freqBars, studyLinks } from "./population.ts";
 import { frequencyExampleBody } from "../../../../lib/genetics/frequency-example.ts";

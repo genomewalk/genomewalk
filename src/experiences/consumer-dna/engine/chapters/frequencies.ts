@@ -1,7 +1,7 @@
 import type { ChapterOptions } from "../../../shared/types.ts";
 import { ensureHeader } from "../context.ts";
 import { featuredMarkers, loadMarkers } from "../markers.ts";
-import { hasStudyEvidence } from "../study-evidence.ts";
+import { hasStudyEvidence } from "../../../../lib/catalogues/study-evidence.ts";
 import { buildGuard } from "../view/file.ts";
 import { SOURCES, el, ext, note } from "../view/html.ts";
 import { markerRow } from "../view/markers.ts";

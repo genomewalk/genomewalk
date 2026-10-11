@@ -46,7 +46,7 @@ an uploaded genome.
 
 ## Automatic categories and concise results
 
-`src/experiences/vcf/engine/result-evidence.ts` derives categories from the preserved ClinVar
+`src/lib/results/evidence.ts` derives categories from the preserved ClinVar
 classification labels. It has no gene, rsID or exact-variant exception list:
 
 - Disease evidence: retained pathogenic, likely pathogenic and conflicting classes.

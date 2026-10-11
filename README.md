@@ -1,7 +1,7 @@
 # Genomewalk
 
 An educational field guide to a DNA data file. Open a file in your browser,
-explore nine chapters in any order, or go straight to **Your results**.
+explore the chapters in any order, or go straight to **Your results**.
 Personal DNA files are read locally. The browser downloads public indexes, matches
 locally, then fetches only the catalogue blocks needed for the annotations.
 No genome upload endpoint or remote matching API is used.
@@ -32,19 +32,11 @@ select the file again. Use the URL printed by that server; an older process on a
 different port can keep serving stale modules. Keep one dev server per checkout.
 
 The application uses React, TanStack Start, Vite and Three.js. **The deployable site
-is entirely static.** `npm run build` prerenders all 12 pages;
-upload the contents of **`dist/client/`** to a static host with HTTP byte-range
-support. `npm run preview` serves that exact folder at `http://localhost:5283`.
-No application server or genome upload endpoint is needed. The build-time
-`dist/server/` folder is not deployed. See [deployment instructions](docs/DEPLOYMENT.md)
-for clean URLs, byte-range responses, cache headers and host file-size limits.
-
-**GitHub Pages** serves the entire static folder at `genomewalk.com`, including
-public catalogues and the teaching sample. The **Deploy site** GitHub Actions
-workflow validates and publishes each push to `main`; it can also be triggered
-manually. No hosting token or separate data bucket is needed. Local development
-uses the same paths. See the [deployment guide](docs/DEPLOYMENT.md) for domain setup
-and the separate, manual **Build reference data** workflow.
+is entirely static:** `npm run build` prerenders the pages into **`dist/client/`**,
+and `npm run preview` serves that folder at `http://localhost:5283`.
+GitHub Pages publishes it at `genomewalk.com`. See the
+[deployment guide](docs/DEPLOYMENT.md) for hosting, byte-range requirements,
+domain setup and the deployment and reference-data workflows.
 
 ## Supported files
 
@@ -54,9 +46,9 @@ and the separate, manual **Build reference data** workflow.
 | 23andMe raw TXT, ZIP or gzip                       | Four-column genotype export with its original header               |
 | AncestryDNA raw TXT, ZIP or gzip                   | Five-column allele export with its original header                 |
 
-Consumer formats are an optional module. Their first five lessons explain the
-actual export instead of inventing VCF fields. Chapters 7–9 have their own population-frequency, ClinVar and result views.
-All nine chapter names remain the same as VCF, with independent processing and sessions. Consumer matching is
+Consumer formats are an optional module with format-specific lessons,
+independent processing and sessions. Chapter names match the VCF experience.
+Consumer matching is
 limited to complete, two-letter **autosomal single-base calls on GRCh37 or
 GRCh38, on the supported forward strand**. Other calls remain visible in the
 file summary. Unknown or contradictory metadata never selects a catalogue by
@@ -68,7 +60,7 @@ another provider requires a verified format profile and fixtures; accepting a
 filename extension alone is insufficient.
 
 The public [HG002 sample](public/samples/README.md) is included for readers who
-do not have a file. [Synthetic fixtures](src/experiences/consumer-dna/fixtures/README.md) are provided
+do not have a file. [Synthetic fixtures](docs/CONSUMER_FILES.md#synthetic-fixtures) are provided
 for development; they do not describe a real person.
 
 ## Understand the code
@@ -121,22 +113,13 @@ With Docker, run the same pipeline in the tools image:
 docker compose run --build --rm tools data:build
 ```
 
-Replace `data:build` with `data:rebuild` for a network-free rebuild from a complete
-cache, or `data:refresh` to fetch fresh public inputs. Downloads stay in `data/`;
-generated catalogues go to `public/ref/`. The tools image includes its own Linux
-UCSC executable and never reuses a Mac executable from the cache. Run
-`docker compose up --build` afterward to preview the updated site.
+Use `data:rebuild` for a network-free rebuild from a complete cache, or
+`data:refresh` to fetch fresh public inputs. Downloads stay in `data/`; generated
+catalogues go to `public/ref/`. Run `docker compose up --build` afterward to
+preview the updated site. Reference jobs are separate from the app build.
 
-`npm run data` lists the available workflows. `npm run data:plan` shows the build plan,
-and `npm run data:inputs` checks whether the local cache is ready for a network-free rebuild.
-`npm run data:citations` extracts variant publication lists from ClinVar's structured VCV XML release;
-`npm run data:build` rebuilds both reference indexes and the separate consumer rsID lookups; `npm run data:ranges` rebuilds byte-range locators from existing catalogues;
-`npm run data:publications` builds compact author/journal/year citation labels from cached or newly fetched PubMed metadata;
-`npm run data:check` validates the existing files without network access. `npm run data:rebuild` checks prerequisites
-before running any stage and uses cached inputs only;
-`npm run data:refresh` refreshes inputs and rebuilds. Individual download,
-frequency, catalogue and marker targets are documented in
-[scripts/README.md](scripts/README.md). These jobs are separate from the app build.
+`npm run data` lists the workflows. The [pipeline guide](scripts/README.md)
+documents prerequisites, commands, sources and validation.
 
 ## License and data
 

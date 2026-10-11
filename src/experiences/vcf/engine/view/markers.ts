@@ -1,6 +1,6 @@
 import type { Marker, MarkerData } from "../../../../lib/catalogues/types.ts";
 import { frequencyComparison } from "../../../../components/diagrams/frequency-comparison.ts";
-import { hasStudyEvidence, studyCitations } from "../study-evidence.ts";
+import { hasStudyEvidence, studyCitations } from "../../../../lib/catalogues/study-evidence.ts";
 import { ext, escape, kvx } from "./html.ts";
 import { pct, freqBars, PERSON_PATH } from "./population.ts";
 import { frequencyExampleBody } from "../../../../lib/genetics/frequency-example.ts";

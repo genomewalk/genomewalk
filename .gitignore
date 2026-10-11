@@ -93,7 +93,6 @@ sample_dna*
 genome_*.txt
 AncestryDNA*.txt
 23andme*.txt
-!tests/fixtures/*-synthetic.txt
 !src/experiences/consumer-dna/fixtures/*-synthetic.txt
 
 # Public release assets and synthetic fixtures must remain versioned.

@@ -268,18 +268,18 @@ contain several sources, and `studyNote` records qualifications. See
 The scripts at this directory's root are small CLI entry points. Shared code is
 in `lib/`:
 
-| Module                                      | Responsibility                                             |
-| ------------------------------------------- | ---------------------------------------------------------- |
-| `preflight.ts`                              | Read-only prerequisite checks for cached rebuilds          |
-| `config.ts`, `cli.ts`                       | Source URLs, paths, strict options and help                |
-| `plan.ts`                                   | Ordered prerequisites and single-build behavior            |
-| `downloads.ts`, `network.ts`, `tool.ts`     | Public input downloads, HTTP retry and the UCSC executable |
-| `io/atomic.ts`, `io/lines.ts`, `io/bgzf.ts` | Atomic files, streaming lines and bounded BGZF output      |
-| `util.ts`, `log.ts`                         | Small compatibility API and progress logging               |
-| `clinvar.ts`, `catalog.ts`                  | Shared record selection, evidence fields and joins         |
-| `frequencies.ts`                            | Regions, bounded extraction jobs and dataset selection     |
-| `markers.ts`                                | Exact marker identities, cached requests and output        |
-| `validate.ts`                               | Schema, frequency, identity and evidence checks            |
+| Module                                      | Responsibility                                                 |
+| ------------------------------------------- | -------------------------------------------------------------- |
+| `preflight.ts`                              | Read-only prerequisite checks for cached rebuilds              |
+| `config.ts`, `cli.ts`                       | Source URLs, paths, strict options and help                    |
+| `plan.ts`                                   | Ordered prerequisites and single-build behavior                |
+| `downloads.ts`, `network.ts`, `tool.ts`     | Public input downloads, HTTP retry and the UCSC executable     |
+| `io/atomic.ts`, `io/lines.ts`, `io/bgzf.ts` | Atomic files, streaming lines and bounded BGZF reading/writing |
+| `util.ts`, `log.ts`                         | Small compatibility API and progress logging                   |
+| `clinvar.ts`, `catalog.ts`                  | Shared record selection, evidence fields and joins             |
+| `frequencies.ts`                            | Regions, bounded extraction jobs and dataset selection         |
+| `markers.ts`                                | Exact marker identities, cached requests and output            |
+| `validate.ts`                               | Schema, frequency, identity and evidence checks                |
 
 `reference-data.test.ts` exercises synthetic builds, corrupt inputs, failed
 requests, cross-build joins, marker mismatches and write preservation. It is also
@@ -303,9 +303,10 @@ the catalogue even though the result UI omits those technical dates.
 
 ## Runtime independence
 
-The builders own BGZF, checksum, condition-link and citation utilities in
+The builders keep file and BGZF utilities in `scripts/lib/io/`, using Node's
+native CRC32 checksum. Condition-link and citation utilities live in
 `scripts/lib/reference/`. They import neither browser experience. Removing the
-consumer experience therefore does not affect any `data:*` npm target.
+consumer experience therefore does not affect the remaining reference stages.
 
 ## Consumer rsID lookups
 

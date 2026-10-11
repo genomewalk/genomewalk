@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import readline from "node:readline";
-import { streamBlocks } from "../reference/bgzf.ts";
+import { streamBlocks } from "./bgzf.ts";
 
 export async function* textLines(file: fs.PathLike) {
   const input = fs.createReadStream(file);

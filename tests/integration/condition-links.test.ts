@@ -1,9 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {
-  catalogConditionReferences,
-  conditionUrl,
-} from "../../src/experiences/vcf/engine/condition-links.ts";
+import { catalogConditionReferences } from "../../scripts/lib/reference/condition-links.ts";
+import { conditionUrl } from "../../src/lib/results/condition-links.ts";
 import { parseCatalogEntry } from "../../src/lib/results/evidence.ts";
 
 const hitFrom = (names: string | undefined, databases: string | undefined) => {

@@ -37,116 +37,91 @@ public records and small DOM stubs. They cover:
   extraction, cross-build joins, exact marker identities and cached responses.
   Network-free rebuild tests verify a missing marker cache cannot trigger HTTP.
 - Reviewed stylesheets, VCF lesson text/templates and unchanged evidence
-  helpers. See [fixture documentation](../tests/fixtures/README.md).
+  helpers. See [regression snapshots](#regression-snapshots).
 
-The catalogue decoder now indexes bounded text blocks instead of retaining a
+The catalogue decoder indexes bounded text blocks instead of retaining a
 full decompressed byte array, a full decoded string and a full split-line array.
 Its regression fixture checks exact keys, indels, zero frequencies, class/star
 counts and preview entries.
 
+## Regression snapshots
+
+The fixtures in `tests/fixtures/` preserve reviewed presentation and evidence
+behavior. Review intentional changes in the browser and update only the affected
+entries. Do not regenerate snapshots to conceal a failure.
+
+- `styles.sha256.json`: reviewed shared styles, including `src/styles/lessons/`.
+  CSS Module snapshots strip scope markers before hashing, preserving declarations
+  and selectors. Add a snapshot when adding a stylesheet.
+- `vcf-lesson-content.sha256.json`: runtime strings and templates for VCF chapters,
+  extracted from the previous single-file implementation. Types and literal
+  property-access keys are excluded, so type annotations and formatting do not
+  change this check.
+- `vcf-baseline.sha256.json`: unchanged evidence rules, identity helpers, session
+  code and reviewed lesson/result styles. Refactored readers and chapters use
+  behavior and content tests instead of obsolete whole-file hashes.
+- `vcf-shell.sha256.json`: the preserved VCF chapter execution body.
+
+`npm run format` excludes byte-snapshotted chapter rendering and styles; maintained
+new modules are formatted normally. Snapshots supplement behavior tests and
+cannot establish correct parsing or matching on their own.
+
+`tests/helpers/vcf.ts` constructs synthetic BGZF records for real-module tests.
+The [consumer fixtures](CONSUMER_FILES.md#synthetic-fixtures) cover provider browser
+flows. Never add personal genomes or results to either fixture directory.
+
 ## Browser regression procedure
 
-Use the bundled public HG002 sample and the invented fixtures in
-`src/experiences/consumer-dna/fixtures/`. Keep personal data out of screenshots.
+Use the bundled [public HG002 sample](../public/samples/README.md) and
+[invented consumer fixtures](CONSUMER_FILES.md#synthetic-fixtures). Keep personal
+data out of screenshots.
 
 1. Check the landing illustration and its zoom controls, then load HG002.
-2. Visit results directly before running another chapter. Verify only chapter 9
-   completes, expand a result and check its raw row, genotype and source links.
-3. Run chapters 1–8. Check header disclosures, column links, genotype examples,
+2. Visit results directly before running another chapter. Verify only the results
+   chapter completes, expand a result and check its raw row, genotype and source links.
+3. Run the remaining chapters. Check header disclosures, column links, genotype examples,
    sampled row types, full counts, summary, gnomAD and ClinVar previews.
 4. Navigate away and back. Completed output and result disclosures should survive.
-5. Select the 23andMe fixture. Progress and prior results must reset. Run all nine
+5. Select the 23andMe fixture. Progress and prior results must reset. Run all
    chapters, then repeat provider-specific rendering with the Ancestry fixture.
 6. Check a narrow viewport for page overflow and usable disclosures. Verify a
    malformed file gives a recoverable error and the next valid import succeeds.
 
-Record the actual results and any incomplete checks below rather than treating
-these instructions as evidence that they passed.
+Record actual results and incomplete checks with the change being reviewed.
+These instructions are a procedure, not evidence that the checks passed.
 
 ## Reference data
 
-The shipped catalogues contain 511,197 GRCh38 records and 511,193 GRCh37 records,
-with five cited markers per build. Validation also checks the consumer sidecars'
-source hashes. This maintainability pass does not rewrite scientific assets or
-change matching eligibility. A fresh full-network gnomAD rebuild is separate
-from application release validation; see [pipeline instructions](../scripts/README.md).
+`npm run data:check` validates the shipped catalogue, marker, range, publication
+and consumer indexes, including their source hashes. Use its output for the
+current asset inventory. A fresh upstream rebuild is separate from application
+release validation; see the [pipeline guide](../scripts/README.md).
 
 These checks establish software behavior, not clinical validity or support for
 every historical provider export. Catalogue coverage and exact-representation
 limitations remain. Large files and in-memory indexes have device-dependent costs.
 
-## September 29, 2026 cleanup verification
+## Historical reference measurements
 
-### Static build and byte-range transport
+The following observations were recorded during September 2026 validation and
+are retained as benchmark provenance. They are not current release results or
+fixed expectations for later public-data releases. The whitepaper's
+[engineering snapshot](whitepaper/engineering-snapshot.json) retains the dated
+asset sizes, hashes and measurement provenance. Rerun checks and measurements
+before citing them for a changed implementation or catalogue.
 
-- The production build prerenders 12 HTML pages into `dist/client/`. The file-only
-  preview serves those pages without SSR or an application API. Deep chapter URLs
-  resolve to their own `index.html`; HTTP range responses return 206 and exact bytes.
-- The 178-test suite covers rejected full-file fallback, wrong ranges/lengths,
-  decompression by a host, cancellation, split UTF-8 and cross-block rows, indels,
-  named reference contigs, stale block hashes and local-file behavior. TypeScript,
-  lint, production build, static preflight and both reference builds validate.
-- HG002 returned all 399 results identical field-for-field to the full-catalogue
-  reader. Its catalogue requests transferred 5,154,640 index bytes plus 2,745,473
-  annotation bytes (203 range requests), compared with the 26,640,645-byte complete
-  GRCh38 catalogue. These figures exclude the public genome and app assets.
-- Both 23andMe and Ancestry synthetic fixtures retained their one result with
-  identical fields; each needed 12,830 annotation bytes after loading its indexes.
-- Browser checks on the file-only static server exercised the public sample,
-  its 399 results and local synthetic consumer-file import. Neither flow needs
-  a server-side matching operation. Catalogue key matching remains local; range
-  headers still expose selected catalogue regions to the static host.
-- Existing catalogues were not rewritten. `data:ranges` generated locators from
-  their exact bytes; validation re-creates every locator and block hash. A fresh
-  upstream scientific-data rebuild was not run.
+On 29 September, the static-server comparison returned all 399 HG002 results
+identical field-for-field to the full-catalogue reader. Catalogue requests
+transferred 5,154,640 index bytes plus 2,745,473 annotation bytes in 203 range
+requests, compared with the 26,640,645-byte complete GRCh38 catalogue. These
+figures exclude the public genome and application assets. Both synthetic consumer
+fixtures retained one result with identical fields; each needed 12,830 annotation
+bytes after loading its indexes. This comparison added range locators to the
+existing catalogue bytes; it did not perform a fresh upstream rebuild.
 
-### Earlier cleanup checks
-
-- All 174 application/pipeline tests, TypeScript, ESLint, production compilation
-  and shipped-data validation passed. Search tests cover category overlap, phrase
-  fallback, suggestion deduplication and HTML escaping. New offline preflight
-  tests cover missing inputs and incorrect cached marker identities.
-- Removed 130 unused CSS selector branches. An AST comparison against the
-  pre-cleanup styles confirmed every retained selector, declaration and rule
-  order stayed identical, including across the new lesson stylesheet imports.
-  Reviewed stylesheet snapshots now cover the smaller files.
-- HG002 direct results still returned 399 variants, 253 genes and 274 records
-  with publications. Search, keyboard suggestions, pagination, evidence filters,
-  expanded details and restoration after chapter navigation worked. Chapter 2's
-  linked REF disclosure also opened correctly.
-- The synthetic 23andMe fixture still returned its single ALDH2 result. Its
-  expanded raw row, allele explanation and publication links rendered correctly.
-  Chapter 2's genotype link opened its disclosure. The lesson and expanded
-  results had no page overflow at a 390 px viewport. Landing zoom controls and
-  representative desktop/mobile layouts were visually inspected; this was not
-  a full pixel-diff test or a repeat of every browser scenario below.
-- An isolated VCF-only tree passed 103 tests, TypeScript and lint with the
-  optional consumer runtime and builder directories removed.
-- `data:plan -- --offline --only GRCh37` produced the expected stages, including
-  the GRCh38 frequency join. `data:inputs` correctly reported ten missing raw
-  marker-response caches in this checkout. A complete offline rebuild therefore
-  needs those caches populated first; no scientific assets were rebuilt during
-  this pass. The shipped catalogues, marker files and sidecars passed validation.
-
-## Earlier September 2026 maintainability pass
-
-- All 160 application/pipeline tests passed, including the deployment-size
-  regression. TypeScript, ESLint, production compilation and shipped-data validation passed.
-- Both catalogues were rebuilt in an isolated output directory using cached inputs.
-  GRCh38 and GRCh37 outputs were byte-for-byte identical to their shipped files.
-  A fresh full-network frequency/marker rebuild was not performed.
-- HG002 exercised all nine VCF chapters across browser runs. Full counts remained
-  5,201,459 passing variants (4,233,644 SNPs and 967,815 indels). Results remained
-  399 variants, 253 genes and 274 records with publications. Direct results access,
-  expanded result restoration and header/column disclosure links were verified.
-- Both synthetic consumer fixtures completed all nine chapters. 23andMe retained
-  six rows/five sites; Ancestry retained five rows/five sites. Each produced one
-  catalogue result. Direct Ancestry results completed only chapter 9. Selecting a
-  new file reset progress, and a valid import succeeded after an invalid-header error.
-- VCF results and consumer row diagrams had no page overflow at a 390 px viewport.
-  Landing canvas/zoom controls worked; existing styles and VCF lesson templates
-  passed snapshot checks. This was visual inspection, not a full pixel-diff test.
-- An isolated VCF-only source tree passed its 91 tests with the optional consumer
-  runtime and builder folders removed. TypeScript, lint and a production build
-  passed in that isolated tree too.
-- Browser observations in this earlier pass used the development server.
+Earlier September browser checks recorded 5,201,459 passing HG002 variants
+(4,233,644 SNPs and 967,815 indels), with 399 results, 253 genes and 274 records
+with publications. The 23andMe fixture had six rows at five sites; Ancestry had
+five rows at five sites. Both completed the chapter flow and returned one result.
+Desktop and 390 px layouts were visually inspected; these were not pixel-diff
+tests. Those earlier observations used the development server.

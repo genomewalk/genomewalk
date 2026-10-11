@@ -8,7 +8,7 @@ export {
   pct,
 } from "../../../../lib/view/population.ts";
 import { frequencyComparison } from "../../../../components/diagrams/frequency-comparison.ts";
-import { hasStudyEvidence, studyCitations } from "../study-evidence.ts";
+import { hasStudyEvidence, studyCitations } from "../../../../lib/catalogues/study-evidence.ts";
 import { escape, ext } from "./html.ts";
 
 export const studyLinks = (marker: Marker) =>

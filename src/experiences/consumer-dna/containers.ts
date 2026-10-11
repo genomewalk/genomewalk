@@ -9,8 +9,8 @@ interface DecodedEntry {
   expected?: Checksum | undefined;
 }
 import { Gunzip, Unzip, UnzipInflate, strFromU8 } from "fflate";
-import { crc32 } from "./engine/checksum.ts";
-import { yieldToLoop } from "./engine/schedule.ts";
+import { crc32 } from "../../lib/io/checksum.ts";
+import { yieldToLoop } from "../../lib/async/schedule.ts";
 
 // Limits apply only to compact consumer exports; the streaming VCF path has
 // no such file-size limit. Check decoded bytes as well as archive declarations.

@@ -38,8 +38,8 @@ missing, malformed or contradictory data when touching a reader. Avoid tests
 that only repeat the implementation.
 
 For a UI change, check a wide screen and a narrow screen, keyboard navigation,
-and reduced-motion behavior. For importer changes, use the synthetic fixtures
-in `src/experiences/consumer-dna/fixtures/`, run the applicable chapters in a different order, visit
+and reduced-motion behavior. For importer changes, use the
+[synthetic fixtures](docs/CONSUMER_FILES.md#synthetic-fixtures), run the applicable chapters in a different order, visit
 Your results directly, navigate back, and change files. Also exercise the public
 HG002 VCF path. A test file with no catalogue match must not produce a negative
 health conclusion.
@@ -65,9 +65,8 @@ shared diagrams. Run `npm run test:vcf` or `npm run test:consumer` while iterati
 then the full `npm run check:release` before release. CI runs that release check inside Docker
 on pushes to `main` and pull requests.
 
-`tests/fixtures/` includes the reviewed presentation and evidence snapshots.
-For an intentional copy or style change, review the rendered change and update
-only the affected fixture. Do not regenerate snapshots to hide a failure.
+The [regression snapshot guide](docs/VALIDATION.md#regression-snapshots) explains
+the reviewed fixtures in `tests/fixtures/` and how to update intentional changes.
 
 ## Commit messages
 

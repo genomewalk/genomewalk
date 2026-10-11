@@ -1,6 +1,6 @@
 # Architecture
 
-Genomewalk has nine chapters and two file experiences. React owns routes, file
+Genomewalk has VCF and consumer file experiences. React owns routes, file
 selection and the page shell. The selected experience owns its session, lessons,
 counting rules and matching policy. Personal file bytes and derived results stay
 in memory. Genome matching fetches fixed public reference assets from the static
@@ -80,31 +80,31 @@ not break data production.
 
 ## Module map
 
-| Area                                          | Responsibility                                                         |
-| --------------------------------------------- | ---------------------------------------------------------------------- |
-| `src/routes/`                                 | Route metadata and page composition                                    |
-| `src/lib/intake/use-genome-intake.ts`         | File selection, cancellation, progress and navigation                  |
-| `src/lib/catalogues/public-sample.ts`         | Download the fixed public HG002 sample                                 |
-| `src/experiences/index.ts`, `selection.ts`    | Select an experience; retain a file handle through development updates |
-| `src/experiences/*/chapter-page.tsx`          | Run chapters and retain completed output for the current visit         |
-| `src/components/results-panel.tsx`            | Shared loading, cancellation, retry and cached output UI               |
-| `src/experiences/*/results-panel.tsx`         | Connect the shared panel to each independent engine/session            |
-| `src/experiences/*/engine/context.ts`         | Active file and derived state; reset on selection                      |
-| `src/experiences/*/engine/learn.ts`           | Small ordered chapter registry                                         |
-| `src/experiences/*/engine/chapters/`          | One lesson per module                                                  |
-| `src/experiences/*/engine/statistics.ts`      | Full-file counts, separate from presentation                           |
-| `src/experiences/*/engine/matching.ts`        | Match reported alleles to catalogue entries                            |
-| `src/experiences/*/engine/result-evidence.ts` | Evidence categories and interpretation rules                           |
-| `src/experiences/*/engine/view/`              | HTML rendering; no file parsing                                        |
-| `src/components/*/graphics/`                  | Lazy-loaded Three.js rendering and resource cleanup                    |
-| `src/lib/results/`                            | Result filtering, suggestions, pagination and source links             |
-| `src/lib/view/`                               | Neutral HTML, condition labels and population figures                  |
-| `src/styles/`                                 | Shared presentation; consumer-specific styles stay in its folder       |
+| Area                                       | Responsibility                                                         |
+| ------------------------------------------ | ---------------------------------------------------------------------- |
+| `src/routes/`                              | Route metadata and page composition                                    |
+| `src/lib/intake/use-genome-intake.ts`      | File selection, cancellation, progress and navigation                  |
+| `src/lib/catalogues/public-sample.ts`      | Download the fixed public HG002 sample                                 |
+| `src/experiences/index.ts`, `selection.ts` | Select an experience; retain a file handle through development updates |
+| `src/experiences/*/chapter-page.tsx`       | Run chapters and retain completed output for the current visit         |
+| `src/components/results-panel.tsx`         | Shared loading, cancellation, retry and cached output UI               |
+| `src/experiences/*/results-panel.tsx`      | Connect the shared panel to each independent engine/session            |
+| `src/experiences/*/engine/context.ts`      | Active file and derived state; reset on selection                      |
+| `src/experiences/*/engine/learn.ts`        | Small ordered chapter registry                                         |
+| `src/experiences/*/engine/chapters/`       | One lesson per module                                                  |
+| `src/experiences/*/engine/statistics.ts`   | Full-file counts, separate from presentation                           |
+| `src/experiences/*/engine/matching.ts`     | Match reported alleles to catalogue entries                            |
+| `src/lib/results/evidence.ts`              | Shared evidence categories and interpretation rules                    |
+| `src/experiences/*/engine/view/`           | HTML rendering; no file parsing                                        |
+| `src/components/*/graphics/`               | Lazy-loaded Three.js rendering and resource cleanup                    |
+| `src/lib/results/`                         | Result filtering, suggestions, pagination and source links             |
+| `src/lib/view/`                            | Neutral HTML, condition labels and population figures                  |
+| `src/styles/`                              | Shared presentation; consumer-specific styles stay in its folder       |
 
 ### VCF
 
 `engine/learn.ts` preserves the `STEPS`, `ctx`, `FileSource` and `detectBuild`
-entry points. Its nine chapter definitions now live in `engine/chapters/`.
+entry points. Its chapter definitions live in `engine/chapters/`.
 `runtime.ts` coordinates cached scans; `statistics.ts` performs counting;
 `sampling.ts` handles bounded examples. `reference.ts` identifies the build and
 `identity.ts` constructs exact allele keys. `catalogue.ts` and `markers.ts` load

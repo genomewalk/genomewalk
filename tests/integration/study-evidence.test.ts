@@ -4,10 +4,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import * as renderer from "../../src/experiences/vcf/engine/view/markers.ts";
-import {
-  hasStudyEvidence,
-  studyCitations,
-} from "../../src/experiences/vcf/engine/study-evidence.ts";
+import { hasStudyEvidence, studyCitations } from "../../src/lib/catalogues/study-evidence.ts";
 import { testDocument } from "../helpers/vcf.ts";
 
 globalThis.document = testDocument();
