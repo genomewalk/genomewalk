@@ -6,6 +6,20 @@ import { CHAPTER_COUNT } from "./src/lib/navigation/journey.ts";
 
 export default defineConfig({
   plugins: [
+    {
+      name: "raw-compressed-data",
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          if (/^\/(?:samples|ref)\/[^?]*\.gz(?:\?|$)/.test(req.url || "")) {
+            // These are gzip files read by the app, including exact BGZF ranges.
+            // Override Vite's inferred encoding so fetch keeps their raw bytes.
+            res.setHeader("Content-Encoding", "identity");
+            res.setHeader("Content-Type", "application/gzip");
+          }
+          next();
+        });
+      },
+    },
     tailwindcss(),
     tanstackStart({
       prerender: { enabled: true, crawlLinks: false, failOnError: true },

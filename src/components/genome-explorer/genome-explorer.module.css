@@ -15,7 +15,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  min-height: 43px;
+  min-height: 44px;
+  flex-wrap: wrap;
   margin: 0 3% 6px;
 }
 :where(.genome-explorer) :global(.genome-figure-heading) h2 {
@@ -133,6 +134,7 @@
 :where(.genome-explorer) :global(.genome-pair-hotspot) {
   position: absolute;
   width: 14.333%;
+  min-width: 44px;
   height: 14.84%;
   border: 0;
   background: transparent;
@@ -202,6 +204,7 @@
 }
 :where(.genome-explorer) :global(.genome-zoom-out) {
   display: inline-flex;
+  min-height: 44px;
   flex-shrink: 0;
   align-items: center;
   gap: 6px;
@@ -273,6 +276,7 @@
   font-size: 15px;
   line-height: 1.4;
   white-space: nowrap;
+  min-height: 44px;
   cursor: zoom-in;
 }
 :where(.genome-explorer) :global(.genome-gene-zoom):hover {
@@ -751,4 +755,57 @@
 }
 .genome-explorer[data-appearance="dark"] :global(.genome-sequence-leaders) {
   stroke: #edd6ae99;
+}
+
+/* Give annotations space at phone widths without reducing the label text. */
+@container (max-width: 420px) {
+  :where(.genome-explorer) :global(.genome-zoom-space):global(.genome-at-0) {
+    min-height: 560px;
+  }
+  :where(.genome-explorer) :global(.genome-total-note) {
+    top: 0;
+    left: 0;
+    max-width: 46%;
+  }
+  :where(.genome-explorer) :global(.genome-inheritance-note) {
+    top: 0;
+    left: auto;
+    right: 0;
+    width: 46%;
+    white-space: normal;
+  }
+  :where(.genome-explorer) :global(.genome-inheritance-note) b {
+    display: block;
+  }
+  :where(.genome-explorer) :global(.genome-chromosome-note) {
+    top: 85%;
+    left: 2%;
+    width: 45%;
+  }
+  :where(.genome-explorer) :global(.genome-sex-note) {
+    left: 77%;
+  }
+  :where(.genome-explorer) :global(.genome-sex-note) > span,
+  :where(.genome-explorer) :global(.genome-parent-note),
+  :where(.genome-explorer) :global(.genome-note) > span {
+    font-size: 14px;
+  }
+  :where(.genome-explorer) :global(.genome-note) b {
+    font-size: 12px;
+    letter-spacing: 0.8px;
+  }
+  :where(.genome-explorer) :global(.genome-helix-note) {
+    width: 75%;
+  }
+  :where(.genome-explorer) :global(.genome-gene-note) {
+    width: 46%;
+  }
+  :where(.genome-explorer) :global(.genome-sequence-gene-note) {
+    left: 50%;
+    width: 92%;
+    white-space: normal;
+  }
+  :where(.genome-explorer) :global(.genome-zoom-space):global(.genome-at-2) {
+    height: 470px;
+  }
 }

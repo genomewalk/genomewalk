@@ -250,29 +250,8 @@
   line-height: var(--wgs-leading-small);
   color: var(--wgs-faint);
 }
-@container (max-width: 760px) {
-  .row-map-entries {
-    --row-map-note-width: 160px;
-    --row-map-check-width: 0px;
-  }
-  .row-map-head,
-  .row-map-group {
-    grid-template-columns: var(--row-map-note-width) minmax(0, 1fr);
-  }
-  .row-map-check-heading {
-    display: none;
-  }
-  .row-map-records {
-    border-bottom: 0;
-    padding-bottom: 6px;
-  }
-  .row-map-check {
-    grid-column: 2;
-    padding: 0 12px 14px;
-    border-bottom: 1px dashed var(--wgs-line-soft);
-  }
-}
-@container (max-width: 540px) {
+/* Stack the explanations before their fixed columns squeeze the record. */
+@container (max-width: 900px) {
   .row-map-head,
   .row-map-entries::before,
   .row-map-note::before,
@@ -309,6 +288,7 @@
   }
   .row-map-check {
     grid-column: 1;
+    padding: 0 12px 14px;
     background: var(--wgs-card);
     border: 1px solid var(--wgs-line);
     border-top: 0;
@@ -432,7 +412,7 @@
 .vcf-count-detail code {
   overflow-wrap: anywhere;
 }
-@container (max-width: 540px) {
+@container (max-width: 900px) {
   .vcf-row-map .row-map-record {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
@@ -454,8 +434,15 @@
     row-gap: 14px;
   }
 }
-@container (max-width: 360px) {
-  .file-row-map[data-allele-columns] .row-map-cells {
+/* Coordinates are identifiers: keep every digit together. */
+.vcf-row-map .row-map-cells > div:nth-child(2) dd,
+.consumer-row-map .row-map-cells > div:nth-child(3) dd {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+@container (max-width: 440px) {
+  .file-row-map[data-allele-columns] .row-map-cells,
+  .vcf-row-map .row-map-cells {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     row-gap: 14px;
   }

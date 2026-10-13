@@ -35,11 +35,50 @@
     font-size: 20px;
   }
   .reading-layout {
-    grid-template-columns: 195px minmax(0, 1fr);
+    grid-template-columns: 220px minmax(0, 1fr);
     gap: 28px;
   }
   .reading-main {
     padding-left: 28px;
+  }
+}
+@media (max-width: 1000px) {
+  .reading-layout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .chapter-sidebar {
+    position: static;
+  }
+  .sidebar-heading {
+    margin-top: 20px;
+  }
+  .reading-progress {
+    margin-bottom: 0;
+  }
+  .sidebar-chapters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(44px, 1fr));
+    gap: 6px;
+    margin-top: 16px;
+  }
+  .sidebar-part,
+  .sidebar-privacy,
+  .sidebar-chapter > span:nth-child(2),
+  .sidebar-chapter > svg {
+    display: none;
+  }
+  .sidebar-chapter {
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    margin: 0;
+    padding: 10px 2px;
+    border-color: var(--wgs-line-soft);
+  }
+  .reading-main {
+    padding-left: 0;
+    border-left: 0;
   }
 }
 @media (max-width: 800px) {
@@ -101,40 +140,6 @@
   .chapter-row-copy h3 {
     font-size: 22px;
   }
-  .reading-layout {
-    grid-template-columns: 1fr;
-    gap: 24px;
-  }
-  .chapter-sidebar {
-    position: static;
-  }
-  .sidebar-heading {
-    margin-top: 20px;
-  }
-  .reading-progress {
-    margin-bottom: 0;
-  }
-  .sidebar-chapters {
-    display: flex;
-    gap: 6px;
-    margin-top: 16px;
-  }
-  .sidebar-part,
-  .sidebar-privacy,
-  .sidebar-chapter > span:nth-child(2),
-  .sidebar-chapter > svg {
-    display: none;
-  }
-  .sidebar-chapter {
-    flex: 1;
-    justify-content: center;
-    padding: 8px 2px;
-    border-color: var(--wgs-line-soft);
-  }
-  .reading-main {
-    padding-left: 0;
-    border-left: 0;
-  }
   .reading-main .step {
     padding-top: 28px;
   }
@@ -150,9 +155,6 @@
   .site-header,
   .site-footer {
     width: calc(100% - 40px);
-  }
-  .header-nav a:last-child {
-    display: none;
   }
   .hero {
     grid-template-columns: 1fr;
@@ -278,11 +280,6 @@
   .s-out .note {
     font-size: 14px;
     padding: var(--wgs-space-content);
-  }
-  .kvx-body table.fmt {
-    display: block;
-    max-width: 100%;
-    overflow-x: auto;
   }
   table.fmt th,
   table.fmt td {

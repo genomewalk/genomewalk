@@ -47,3 +47,24 @@ test("missing population counts stay distinct from zero", () => {
   assert.match(tom![2]!, />No data<\/b>/);
   assert.ok(html.includes("No frequency is reported for this group."));
 });
+
+test("stacked comparison answers identify each person and keep shared answers once", () => {
+  const html = vcfStory(reference("GRCh38"));
+  assert.match(
+    html,
+    /<span class="frequency-comparison-person"><b>Mei<\/b> · East Asian ancestry<\/span><b>Less surprising\.<\/b>/,
+  );
+  assert.match(
+    html,
+    /<span class="frequency-comparison-person"><b>Tom<\/b> · European ancestry<\/span><b>More surprising\.<\/b>/,
+  );
+  assert.equal((html.match(/<figure class="frequency-people"/g) || []).length, 1);
+  assert.equal(
+    (html.match(/Frequency alone cannot tell us\. Check the quality of the call\./g) || []).length,
+    1,
+  );
+  assert.equal(
+    (html.match(/Frequency alone does not calculate either person’s risk\./g) || []).length,
+    1,
+  );
+});

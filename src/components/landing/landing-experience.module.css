@@ -296,17 +296,17 @@
   min-height: 0;
 }
 .landing-experiment :global(.observatory-plate) :global(.genome-note) > span {
-  font-size: clamp(11px, 1.15vw, 15px);
+  font-size: clamp(14px, 1.15vw, 15px);
 }
 .landing-experiment :global(.observatory-plate) :global(.genome-note) b {
-  font-size: clamp(10px, 1vw, 13px);
+  font-size: clamp(12px, 1vw, 13px);
 }
 .landing-experiment :global(.observatory-plate) :global(.genome-letter) {
   font-size: clamp(16px, 1.7vw, 23px);
   min-width: 0;
 }
 .landing-experiment :global(.observatory-plate) :global(.genome-sequence-parent) {
-  font-size: clamp(11px, 1.1vw, 15px);
+  font-size: clamp(14px, 1.1vw, 15px);
 }
 .landing-experiment :global(.observatory-plate) :focus-visible {
   outline-color: var(--wgs-accent);
@@ -581,7 +581,7 @@
 }
 @media (max-width: 480px) {
   .landing-experiment :global(.observatory-content) {
-    padding-top: 140px;
+    padding-top: 230px;
     gap: 34px;
   }
   .landing-experiment :global(.observatory) h1 {
@@ -608,35 +608,35 @@
     font-size: 25px;
   }
   .landing-experiment :global(.observatory-plate) :global(.genome-zoom-space) {
-    height: 450px;
+    height: 560px;
   }
   .landing-experiment :global(.observatory-plate) :global(.genome-note) > span {
-    font-size: 12px;
+    font-size: 14px;
   }
   .landing-experiment :global(.observatory-plate) :global(.genome-note) b {
-    font-size: 11px;
+    font-size: 12px;
   }
   .landing-experiment :global(.observatory-plate) :global(.genome-letter) {
     font-size: var(--wgs-text-body);
   }
   .landing-experiment :global(.observatory-plate) :global(.genome-sequence-parent) {
-    font-size: 12px;
+    font-size: 14px;
   }
   .landing-experiment :global(.observatory-explorer-hint) {
-    font-size: 11px;
+    font-size: 14px;
   }
   .landing-experiment :global(.observatory-footer) {
     bottom: 19px;
     gap: 10px;
   }
   .landing-experiment :global(.observatory-scroll) {
-    font-size: 8px;
+    font-size: 12px;
     letter-spacing: 1px;
     gap: 8px;
   }
   .landing-experiment :global(.observatory-scroll) > span {
-    width: 30px;
-    height: 30px;
+    width: 44px;
+    height: 44px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -649,24 +649,36 @@
 @container (max-width: 330px) {
   .landing-experiment :global(.observatory-plate) :global(.genome-total-note) {
     top: 0;
-    max-width: 44%;
+    max-width: 46%;
+    left: 0;
   }
   .landing-experiment :global(.observatory-plate) :global(.genome-inheritance-note) {
     top: 0;
     left: auto;
-    right: 5%;
-    width: 43%;
+    right: 0;
+    width: 46%;
     white-space: normal;
   }
   .landing-experiment :global(.observatory-plate) :global(.genome-total-note) b,
   .landing-experiment :global(.observatory-plate) :global(.genome-inheritance-note) b {
     display: block;
     margin-bottom: 3px;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 1px;
   }
   .landing-experiment :global(.observatory-plate) :global(.genome-total-note) > span,
   .landing-experiment :global(.observatory-plate) :global(.genome-inheritance-note) > span {
-    font-size: 10px;
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 600px) {
+  .landing-experiment :global(.observatory-content) {
+    padding-top: 200px;
+  }
+}
+@media (max-width: 480px) {
+  .landing-experiment :global(.observatory-plate) :global(.genome-zoom-space):global(.genome-at-2) {
+    height: 470px;
   }
 }

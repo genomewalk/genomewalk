@@ -4,7 +4,7 @@
 }
 .chromosome-gallery .chromosome-gallery-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 26px 8px;
   margin: 0;
   padding: 0;
@@ -47,7 +47,8 @@
 .chromosome-gallery-count {
   color: var(--wgs-mut);
   font-family: var(--wgs-mono);
-  font-size: .74rem;
+  font-size: var(--wgs-text-data);
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
   line-height: 1.65;
 }
@@ -63,6 +64,11 @@
   color: var(--wgs-faint);
   font-size: .82rem;
 }
+@container (min-width: 360px) {
+  .chromosome-gallery .chromosome-gallery-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
 @container (min-width: 460px) {
   .chromosome-gallery .chromosome-gallery-grid {
     grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -76,7 +82,7 @@
     --chromosome-max-height: 124px;
   }
   .chromosome-gallery-count {
-    font-size: .78rem;
+    font-size: var(--wgs-text-data);
   }
 }
 @container (min-width: 900px) {

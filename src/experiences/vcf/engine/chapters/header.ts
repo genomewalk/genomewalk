@@ -11,6 +11,7 @@ import { kvx, el, ext, SOURCES, fmt, escape, tile } from "../view/html.ts";
 import { headerDiagram } from "../header-diagram.ts";
 import { detectBuild } from "../reference.ts";
 import { chrRank, sexFigure, unknownFigure, chromoSvg } from "../view/genetics.ts";
+import { scrollCue } from "../../../../lib/view/file-excerpt.ts";
 
 export const headerChapter = {
   title: "The file introduces itself",
@@ -89,12 +90,12 @@ export const headerChapter = {
            genome that scientists use as a shared coordinate system. ${BUILD_TEXT[build]}</p>
            <p>${howKnown}</p>
            <p>Line the two up and only the mismatches matter:</p>
-<pre class="align">position   1 2 3 4 5 6 7 8
+<div class="file-excerpt"><pre class="align" role="region" aria-label="Your DNA aligned with the reference sequence" tabindex="0">position   1 2 3 4 5 6 7 8
 reference  A C G <i>T</i> A G T <i>G</i>
-you        A C G <i>A</i> A G T <i>T</i></pre>
+you        A C G <i>A</i> A G T <i>T</i></pre>${scrollCue}</div>
            <p>Two spots differ, so the file gets exactly two lines:</p>
-<pre class="align">POS 4     REF <i>T</i>   ALT <i>A</i>
-POS 8     REF <i>G</i>   ALT <i>T</i></pre>
+<div class="file-excerpt"><pre class="align" role="region" aria-label="Two VCF rows for differences from the reference" tabindex="0">POS 4     REF <i>T</i>   ALT <i>A</i>
+POS 8     REF <i>G</i>   ALT <i>T</i></pre>${scrollCue}</div>
            <p>The six matching positions are never written down. That is why a VCF is small
            enough to open in a browser.</p>
          </div>`,
@@ -209,10 +210,10 @@ POS 8     REF <i>G</i>   ALT <i>T</i></pre>
       after = sorted.filter((c) => chrRank(c.id) > 24);
     const you = knownSex();
     const pairTag = `<div class="karyo-pair-tag">${you ? sexFigure(you, true) : unknownFigure}<span>23</span></div>`;
-    const karyo = `<div class="karyo">
+    const karyo = `<div class="diagram-scroll" role="region" aria-label="Reference chromosome lengths, drawn to scale" tabindex="0"><div class="karyo">
         <div class="karyo-bars">${before.map(bar).join("")}<div class="karyo-pair">${pairTag}${xy.map(bar).join("")}</div>${after.map(bar).join("")}</div>
         <div class="karyo-labels">${before.map(label).join("")}<div class="karyo-pair-labels">${xy.map(label).join("")}</div>${after.map(label).join("")}</div>
-      </div>`;
+      </div></div><p class="diagram-scroll-hint">↔ Scroll sideways to see every chromosome label.</p>`;
     // Turn "3 billion" into something you can picture.
     const pages = Math.round((total / 3000 / 1e6) * 10) / 10; // 3,000 letters per printed page
     const years = Math.round(total / 31557600); // one letter per second, nonstop
@@ -243,8 +244,11 @@ POS 8     REF <i>G</i>   ALT <i>T</i></pre>
            ${chromoSvg}
            <span class="chromo-arrow">unwound →</span>
            <div class="chromo-strand">
+             <div class="diagram-scroll" role="region" aria-label="Aligned maternal and paternal DNA letters" tabindex="0"><div class="strand-rows">
              <div class="strand"><span class="who m">from your mother</span><code>…ACGTAGTGCAT<i class="m">T</i>GACCGTA<i class="m">A</i>GCTTGCA…</code></div>
              <div class="strand"><span class="who f">from your father</span><code>…ACGTAGTGCAT<i class="f">C</i>GACCGTA<i class="f">G</i>GCTTGCA…</code></div>
+             </div></div>
+             <p class="diagram-scroll-hint">↔ Scroll sideways to compare the aligned DNA letters.</p>
              <span>two copies of the same chromosome — nearly identical, differing at a few spots</span>
            </div>
          </div>
@@ -306,14 +310,14 @@ POS 8     REF <i>G</i>   ALT <i>T</i></pre>
              <p><b>But hold on — didn't we say the file stores only the differences?</b> It still
              mostly does. The trick is that a matching stretch is written as one line — a start
              and an end — not letter by letter. Take the same example as before:</p>
-<pre class="align">position   1 2 3 4 5 6 7 8
+<div class="file-excerpt"><pre class="align" role="region" aria-label="Reference and sample sequences for the gVCF example" tabindex="0">position   1 2 3 4 5 6 7 8
 reference  A C G <i>T</i> A G T <i>G</i>
-you        A C G <i>A</i> A G T <i>T</i></pre>
+you        A C G <i>A</i> A G T <i>T</i></pre>${scrollCue}</div>
              <p>A plain VCF writes two lines, one per difference. A gVCF writes four:</p>
-<pre class="align">POS 1–3   same as reference
+<div class="file-excerpt"><pre class="align" role="region" aria-label="gVCF rows for matching stretches and differences" tabindex="0">POS 1–3   same as reference
 POS 4     REF <i>T</i>   ALT <i>A</i>
 POS 5–7   same as reference
-POS 8     REF <i>G</i>   ALT <i>T</i></pre>
+POS 8     REF <i>G</i>   ALT <i>T</i></pre>${scrollCue}</div>
              <p>Six matching letters cost two lines, not six. In a real genome the matching
              stretches run for hundreds of letters at a time, so billions of matching letters
              fit into a few million lines — about as many lines as the differences themselves.

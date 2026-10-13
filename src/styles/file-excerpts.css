@@ -37,3 +37,73 @@
   font: var(--wgs-text-data)/1.8 var(--wgs-mono);
   overflow-x: auto;
 }
+
+/* Aligned file rows deliberately scroll within the lesson, with a visible
+   cue outside the scrolling area and a focus target for keyboard users. */
+.raw,
+.file-excerpt,
+.rawline-scroll {
+  min-width: 0;
+  max-width: 100%;
+}
+.rawline.rawline-scroll {
+  overflow: visible;
+}
+.rawline-scroll .rawline-cells {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  padding-block: 5px;
+}
+.rawline-scroll .cell {
+  flex-shrink: 0;
+}
+.file-excerpt > pre {
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: pre;
+}
+.header-field-example .header-definition-line {
+  white-space: pre-wrap;
+}
+.raw > pre,
+.rawline-scroll .cell-v,
+.file-excerpt > pre,
+.header-field-example .file-excerpt > pre,
+.catalogue-preview table {
+  font-size: max(14px, var(--wgs-text-data));
+}
+.raw > pre,
+.rawline-scroll .rawline-cells,
+.file-excerpt > pre,
+.catalogue-preview-scroll {
+  overscroll-behavior-x: contain;
+}
+:is(.raw > pre, .rawline-scroll .rawline-cells, .file-excerpt > pre):focus-visible {
+  outline: 2px solid var(--wgs-accent);
+  outline-offset: 3px;
+}
+.s-out .scroll-cue {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0 0;
+  color: var(--wgs-mut);
+  font: 13px/1.5 var(--wgs-sans);
+}
+.catalogue-preview .scroll-cue {
+  margin: 0;
+}
+@media (max-width: 700px) {
+  .raw,
+  .raw-first .raw,
+  .rawline-scroll {
+    padding: 12px;
+  }
+  .raw.catalogue-preview {
+    gap: 10px;
+  }
+  .catalogue-preview th,
+  .catalogue-preview td {
+    padding: 10px 12px;
+  }
+}

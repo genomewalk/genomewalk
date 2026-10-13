@@ -18,7 +18,7 @@ export function sexChromosomeDiagram(estimate: string, format: string) {
     const selected = estimate === pair;
     return `<div class="sexcase${selected ? " on" : ""}">
       <div class="sexcase-head"><span class="fig${selected ? " you" : ""}" aria-label="${label}${selected ? " (you)" : ""}">${emoji}</span><b>${pair.split("").join(" ")}</b><span>${label}${selected ? " · you" : ""}</span></div>
-      <div class="chromo-strand">${strands}<span>${caption}</span></div>
+      <div class="chromo-strand"><div class="diagram-scroll" role="region" aria-label="${pair} chromosome DNA letters" tabindex="0"><div class="strand-rows">${strands}</div></div><p class="diagram-scroll-hint">↔ Scroll sideways to compare the aligned DNA letters.</p><span>${caption}</span></div>
     </div>`;
   };
   return `<div class="sexcases">

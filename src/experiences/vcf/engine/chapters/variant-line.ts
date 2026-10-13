@@ -3,6 +3,8 @@ import { escape, kvx, el, note, ext, SOURCES } from "../view/html.ts";
 import { copiesSvg, gtCases, chromoRow } from "../view/genetics.ts";
 import { ctx } from "../context.ts";
 import { firstLines, firstVariant } from "../sampling.ts";
+import { teachingTable } from "../../../../lib/view/teaching-table.ts";
+import { fileExcerpt, scrollCue } from "../../../../lib/view/file-excerpt.ts";
 
 export const variantLineChapter = {
   title: "Lets learn to read a variant line",
@@ -30,20 +32,15 @@ export const variantLineChapter = {
       container.className += " vcf-column-detail";
       return container;
     };
-    const card = (vals: string[]) => {
-      const c = el("div", "rawline sample-row");
-      c.append(
-        el(
-          "div",
-          "rawline-cells",
-          COLS.map(
-            (k, i) =>
-              `<span class="cell">${columnLink(k, k, "cell-k")}<span class="cell-v">${escape(vals[i])}</span></span>`,
-          ).join(""),
-        ),
+    const card = (vals: string[]) =>
+      el(
+        "div",
+        "rawline rawline-scroll sample-row",
+        `<div class="rawline-cells" role="region" aria-label="VCF example line, all ten columns" tabindex="0">${COLS.map(
+          (k, i) =>
+            `<span class="cell">${columnLink(k, k, "cell-k")}<span class="cell-v">${escape(vals[i])}</span></span>`,
+        ).join("")}</div>${scrollCue}`,
       );
-      return c;
-    };
     const swap = [
       "11",
       "66560624",
@@ -89,11 +86,19 @@ export const variantLineChapter = {
         `
         <p>Every line is a small <b>edit instruction</b> against the reference. There are only
         three kinds of edit:</p>
-        <table class="fmt fmt-wide"><thead><tr><th>Edit</th><th>What REF and ALT look like</th><th>Example</th></tr></thead><tbody>
-          <tr><td class="fk">Swap</td><td class="fd">one letter for another — same length</td><td class="fv">REF=A &nbsp; ALT=C</td></tr>
-          <tr><td class="fk">Insertion</td><td class="fd">extra letters — ALT is longer than REF</td><td class="fv">REF=A &nbsp; ALT=AC</td></tr>
-          <tr><td class="fk">Deletion</td><td class="fd">letters removed — REF is longer than ALT</td><td class="fv">REF=AT &nbsp;ALT=A</td></tr>
-        </tbody></table>
+        ${teachingTable(
+          "Three kinds of variant edit",
+          [
+            { label: "Edit", className: "fk" },
+            { label: "What REF and ALT look like", className: "fd" },
+            { label: "Example", className: "fv" },
+          ],
+          [
+            ["Swap", "one letter for another — same length", "REF=A &nbsp; ALT=C"],
+            ["Insertion", "extra letters — ALT is longer than REF", "REF=A &nbsp; ALT=AC"],
+            ["Deletion", "letters removed — REF is longer than ALT", "REF=AT &nbsp; ALT=A"],
+          ],
+        )}
         <div class="aside">
           <p>REF and ALT list the <b>options</b>; <code>GT</code> tells us which allele each copy
           carries. At a typical site on chromosomes <b>1–22</b>, you inherit one copy from each
@@ -183,9 +188,9 @@ export const variantLineChapter = {
         `<code>${escape(sPOS)}</code>`,
         `<p>Which letter along that chromosome, counting from its start (the first letter is
          position 1). Position <b>${(+sPOS).toLocaleString()}</b> is this one:</p>
-<pre class="align posline">${left}<i class="o0">${escape(sREF)}</i>${right}
+<div class="file-excerpt"><pre class="align posline" role="region" aria-label="Position ${escape(sPOS)} in the reference sequence" tabindex="0">${left}<i class="o0">${escape(sREF)}</i>${right}
 ${" ".repeat(left.length)}↑
-${" ".repeat(left.length - 2)}${escape(sPOS)}</pre>
+${" ".repeat(left.length - 2)}${escape(sPOS)}</pre>${scrollCue}</div>
          ${
            chrLen
              ? `<p>Chromosome ${escape(sCHR)} is <b>${chrLen.toLocaleString()}</b> letters long, so
@@ -344,12 +349,26 @@ ${" ".repeat(left.length - 2)}${escape(sPOS)}</pre>
              <div class="case-sum">Your <b>values</b>, in that order. One such column per person — this file has one.</div></div>
          </div>
          <p>Line FORMAT up with YOU and each key gets its value:</p>
-<pre class="align">FORMAT   ${fkeys.map((k, i) => w(k, colw[i]!)).join("")}   ← keys
-YOU      ${fvals.map((v, i) => w(v, colw[i]!)).join("")}   ← values</pre>
+<div class="file-excerpt"><pre class="align" role="region" aria-label="FORMAT keys aligned with your sample values" tabindex="0">FORMAT   ${fkeys.map((k, i) => w(k, colw[i]!)).join("")}   ← keys
+YOU      ${fvals.map((v, i) => w(v, colw[i]!)).join("")}   ← values</pre>${scrollCue}</div>
          <p>All the fields on this line, with the header's own description of each:</p>
-         <table class="fmt"><thead><tr><th>Column</th><th>Key</th><th>Value</th><th>File says</th><th>In plain words</th></tr></thead><tbody>
-           ${fieldRows.map(({ level, k, v }) => `<tr><td class="fd">${level}</td><td class="fk">${escape(k)}</td><td class="fv">${escape(v)}</td><td class="fd">${escape(hdrDesc(level, k)) || "—"}</td><td class="fd">${plain(level, k, v)}</td></tr>`).join("")}
-         </tbody></table>
+         ${teachingTable(
+           "INFO and FORMAT fields in this example",
+           [
+             { label: "Column", className: "fd" },
+             { label: "Key", className: "fk" },
+             { label: "Value", className: "fv" },
+             { label: "File says", className: "fd" },
+             { label: "In plain words", className: "fd" },
+           ],
+           fieldRows.map(({ level, k, v }) => [
+             level,
+             escape(k),
+             escape(v),
+             escape(hdrDesc(level, k)) || "—",
+             plain(level, k, v),
+           ]),
+         )}
          <p>Notice <code>DP</code> appears at both levels. INFO's is the total across everyone in the
          file; FORMAT's is yours alone — identical here only because this file holds one person.
          <code>AC</code> and <code>AN</code> exist only at the spot level (with three people they
@@ -390,8 +409,11 @@ YOU      ${fvals.map((v, i) => w(v, colw[i]!)).join("")}   ← values</pre>
     out.append(
       el(
         "div",
-        "raw",
-        `<span class="raw-k">From the file</span><pre>${linkedHeader}\n${padded.slice(1).map(escape).join("\n")}</pre>`,
+        null,
+        fileExcerpt(
+          `${linkedHeader}\n${padded.slice(1).map(escape).join("\n")}`,
+          "First real VCF rows from your file",
+        ),
       ),
     );
 
@@ -468,21 +490,28 @@ YOU      ${fvals.map((v, i) => w(v, colw[i]!)).join("")}   ← values</pre>
         <code>${escape(first![8])}</code> paired with <code>${escape(first![9])}</code>:`,
       ),
     );
-    const tbl = el("table", "fmt");
-    tbl.append(
+    out.append(
       el(
-        "tbody",
+        "div",
         null,
-        keys
-          .map((k, i) => {
+        teachingTable(
+          "FORMAT measurements in your first variant",
+          [
+            { label: "Key", className: "fk" },
+            { label: "Value", className: "fv" },
+            { label: "Meaning", className: "fd" },
+          ],
+          keys.map((k, i) => {
             const v = vals[i] ?? "·",
               more = explain(k, v);
-            return `<tr><td class="fk">${escape(k)}</td><td class="fv">${escape(v)}</td>
-             <td class="fd">${escape(defs[k] || "")}${more ? `<div class="fx">${more}</div>` : ""}</td></tr>`;
-          })
-          .join(""),
+            return [
+              escape(k),
+              escape(v),
+              `${escape(defs[k] || "")}${more ? `<div class="fx">${more}</div>` : ""}`,
+            ];
+          }),
+        ),
       ),
     );
-    out.append(tbl);
   },
 };

@@ -70,8 +70,7 @@
   background: none;
   border: 0;
   padding: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  flex: none;
   white-space: nowrap;
 }
 .chromo-strand span {
@@ -125,3 +124,29 @@
   margin: 0;
 }
 
+
+/* One scroll surface keeps parental rows and highlighted bases aligned. */
+.diagram-scroll {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  padding-bottom: 6px;
+}
+.diagram-scroll:focus-visible {
+  outline: 2px solid var(--wgs-accent);
+  outline-offset: 2px;
+}
+.strand-rows {
+  width: max-content;
+  min-width: 100%;
+}
+.diagram-scroll-hint {
+  margin: 4px 0 0;
+  color: var(--wgs-mut);
+  font-size: var(--wgs-text-small);
+  line-height: var(--wgs-leading-small);
+}
+.sexcase {
+  min-width: 0;
+}

@@ -1,3 +1,4 @@
+import { teachingTable } from "../../../../lib/view/teaching-table.ts";
 import { ensureHeader } from "../runtime.ts";
 import { buildGuard } from "../view/file.ts";
 import { loadMarkers } from "../markers.ts";
@@ -49,13 +50,37 @@ export const frequenciesChapter = {
         <p>A high allele frequency can weigh against a rare, highly penetrant disease explanation.
          It does not rule out every health association. The appropriate threshold depends on the
          condition, inheritance, penetrance and the population data available.</p>
-        <table class="fmt"><thead><tr><th>Highest group</th><th>Band</th><th>How to read it</th></tr></thead><tbody>
-          <tr><td class="fv">5% or more</td><td class="fk">common</td><td class="fd">Common alleles can still have trait, drug-response or susceptibility associations.</td></tr>
-          <tr><td class="fv">1% – 5%</td><td class="fk">uncommon</td><td class="fd">Frequency needs condition-specific context; it is not a universal exclusion threshold.</td></tr>
-          <tr><td class="fv">0.1% – 1%</td><td class="fk">rare</td><td class="fd">Rarity alone does not establish a harmful effect.</td></tr>
-          <tr><td class="fv">below 0.1%</td><td class="fk">very rare</td><td class="fd">Very low frequency alone does not establish a harmful effect.</td></tr>
-          <tr><td class="fv">no value</td><td class="fk">unknown</td><td class="fd">Missing data is not evidence that the allele is rare or absent.</td></tr>
-        </tbody></table>
+        ${teachingTable(
+          "Reading allele frequency bands",
+          [
+            { label: "Highest group", className: "fv" },
+            { label: "Band", className: "fk" },
+            { label: "How to read it", className: "fd" },
+          ],
+          [
+            [
+              "5% or more",
+              "common",
+              "Common alleles can still have trait, drug-response or susceptibility associations.",
+            ],
+            [
+              "1% – 5%",
+              "uncommon",
+              "Frequency needs condition-specific context; it is not a universal exclusion threshold.",
+            ],
+            ["0.1% – 1%", "rare", "Rarity alone does not establish a harmful effect."],
+            [
+              "below 0.1%",
+              "very rare",
+              "Very low frequency alone does not establish a harmful effect.",
+            ],
+            [
+              "no value",
+              "unknown",
+              "Missing data is not evidence that the allele is rare or absent.",
+            ],
+          ],
+        )}
         <p class="mini">These bands are reading aids, not clinical classification rules.
          A recessive disorder usually involves relevant variants on both copies; a dominant
          disorder can involve one copy, but penetrance and the exact variant still matter.

@@ -37,8 +37,11 @@ export function callPositionDiagram(call: ConsumerCall) {
   return `<figure class="mk-spot consumer-example-location" aria-label="Chromosome ${escape(call.chrom)}, position ${fmt(call.pos)}, reported alleles ${escape(call.alleles.map((a) => a ?? "unknown").join(" and "))}">
     <span class="mk-lbl">Chromosome <b>${escape(call.chrom)}</b> · position <b>${fmt(call.pos)}</b></span>
     <div class="chromo-strand mk-zoom">
-      ${strands}
-      <div class="strand mk-arrow" aria-hidden="true"><span class="who"></span><code>${" ".repeat(prefix.length)}↑</code></div>
+      <div class="diagram-scroll" role="region" aria-label="Reported alleles at the same chromosome position" tabindex="0"><div class="strand-rows">
+        ${strands}
+        <div class="strand mk-arrow" aria-hidden="true"><span class="who"></span><code>${" ".repeat(prefix.length)}↑</code></div>
+      </div></div>
+      <p class="diagram-scroll-hint">Scroll sideways to compare the aligned DNA letters.</p>
     </div>
     <figcaption class="mini">Your reported letters at this site. ${call.alleles.includes(null) ? "? means no call was reported. " : ""}The dots stand for surrounding DNA, which is not shown. Diagram not to scale.</figcaption>
   </figure>`;

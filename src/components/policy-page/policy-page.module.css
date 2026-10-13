@@ -31,6 +31,7 @@
 }
 .policy-meta nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 .policy-meta nav a {
@@ -182,6 +183,12 @@
     display: block;
     padding: 12px 0;
     border-bottom: 1px solid var(--wgs-line-soft);
+  }
+  .policy-meta nav a,
+  .policy-sidebar a,
+  .policy-mobile-contents summary {
+    min-height: 44px;
+    align-content: center;
   }
   .policy-mobile-contents summary {
     cursor: pointer;

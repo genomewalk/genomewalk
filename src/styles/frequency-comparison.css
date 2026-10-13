@@ -7,22 +7,15 @@
   background: var(--wgs-card);
   overflow: hidden;
 }
-.frequency-comparison-scroll {
-  overflow-x: auto;
-}
-.frequency-comparison-scroll:focus-visible {
-  outline: 2px solid var(--wgs-pink);
-  outline-offset: -3px;
-}
 .frequency-comparison table {
   width: 100%;
-  min-width: 690px;
   table-layout: fixed;
   border-collapse: collapse;
   color: var(--wgs-mut);
   font: var(--wgs-text-small)/1.6 var(--wgs-sans);
   text-align: left;
 }
+.frequency-comparison-person { display: none; }
 .frequency-comparison-topic { width: 17%; }
 .frequency-comparison th,
 .frequency-comparison td {
@@ -109,5 +102,44 @@
 @container (max-width: 840px) {
   .frequency-comparison .frequency-people-list {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+/* Every question keeps its answer(s) together when columns no longer fit. */
+@container (max-width: 700px) {
+  .frequency-comparison table,
+  .frequency-comparison tbody {
+    display: block;
+  }
+  .frequency-comparison colgroup,
+  .frequency-comparison thead {
+    display: none;
+  }
+  .frequency-comparison tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--wgs-space-content);
+    gap: var(--wgs-space-content);
+    border-bottom: 1px solid var(--wgs-line-soft);
+  }
+  .frequency-comparison tr:last-child { border-bottom: 0; }
+  .frequency-comparison th,
+  .frequency-comparison td {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+  }
+  .frequency-comparison th + td,
+  .frequency-comparison td + td { border: 0; }
+  .frequency-comparison-person {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--wgs-ink);
+  }
+}
+@container (max-width: 440px) {
+  .frequency-comparison .frequency-people-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 18px;
   }
 }

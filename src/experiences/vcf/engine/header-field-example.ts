@@ -1,4 +1,5 @@
 import type { HeaderDataExamples } from "./header-data-examples.ts";
+import { scrollCue } from "../../../lib/view/file-excerpt.ts";
 const escape = (value: unknown) =>
   String(value).replace(
     /[&<>"']/g,
@@ -51,7 +52,7 @@ function rowExcerpt(
   const values = indices
     .map((i, n) => highlight(i, fields[i]!) + " ".repeat(widths[n]! - fields[i]!.length))
     .join("  ");
-  return `<pre class="header-data-line"><code><span class="header-data-labels">${labels}</span>\n${values}</code></pre>`;
+  return `<div class="file-excerpt"><pre class="header-data-line" role="region" aria-label="VCF data columns for this header example" tabindex="0"><code><span class="header-data-labels">${labels}</span>\n${values}</code></pre>${scrollCue}</div>`;
 }
 
 export function headerFieldExample(
@@ -136,7 +137,7 @@ export function headerFieldExample(
   return {
     label: `${kind} · ${fields["ID"]}`,
     html: `<p>${intro}</p><figure class="header-field-example">
-      <pre><code>${highlighted}</code></pre>
+      <div class="file-excerpt"><pre class="header-definition-line" role="region" aria-label="VCF ${kind} header definition" tabindex="0"><code>${highlighted}</code></pre>${scrollCue}</div>
       <p>${definition}</p>
       ${dataExample}
     </figure>`,

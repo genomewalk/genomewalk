@@ -1,6 +1,7 @@
 import type { CatalogueIndex } from "../../lib/catalogues/types.ts";
 import { clinvarIndexPreview } from "../../lib/catalogues/catalogue-preview.ts";
 import { splitBar } from "../../components/diagrams/share-chart.ts";
+import { teachingTable } from "../../lib/view/teaching-table.ts";
 
 const escape = (value: unknown) =>
   String(value ?? "").replace(
@@ -34,9 +35,19 @@ export function clinvarChapterHtml(
   },
 ) {
   const classes = ["P", "LP", "PLP", "C", "O"].filter((kind) => catalogue.byClass[kind]);
-  const classificationCounts = `<table class="fmt"><thead><tr><th>Classification</th><th>Entries</th><th>Meaning</th></tr></thead><tbody>
-    ${classes.map((kind) => `<tr><td class="fk">${escape(labels[kind])}</td><td class="fv">${fmt(catalogue.byClass[kind])}</td><td class="fd">${escape(meanings[kind])}</td></tr>`).join("")}
-  </tbody></table>`;
+  const classificationCounts = teachingTable(
+    "ClinVar classifications in this catalogue",
+    [
+      { label: "Classification", className: "fk" },
+      { label: "Entries", className: "fv" },
+      { label: "Meaning", className: "fd" },
+    ],
+    classes.map((kind) => [
+      escape(labels[kind]),
+      fmt(catalogue.byClass[kind]),
+      escape(meanings[kind]),
+    ]),
+  );
   const reviewCounts = splitBar(
     [0, 1, 2, 3, 4].map((stars) => ({
       label: `${stars}★ ${reviewLabels[stars]}`,

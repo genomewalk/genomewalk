@@ -37,18 +37,19 @@
 .ml-rows .match-row .mh-condition,
 .ml-rows .match-row .mh-location {
   display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .ml-rows .match-row .mh-title {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 2px 10px;
   min-width: 0;
 }
 .ml-rows .match-row .mh-id {
-  flex: none;
+  flex: 0 1 auto;
+  overflow-wrap: anywhere;
   color: var(--wgs-mut);
   font: 12px/1.5 var(--wgs-mono);
 }
@@ -225,7 +226,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 38px;
+  min-height: 44px;
   padding: 7px 12px;
   border: 1px solid var(--wgs-line-soft);
   border-radius: 24px;
@@ -251,4 +252,15 @@
 @container match-list (max-width: 540px) {
   .ml-categories { gap: 7px; }
   .ml-categories button { font-size: 13px; padding: 7px 10px; }
+}
+
+/* Search suggestions and paging keep the same comfortable touch targets as filters. */
+.mlist .ml-q,
+.mlist .ml-pager button,
+.mlist .ml-sug-i {
+  min-height: 44px;
+}
+.mlist .ml-sug-i > span:first-child {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
