@@ -1,3 +1,18 @@
+.desktop-notice {
+  display: none;
+  margin: 0;
+  padding: 8px 16px;
+  background: var(--wgs-pink-bg);
+  color: var(--wgs-ink);
+  text-align: center;
+  font: 500 14px/1.5 var(--wgs-sans);
+}
+@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+  .desktop-notice {
+    display: block;
+  }
+}
+
 .site-shell {
   overflow: clip;
 }

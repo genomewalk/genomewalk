@@ -110,6 +110,7 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
+        <p className="desktop-notice">Best experienced on a desktop or laptop.</p>
         {children}
         <Scripts />
       </body>
