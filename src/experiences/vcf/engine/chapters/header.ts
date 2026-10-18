@@ -1,4 +1,4 @@
-import { ctx } from "../context.ts";
+import { ctx, currentBuild } from "../context.ts";
 import { readHeader } from "../vcf.ts";
 import { headerPreviews, knownSex } from "../runtime.ts";
 import { readHeaderDataExamples } from "../header-data-examples.ts";
@@ -9,7 +9,6 @@ import {
 } from "../header-field-example.ts";
 import { kvx, el, ext, SOURCES, fmt, escape, tile } from "../view/html.ts";
 import { headerDiagram } from "../header-diagram.ts";
-import { detectBuild } from "../reference.ts";
 import { chrRank, sexFigure, unknownFigure, chromoSvg } from "../view/genetics.ts";
 import { scrollCue } from "../../../../lib/view/file-excerpt.ts";
 
@@ -53,16 +52,14 @@ export const headerChapter = {
     const made = val("source"); // who produced it
     const date = val("fileDate"); // when
 
-    // The build: some files name it on a ##reference line, many do not. The
-    // length of chromosome 1 is unique per build, so that is what we trust.
+    // Use reference names and chromosome lengths together; disagreements must
+    // remain visible instead of silently picking one piece of evidence.
     const stated = val("reference"); // e.g. GRCh38.p13 (may be missing)
-    const build = detectBuild(meta); // GRCh38 / GRCh37 / T2T-CHM13 / unknown
-    const chr1 = meta.find((l) => /^##contig=<ID=(chr)?1,/.test(l));
-    const chr1len = +((chr1 || "").match(/length=(\d+)/) || [])[1]!;
+    const build = currentBuild();
     const shown = build !== "unknown" ? build : stated || "(not stated)";
     const BUILD_TEXT = {
       GRCh38: `${ext(SOURCES.build["GRCh38"]!, "<code>GRCh38</code>")} is ${ext(SOURCES.grc, "Genome Reference Consortium")}
-                 human build 38 (2013), the standard used by almost all modern human genome files.`,
+                 human build 38 (2013), also called <code>hg38</code>.`,
       GRCh37: `${ext(SOURCES.build["GRCh37"]!, "<code>GRCh37</code>")} is ${ext(SOURCES.grc, "Genome Reference Consortium")}
                  human build 37 (2009), also called <code>hg19</code>. Many labs still use it. Its
                  positions differ from the newer GRCh38, so the build name matters whenever two files
@@ -70,20 +67,22 @@ export const headerChapter = {
       "T2T-CHM13": `${ext(SOURCES.build["T2T-CHM13"]!, "<code>T2T-CHM13</code>")} is the 2022
                  "telomere-to-telomere" assembly — the first with no gaps. Most catalogues have not
                  moved to it yet.`,
-      unknown: `This file does not say which build it is on, and its chromosome lengths match
-                 none of the usual ones.`,
+      NCBI36: `NCBI36, also called <code>hg18</code> or build 36, is an older human reference.
+                 Genomewalk’s catalogues do not support matching on this build.`,
+      conflicting: `The header gives conflicting build information. Catalogue matching is unavailable.`,
+      unknown: `We could not identify the build from this file’s reference metadata.
+                 Catalogue matching is unavailable.`,
     };
-    const howKnown = stated
-      ? `The file names it on its <code>##reference</code> line.`
-      : chr1len
-        ? `The file has no <code>##reference</code> line, so we read the declared length of
-             chromosome 1 instead — <b>${fmt(chr1len)}</b> letters, ${build !== "unknown" ? `which only ${build} has` : "which matches no build we know"}.`
-        : `The file has neither a <code>##reference</code> line nor chromosome lengths.`;
+    const howKnown = `We check reference names, assembly labels and declared chromosome lengths in the header.
+      If these do not identify a build, we ask you before catalogue matching. We do not guess.
+      If you do not know, you can still explore the file without catalogue matching.
+      ${ctx.selectedBuild ? `<b>Selected by you:</b> ${escape(ctx.selectedBuild)}. The file’s metadata did not identify its build.` : ""}
+      ${stated ? `The <code>##reference</code> line says <code>${escape(stated)}</code>.` : ""}`;
     out.append(
       headerDetail(
         "reference-build",
         "Reference build",
-        `<code>${escape(shown)}</code>`,
+        `<code>${escape(shown)}</code>${ctx.selectedBuild ? " · Selected by you" : ""}`,
         `<div class="reference-detail">
            <p>A VCF does not store your whole genome. It stores only the places where your
            genome differs from a <b>reference build</b> — a publicly maintained map of one human
@@ -187,47 +186,58 @@ POS 8     REF <i>G</i>   ALT <i>T</i></pre>${scrollCue}</div>
       .filter((value) => value != null);
     const isMain = (id: string) => /^([1-9]|1[0-9]|2[0-2]|X|Y|MT|M)$/.test(id.replace(/^chr/, ""));
     const chroms = contigs.filter((c) => isMain(c.id));
-    const mapExample = chroms.find((c) => c.id.replace(/^chr/, "") === "1") || chroms[0];
-    const extras = contigs.length - chroms.length;
-    const hasMT = chroms.some((c) => /^(chr)?(MT|M)$/.test(c.id));
-    const hasXY = chroms.some((c) => /^(chr)?X$/.test(c.id));
-    const total = chroms.reduce((s, c) => s + c.len, 0);
-    const longest = chroms.reduce((a, b) => (b.len > a.len ? b : a), chroms[0]!);
-    const shortest = chroms
-      .filter((c) => !/^(chr)?(MT|M)$/.test(c.id))
-      .reduce((a, b) => (b.len < a.len ? b : a), chroms[0]!);
-    // Draw the chromosomes to scale: one bar each, height = length / longest.
-    // MT is ~0.007% of chr 1, so it gets a 2% floor just to stay visible.
-    const sorted = [...chroms].sort((a, b) => chrRank(a.id) - chrRank(b.id));
-    const bar = (c: { len: number; id: unknown }) =>
-      `<i style="height:${Math.max(2, (c.len / longest.len) * 100).toFixed(1)}%" title="${escape(c.id)}: ${c.len.toLocaleString()} letters"></i>`;
-    const label = (c: { id: string }) => `<span>${escape(c.id.replace(/^chr/, ""))}</span>`;
-    // X and Y are boxed together as pair 23. The figure inside is you — but only
-    // once step 4 has worked it out from the data; the header alone can't say.
-    const isXY = (c: { id: string }) => /^(chr)?[XY]$/.test(c.id);
-    const before = sorted.filter((c) => chrRank(c.id) < 23),
-      xy = sorted.filter(isXY),
-      after = sorted.filter((c) => chrRank(c.id) > 24);
-    const you = knownSex();
-    const pairTag = `<div class="karyo-pair-tag">${you ? sexFigure(you, true) : unknownFigure}<span>23</span></div>`;
-    const karyo = `<div class="diagram-scroll" role="region" aria-label="Reference chromosome lengths, drawn to scale" tabindex="0"><div class="karyo">
+    if (!chroms.length) {
+      out.append(
+        headerDetail(
+          "header-genome-map",
+          "Genome map",
+          "Not listed in the header",
+          `<p>This file does not declare primary chromosomes in <code>##contig</code> lines.
+          You can still explore its records, but we cannot draw a chromosome map from the header.</p>`,
+        ),
+      );
+    } else {
+      const mapExample = chroms.find((c) => c.id.replace(/^chr/, "") === "1") || chroms[0];
+      const extras = contigs.length - chroms.length;
+      const hasMT = chroms.some((c) => /^(chr)?(MT|M)$/.test(c.id));
+      const hasXY = chroms.some((c) => /^(chr)?X$/.test(c.id));
+      const total = chroms.reduce((s, c) => s + c.len, 0);
+      const longest = chroms.reduce((a, b) => (b.len > a.len ? b : a), chroms[0]!);
+      const shortest = chroms
+        .filter((c) => !/^(chr)?(MT|M)$/.test(c.id))
+        .reduce((a, b) => (b.len < a.len ? b : a), chroms[0]!);
+      // Draw the chromosomes to scale: one bar each, height = length / longest.
+      // MT is ~0.007% of chr 1, so it gets a 2% floor just to stay visible.
+      const sorted = [...chroms].sort((a, b) => chrRank(a.id) - chrRank(b.id));
+      const bar = (c: { len: number; id: unknown }) =>
+        `<i style="height:${Math.max(2, (c.len / longest.len) * 100).toFixed(1)}%" title="${escape(c.id)}: ${c.len.toLocaleString()} letters"></i>`;
+      const label = (c: { id: string }) => `<span>${escape(c.id.replace(/^chr/, ""))}</span>`;
+      // X and Y are boxed together as pair 23. The figure inside is you — but only
+      // once step 4 has worked it out from the data; the header alone can't say.
+      const isXY = (c: { id: string }) => /^(chr)?[XY]$/.test(c.id);
+      const before = sorted.filter((c) => chrRank(c.id) < 23),
+        xy = sorted.filter(isXY),
+        after = sorted.filter((c) => chrRank(c.id) > 24);
+      const you = knownSex();
+      const pairTag = `<div class="karyo-pair-tag">${you ? sexFigure(you, true) : unknownFigure}<span>23</span></div>`;
+      const karyo = `<div class="diagram-scroll" role="region" aria-label="Reference chromosome lengths, drawn to scale" tabindex="0"><div class="karyo">
         <div class="karyo-bars">${before.map(bar).join("")}<div class="karyo-pair">${pairTag}${xy.map(bar).join("")}</div>${after.map(bar).join("")}</div>
         <div class="karyo-labels">${before.map(label).join("")}<div class="karyo-pair-labels">${xy.map(label).join("")}</div>${after.map(label).join("")}</div>
       </div></div><p class="diagram-scroll-hint">↔ Scroll sideways to see every chromosome label.</p>`;
-    // Turn "3 billion" into something you can picture.
-    const pages = Math.round((total / 3000 / 1e6) * 10) / 10; // 3,000 letters per printed page
-    const years = Math.round(total / 31557600); // one letter per second, nonstop
-    const scale = `<div class="tiles">
+      // Turn "3 billion" into something you can picture.
+      const pages = Math.round((total / 3000 / 1e6) * 10) / 10; // 3,000 letters per printed page
+      const years = Math.round(total / 31557600); // one letter per second, nonstop
+      const scale = `<div class="tiles">
         ${tile("Letters", `${(total / 1e9).toFixed(2)} billion`, "each one A, C, G or T")}
         ${tile("Printed", `≈ ${pages} million pages`, "3,000 letters per page")}
         ${tile("Read aloud", `≈ ${years} years`, "one letter per second, nonstop")}
       </div>`;
-    out.append(
-      headerDetail(
-        "header-genome-map",
-        "Genome map",
-        `${chroms.length} chromosomes · ${(total / 1e9).toFixed(2)} billion bases`,
-        `<p>Each <code>##contig</code> header line declares a reference chromosome or other DNA sequence
+      out.append(
+        headerDetail(
+          "header-genome-map",
+          "Genome map",
+          `${chroms.length} chromosomes · ${(total / 1e9).toFixed(2)} billion bases`,
+          `<p>Each <code>##contig</code> header line declares a reference chromosome or other DNA sequence
          that the data rows can refer to. For example, this line from your header:</p>
          ${
            mapExample
@@ -288,8 +298,9 @@ POS 8     REF <i>G</i>   ALT <i>T</i></pre>${scrollCue}</div>
          that do not belong to any chromosome. We ignore them.</p>`
              : ""
          }`,
-      ),
-    );
+        ),
+      );
+    }
 
     // ── File type: is this a plain VCF or a gVCF? Clues in the header ────
     const clues = meta.filter(

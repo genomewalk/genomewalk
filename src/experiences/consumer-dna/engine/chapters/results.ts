@@ -24,8 +24,9 @@ export default {
     };
     await ensureHeader();
     checkCurrent();
+    const supported = buildGuard(out);
     out.append(note(resultsDisclaimer));
-    if (!buildGuard(out)) return false;
+    if (!supported) return false;
     if (source!.format === "consumer")
       out.append(
         note(

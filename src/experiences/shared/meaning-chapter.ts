@@ -136,13 +136,13 @@ function example(format: string, provider: string, build: string) {
     .join("")}</div>`;
 }
 
-function buildExplanation(format: string, build: string) {
+function buildExplanation(build: string) {
   if (build === "GRCh37" || build === "GRCh38")
     return `Your file uses <code>${build}</code>, so we use the catalogue for that build.`;
   if (!build || build === "unknown")
-    return format === "vcf"
-      ? "Your file’s build could not be identified. The VCF lookup currently assumes GRCh38; that assumption needs to match your file for the comparison to be reliable."
-      : "Your file’s build could not be identified, so catalogue matching is unavailable.";
+    return "Your file’s build could not be identified, so catalogue matching is unavailable.";
+  if (build === "conflicting")
+    return "Your file contains conflicting build information, so catalogue matching is unavailable.";
   return `This file’s build is <code>${escape(build)}</code>. The app’s catalogues support GRCh37 and GRCh38, so catalogue matching is unavailable for this file.`;
 }
 
@@ -165,7 +165,7 @@ export function meaningChapterHtml({
     <div class="sub">How a line finds a matching entry:</div>
     <p>${callExplanation}</p>
     ${example(format!, provider!, build!)}
-    <p>The <b>reference build must match</b>, too. ${buildExplanation(format!, build!)} A marker name (rsID) alone is not enough.</p>
+    <p>The <b>reference build must match</b>, too. ${buildExplanation(build!)} A marker name (rsID) alone is not enough.</p>
     <div class="sub">Where the comparison happens:</div>
     <div class="cases">
       <div class="case"><div class="case-gt case-icon-title case-icon-catalogue">The catalogues come to you</div><div class="case-sum">The next chapters download public reference files for your build. Both file formats use the same catalogue data.</div></div>

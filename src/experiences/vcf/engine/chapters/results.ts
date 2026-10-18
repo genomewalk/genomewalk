@@ -23,8 +23,9 @@ export const resultsChapter = {
     };
     await ensureHeader();
     checkCurrent();
+    const supported = buildGuard(out);
     out.append(note(resultsDisclaimer));
-    if (!buildGuard(out)) return false;
+    if (!supported) return false;
     const sn = sampleNote();
     if (sn) out.append(sn);
     const cat = await loadCatalog(signal, onStatus); // prepares its own catalogue if chapter 8 was skipped

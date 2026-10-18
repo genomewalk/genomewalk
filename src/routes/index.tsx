@@ -1,7 +1,9 @@
 import { ArrowUpRight, Check, FolderOpen, MoveRight } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { GenomeExplorer } from "../components/genome-explorer/genome-explorer.tsx";
 import { ImmersiveHero, LandingShell } from "../components/landing/landing-experience.tsx";
 import { GeneticsLoader } from "../components/genetics-loader.tsx";
+import { BuildChoice } from "../components/build-choice.tsx";
 import { SiteHeader, SiteFooter } from "../components/brand.tsx";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as experiences from "../experiences/index.ts";
@@ -43,9 +45,6 @@ type StepDef = {
 const MB = (n: number) => `${(n / 1048576).toFixed(1)} MB`;
 function Index() {
   const experience = experiences.getExperience();
-  const selected = experiences.getGenomeSelection();
-  const fileName = selected?.name || null;
-  const info = selected?.info;
   const steps = experience.chapters as StepDef[];
   const session = experience.session;
   const { view } = Route.useSearch();
@@ -61,7 +60,21 @@ function Index() {
     onPick,
     onDrop,
     loadSample,
+    pendingBuild,
+    confirmBuild,
+    cancelBuild,
   } = useGenomeIntake(view);
+  const pickerButton = useRef<HTMLButtonElement>(null);
+  const returningToPicker = useRef(false);
+  useEffect(() => {
+    if (!pendingBuild && returningToPicker.current) {
+      returningToPicker.current = false;
+      pickerButton.current?.focus();
+    }
+  }, [pendingBuild]);
+  const selected = experiences.getGenomeSelection();
+  const fileName = selected?.name || null;
+  const info = selected?.info;
 
   const completed = Object.values(session.done).filter(Boolean).length;
   return (
@@ -77,7 +90,7 @@ function Index() {
             className="specimen-section page-width"
             aria-labelledby="specimen-title"
           >
-            <div className="specimen-content" data-landing-arrival>
+            <div className="specimen-content">
               <div className="specimen-intro">
                 <div className="section-eyebrow">
                   <span className="section-index">01 /</span> THE STARTING POINT
@@ -105,104 +118,132 @@ function Index() {
                     <i className="live-dot" /> CHOOSE A GENOME
                   </span>
                   <span>
-                    {busy
-                      ? "OPENING YOUR GENOME"
-                      : fileName
-                        ? "READY FOR THIS VISIT"
-                        : "TWO WAYS TO BEGIN"}
+                    {pendingBuild
+                      ? "BUILD CHOICE"
+                      : busy
+                        ? "OPENING FILE"
+                        : fileName
+                          ? "FILE READY"
+                          : "FILE OR SAMPLE"}
                   </span>
                 </div>
-                <section
-                  className={`file-drop${drag ? " drag" : ""}${fileName ? " file-ready" : ""}`}
-                  aria-label={fileName ? "Current genome" : "Use your own genome"}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setDrag(true);
-                  }}
-                  onDragLeave={() => setDrag(false)}
-                  onDrop={onDrop}
-                >
-                  <div className="file-symbol">
-                    {fileName ? (
-                      <Check size={28} strokeWidth={1.3} />
-                    ) : (
-                      <FolderOpen size={28} strokeWidth={1.3} />
-                    )}
+                <div className="intake-steps">
+                  <div className="intake-step" aria-hidden={!pendingBuild} inert={!pendingBuild}>
+                    <BuildChoice
+                      key={pendingBuild?.id ?? 0}
+                      active={!!pendingBuild}
+                      fileName={pendingBuild?.name ?? "Your selected file"}
+                      onBack={() => {
+                        returningToPicker.current = true;
+                        cancelBuild();
+                      }}
+                      onContinue={confirmBuild}
+                    />
                   </div>
-                  {fileName ? (
-                    <>
-                      <span className="section-eyebrow">
-                        {session.kind === "sample"
-                          ? "Public sample · this visit"
-                          : "Your file · this visit"}
-                      </span>
-                      <h3 className="specimen-name">{fileName}</h3>
-                      <p className="file-description">{`${MB(info!.size)} · build ${info!.build}`}</p>
-                      {busy ? (
-                        <button type="button" className="btn" disabled>
-                          Opening your file…
-                        </button>
+                  <div className="intake-step" aria-hidden={!!pendingBuild} inert={!!pendingBuild}>
+                    <section
+                      className={`file-drop${drag ? " drag" : ""}${fileName ? " file-ready" : ""}`}
+                      aria-label={fileName ? "Current genome" : "Use your own genome"}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setDrag(true);
+                      }}
+                      onDragLeave={() => setDrag(false)}
+                      onDrop={onDrop}
+                    >
+                      <div className="file-symbol">
+                        {fileName ? (
+                          <Check size={28} strokeWidth={1.3} />
+                        ) : (
+                          <FolderOpen size={28} strokeWidth={1.3} />
+                        )}
+                      </div>
+                      {fileName ? (
+                        <>
+                          <span className="section-eyebrow">
+                            {session.kind === "sample"
+                              ? "Public sample · this visit"
+                              : "Your file · this visit"}
+                          </span>
+                          <h3 className="specimen-name">{fileName}</h3>
+                          <p className="file-description">{`${MB(info!.size)} · build ${info!.build}${info!.selectedBuild ? " · Selected by you" : ""}`}</p>
+                          {busy ? (
+                            <button type="button" className="btn" disabled>
+                              Opening your file…
+                            </button>
+                          ) : (
+                            <Link
+                              to="/chapter/$n"
+                              params={{ n: view === "results" ? String(RESULTS_STEP + 1) : "1" }}
+                              className="btn"
+                            >
+                              {view === "results" ? "Open your results" : "Start from chapter 1"}{" "}
+                              <MoveRight size={17} />
+                            </Link>
+                          )}
+                          <button
+                            ref={pickerButton}
+                            type="button"
+                            className="change-file"
+                            disabled={preparing}
+                            onClick={() => fileInput.current?.click()}
+                          >
+                            Choose a different file
+                          </button>
+                        </>
                       ) : (
-                        <Link
-                          to="/chapter/$n"
-                          params={{ n: view === "results" ? String(RESULTS_STEP + 1) : "1" }}
-                          className="btn"
-                        >
-                          {view === "results" ? "Open your results" : "Start from chapter 1"}{" "}
-                          <MoveRight size={17} />
-                        </Link>
+                        <>
+                          <h3>Use your own genome</h3>
+                          <p className="file-description">{experiences.inputDescription}</p>
+                          <button
+                            ref={pickerButton}
+                            type="button"
+                            className="btn"
+                            disabled={preparing}
+                            onClick={() => fileInput.current?.click()}
+                          >
+                            Choose genome file <FolderOpen size={17} />
+                          </button>
+                          {!preparing && <p className="drop-hint">or drag and drop it here</p>}
+                        </>
                       )}
+                      {preparing && (
+                        <GeneticsLoader
+                          label="Reading your file…"
+                          progress={readProgress}
+                          compact
+                        />
+                      )}
+                    </section>
+                    <input
+                      ref={fileInput}
+                      type="file"
+                      accept={experiences.acceptedFiles}
+                      hidden
+                      onChange={onPick}
+                      aria-label="Choose a genome file"
+                    />
+                    <div className="sample-choice">
                       <button
                         type="button"
-                        className="change-file"
-                        disabled={preparing}
-                        onClick={() => fileInput.current?.click()}
+                        className="sample-link"
+                        onClick={loadSample}
+                        disabled={fetching != null || preparing}
                       >
-                        Choose a different file
+                        <span className="sample-link-label">Use sample genome {SAMPLE.label}</span>{" "}
+                        <span className="sample-details">
+                          (NIST Genome in a Bottle · GRCh38 · {SAMPLE.size})
+                        </span>
                       </button>
-                    </>
-                  ) : (
-                    <>
-                      <h3>Use your own genome</h3>
-                      <p className="file-description">{experiences.inputDescription}</p>
-                      <button
-                        type="button"
-                        className="btn"
-                        disabled={preparing}
-                        onClick={() => fileInput.current?.click()}
-                      >
-                        Choose genome file <FolderOpen size={17} />
-                      </button>
-                      {!preparing && <p className="drop-hint">or drag and drop it here</p>}
-                    </>
-                  )}
-                  {preparing && (
-                    <GeneticsLoader label="Reading your file…" progress={readProgress} compact />
-                  )}
-                  <input
-                    ref={fileInput}
-                    type="file"
-                    accept={experiences.acceptedFiles}
-                    hidden
-                    onChange={onPick}
-                    aria-label="Choose a genome file"
-                  />
-                </section>
-                <div className="sample-choice">
-                  <button
-                    type="button"
-                    className="sample-link"
-                    onClick={loadSample}
-                    disabled={fetching != null || preparing}
-                  >
-                    <span className="sample-link-label">Use sample genome {SAMPLE.label}</span>{" "}
-                    <span className="sample-details">
-                      (NIST Genome in a Bottle · GRCh38 · {SAMPLE.size})
-                    </span>
-                  </button>
-                  {fetching != null && (
-                    <GeneticsLoader label="Loading sample genome…" progress={fetching} compact />
-                  )}
+                      {fetching != null && (
+                        <GeneticsLoader
+                          label="Loading sample genome…"
+                          progress={fetching}
+                          compact
+                        />
+                      )}
+                    </div>
+                  </div>
                 </div>
                 {loadError && (
                   <p className="err specimen-error" role="alert">
@@ -276,7 +317,11 @@ function Index() {
                               type="button"
                               className="chapter-open"
                               disabled
-                              aria-label={`Opening file — chapter ${i + 1} will be available shortly`}
+                              aria-label={
+                                pendingBuild
+                                  ? `Choose a reference build before opening chapter ${i + 1}`
+                                  : `Opening file — chapter ${i + 1} will be available shortly`
+                              }
                             >
                               <ArrowUpRight size={20} />
                             </button>

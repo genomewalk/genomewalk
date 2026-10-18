@@ -1,6 +1,6 @@
 import type { ByteSource } from "../../lib/io/types.ts";
 import type { SelectionData, SelectionKind } from "../types.ts";
-import { selectSource } from "./engine/context.ts";
+import { currentBuild, selectSource } from "./engine/context.ts";
 import { STEPS, ctx, FileSource, detectBuild } from "./engine/learn.ts";
 import { readHeader } from "./engine/vcf.ts";
 import { session, resetSession } from "./engine/session.ts";
@@ -28,9 +28,9 @@ export default {
       throw new Error("Choose a compressed VCF containing a sample genotype.");
     return { source, header, build: detectBuild(header.meta) };
   },
-  select({ source, header }: SelectionData, name: string, kind?: SelectionKind) {
+  select({ source, header, selectedBuild }: SelectionData, name: string, kind?: SelectionKind) {
     if (!("slice" in source)) throw new Error("A VCF selection requires a byte reader.");
-    selectSource(source as ByteSource, header);
+    selectSource(source as ByteSource, header, selectedBuild);
     resetSession(name, kind);
   },
   clear() {
@@ -41,7 +41,8 @@ export default {
   describe() {
     return {
       size: ctx.source?.size || 0,
-      build: ctx.header ? detectBuild(ctx.header.meta) : "unknown",
+      build: currentBuild(),
+      selectedBuild: ctx.selectedBuild,
     };
   },
 };

@@ -1,3 +1,5 @@
+import { detectReferenceBuild } from "../../../lib/genetics/reference-build.ts";
+
 export function describeHeader(meta: string[], columns: string[]) {
   const text = meta.join("\n");
   const provider = /23andme/i.test(text)
@@ -16,19 +18,14 @@ export function describeHeader(meta: string[], columns: string[]) {
     throw new Error(
       "This is not a supported 23andMe or AncestryDNA raw export. Keep the original header and column names.",
     );
-  const builds = new Set(
-    [...text.matchAll(/(?:GRCh\s*|build\s*|assembly\s*)(36|37|38)\b/gi)].map((m) => m[1]),
-  );
+  const headerBuild = detectReferenceBuild(meta);
+  const hasBuildMetadata =
+    headerBuild !== "unknown" ||
+    /\b(?:reference|assembly|build|(?:GRCh|NCBI|hg)[\s_-]*\d+|GC[AF]_\d+(?:\.\d+)?)\b/i.test(text);
   // Ancestry's documented raw export profile supplies build/strand when omitted
   // from its header. Explicit contradictory metadata always wins over defaults.
-  const build =
-    builds.size > 1
-      ? "conflicting"
-      : builds.size
-        ? ({ 36: "NCBI36", 37: "GRCh37", 38: "GRCh38" } as Record<string, string>)[[...builds][0]!]!
-        : provider === "AncestryDNA"
-          ? "GRCh37"
-          : "unknown";
+  const useProviderBuild = !hasBuildMetadata && provider === "AncestryDNA";
+  const build = useProviderBuild ? "GRCh37" : headerBuild;
   const negative = /(?:minus|negative|reverse|\(-\))\s+strand/i.test(text);
   const positive = /(?:plus|positive|forward|\(\+\))\s+strand/i.test(text);
   const strand = negative ? (positive ? "conflicting" : "reverse") : "forward";
@@ -36,10 +33,10 @@ export function describeHeader(meta: string[], columns: string[]) {
     provider,
     build,
     strand,
-    buildSource: builds.size
-      ? "file header"
-      : provider === "AncestryDNA"
-        ? "documented AncestryDNA format"
+    buildSource: useProviderBuild
+      ? "documented AncestryDNA format"
+      : hasBuildMetadata
+        ? "file header"
         : "not supplied",
     strandSource: positive || negative ? "file header" : "documented provider format",
   };

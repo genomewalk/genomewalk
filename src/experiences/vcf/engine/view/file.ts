@@ -1,29 +1,33 @@
-import { detectBuild } from "../reference.ts";
-import { ctx } from "../context.ts";
+import { ctx, currentBuild } from "../context.ts";
 import { note, escape } from "./html.ts";
 
-export function buildGuard(out: HTMLElement, informational = false) {
-  const b = detectBuild(ctx.header!.meta);
+export function buildGuard(out: HTMLElement) {
+  const b = currentBuild();
   if (b === "GRCh38" || b === "GRCh37") {
     ctx.build = b;
     return true;
   }
-  if (b === "T2T-CHM13") {
-    out.append(
-      note(`<b>This file is on T2T-CHM13.</b> Neither ClinVar nor gnomAD publish on that
-      build, so there is no catalogue to look it up in. ${informational ? "Chapters 6 to 8 will stop for this file." : "Stopping here."}`),
-    );
-    return false;
-  }
-  ctx.build = "GRCh38";
+  ctx.build = null;
+  const reason =
+    b === "unknown"
+      ? "We couldn’t identify this file’s reference build."
+      : b === "conflicting"
+        ? "This file contains conflicting reference-build information."
+        : `This file uses ${escape(b)}. Genomewalk’s catalogues support GRCh37 and GRCh38.`;
   out.append(
-    note(`<b>Could not tell which reference build this file uses.</b> Assuming GRCh38.
-    If it is actually GRCh37, every lookup below will be wrong — treat the results with suspicion.`),
+    note(
+      `<b>${reason}</b> Catalogue matching is unavailable. You can still explore the file in chapters 1–6.`,
+      "important",
+    ),
   );
-  return true;
+  return false;
 }
 
-export const refUrl = (file: string) => `/ref/${ctx.build || "GRCh38"}/${file}`;
+export const refUrl = (file: string) => {
+  if (ctx.build !== "GRCh37" && ctx.build !== "GRCh38")
+    throw new Error("A supported reference build is required for catalogue matching.");
+  return `/ref/${ctx.build}/${file}`;
+};
 
 export const isGvcf = () =>
   ctx.header!.meta.some(

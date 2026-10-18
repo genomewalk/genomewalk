@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import type { SourceMetadata, Progress } from "../lib/io/types.ts";
 import type { Chapter } from "./shared/types.ts";
+import type { SupportedBuild } from "../lib/genetics/reference-build.ts";
 
 export type SelectionKind = "upload" | "sample";
 /** The router only needs header metadata; each experience owns its reader. */
@@ -11,6 +12,7 @@ export interface SelectionHeader {
 export interface SelectionData {
   source: SourceMetadata;
   header: SelectionHeader;
+  selectedBuild?: SupportedBuild | undefined;
 }
 export interface OpenedGenome extends SelectionData {
   build: string;
@@ -20,7 +22,7 @@ export interface SavedSelection extends SelectionData {
   experienceId: string;
   name: string;
   kind: SelectionKind;
-  info: { size: number; build: string };
+  info: { size: number; build: string; selectedBuild?: SupportedBuild | undefined };
 }
 export interface Experience {
   id: string;
@@ -37,6 +39,6 @@ export interface Experience {
   ): Promise<SelectionData & { build: string }>;
   select(opened: SelectionData, name: string, kind?: SelectionKind): void;
   clear(): void;
-  describe(): { size: number; build: string };
+  describe(): SavedSelection["info"];
   loadPage?: () => Promise<{ default: ComponentType<{ n: string }> }>;
 }

@@ -1,7 +1,8 @@
 import type { ConsumerSource } from "./types.ts";
+import type { SupportedBuild } from "../../lib/genetics/reference-build.ts";
 import type { Progress } from "../../lib/io/types.ts";
 import type { SelectionData, SelectionKind } from "../types.ts";
-import { openConsumerFile } from "./reader.ts";
+import { decodeConsumerCall, openConsumerFile } from "./reader.ts";
 import { STEPS, ctx } from "./engine/learn.ts";
 import { selectSource } from "./engine/context.ts";
 import { session, resetSession } from "./engine/session.ts";
@@ -19,9 +20,17 @@ export default {
     const source = await openConsumerFile(file, signal, onProgress);
     return { source, header: source.header, build: source.build };
   },
-  select({ source }: SelectionData, name: string, kind?: SelectionKind) {
+  select({ source, selectedBuild }: SelectionData, name: string, kind?: SelectionKind) {
     if (!("readCalls" in source)) throw new Error("A consumer selection requires a call reader.");
-    selectSource(source as ConsumerSource);
+    const consumer = source as ConsumerSource;
+    if (consumer.build === "unknown" && selectedBuild) {
+      consumer.build = selectedBuild;
+      consumer.buildSource = "selected by you";
+      consumer.capabilities.matching = consumer.strand === "forward";
+      if (consumer.example)
+        consumer.example = decodeConsumerCall(consumer.example.fields, consumer);
+    }
+    selectSource(consumer);
     resetSession(name, kind);
   },
   clear() {
@@ -30,6 +39,12 @@ export default {
     session.fileName = null;
   },
   describe() {
-    return { size: ctx.source?.size || 0, build: ctx.source?.build || "unknown" };
+    const source = ctx.source;
+    const selectedBuild: SupportedBuild | undefined =
+      source?.buildSource === "selected by you" &&
+      (source.build === "GRCh37" || source.build === "GRCh38")
+        ? source.build
+        : undefined;
+    return { size: source?.size || 0, build: source?.build || "unknown", selectedBuild };
   },
 };

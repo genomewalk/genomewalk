@@ -40,7 +40,7 @@ export async function scanStats(
     GRCh37: [2699520, 154931044],
     "T2T-CHM13": [2394410, 153925834],
   };
-  const [xLo, xHi] = PAR[build] || PAR["GRCh38"]!;
+  const xBounds = PAR[build];
   await streamVariants(
     source,
     (f) => {
@@ -81,7 +81,12 @@ export async function scanStats(
         }
       }
       if (f[0] === "Y" || f[0] === "chrY") s.y++;
-      if ((f[0] === "X" || f[0] === "chrX") && +f[1]! > xLo && +f[1]! < xHi) {
+      if (
+        xBounds &&
+        (f[0] === "X" || f[0] === "chrX") &&
+        +f[1]! > xBounds[0] &&
+        +f[1]! < xBounds[1]
+      ) {
         s.xnp++;
         if (dip && a[0] !== a[1]) s.xhet++;
       }

@@ -1,3 +1,5 @@
+import type { SupportedBuild } from "../../../lib/genetics/reference-build.ts";
+import { detectBuild } from "./reference.ts";
 import type { ByteSource } from "../../../lib/io/types.ts";
 import type { MarkerData } from "../../../lib/catalogues/types.ts";
 import type { loadRangeCatalogue } from "../../../lib/catalogues/catalogue-ranges.ts";
@@ -10,6 +12,7 @@ interface VcfContext {
   sex: string | null;
   markerHits: Record<string, VcfMarkerHit> | null;
   matches: VcfMatch[] | null;
+  selectedBuild?: SupportedBuild;
   build?: string | null;
   markers?: MarkerData;
   catalog?: Awaited<ReturnType<typeof loadRangeCatalogue>> | undefined;
@@ -25,12 +28,24 @@ export const ctx: VcfContext = {
 };
 let controller = new AbortController();
 export const selectionSignal = () => controller.signal;
-export function selectSource(source: ByteSource | null, header: VcfHeader | null = null) {
+export const currentBuild = () => {
+  const detected = ctx.header ? detectBuild(ctx.header.meta) : "unknown";
+  return detected === "unknown" ? ctx.selectedBuild || detected : detected;
+};
+
+export function selectSource(
+  source: ByteSource | null,
+  header: VcfHeader | null = null,
+  selectedBuild?: SupportedBuild,
+) {
+  if (selectedBuild && (!header || detectBuild(header.meta) !== "unknown"))
+    throw new Error("A build can only be selected when the file’s reference build is unknown.");
   controller.abort();
   controller = new AbortController();
   Object.assign(ctx, {
     source,
     header,
+    selectedBuild,
     build: null,
     stats: null,
     sex: null,

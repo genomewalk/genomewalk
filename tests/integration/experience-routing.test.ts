@@ -15,11 +15,11 @@ const { describeSelection, restoreSelection } = await import("../../src/experien
 const { optionalExperiences } = await import("../../src/experiences/optional.ts");
 const text =
   "##fileformat=VCFv4.2\n##reference=GRCh38\n##contig=<ID=1,length=248956422>\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE\n1\t100\trs100\tC\tT\t100\tPASS\t.\tGT\t0/1\n";
-function fixture() {
+function fixture(contents = text) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "genomewalk-routing-"));
   try {
     const file = path.join(directory, "test.bgz");
-    bgzfWrite(text, file);
+    bgzfWrite(contents, file);
     return new File([fs.readFileSync(file)], "synthetic.vcf.bgz");
   } finally {
     fs.rmSync(directory, { recursive: true });
@@ -112,6 +112,29 @@ test("development refresh restores the file handle and header without stale less
   assert.equal(vcf.context.matches, null);
   assert.equal(restoreSelection([], saved), null);
   assert.equal(restoreSelection([vcf], partialFixture({ name: saved!.name })), null);
+});
+
+test("manual build selection survives development refresh and clears with the next file", async () => {
+  const unknownVcf = fixture(text.replace(/##(?:reference|contig)=[^\n]*\n/g, ""));
+  const unknownConsumer = new File(
+    ["# 23andMe\n# plus strand\n# rsid\tchromosome\tposition\tgenotype\nrs1\t1\t100\tCT\n"],
+    "unknown.txt",
+  );
+  for (const file of optionalExperiences.length ? [unknownVcf, unknownConsumer] : [unknownVcf]) {
+    const opened = await openGenomeFile(file);
+    assert.equal(opened.build, "unknown");
+    selectGenome({ ...opened, selectedBuild: "GRCh37" }, file.name, "upload");
+    const saved = getGenomeSelection();
+    assert.equal(saved!.info.build, "GRCh37");
+    assert.equal(saved!.info.selectedBuild, "GRCh37");
+    opened.experience.clear();
+    assert.equal(restoreSelection([opened.experience], saved), opened.experience);
+    assert.equal(getGenomeSelection()!.info.selectedBuild, "GRCh37");
+    const next = await openGenomeFile(file);
+    selectGenome(next, file.name, "upload");
+    assert.equal(getGenomeSelection()!.info.build, "unknown");
+    assert.equal(getGenomeSelection()!.info.selectedBuild, undefined);
+  }
 });
 
 test("an aborted header read never produces a selectable genome", async () => {

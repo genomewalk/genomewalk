@@ -46,6 +46,15 @@ domain setup and the deployment and reference-data workflows.
 | 23andMe raw TXT, ZIP or gzip                       | Four-column genotype export with its original header               |
 | AncestryDNA raw TXT, ZIP or gzip                   | Five-column allele export with its original header                 |
 
+Catalogue matching supports **GRCh37 (hg19)** and **GRCh38 (hg38)**. Genomewalk
+checks reference names, assembly labels and chromosome lengths in VCF headers,
+and build labels in consumer-file comments. Ancestry’s documented export format
+supplies the build when its header omits it. If the build still cannot be identified,
+the app asks you to choose before matching. A choice is labelled **Selected by you**
+and kept only for the current visit. Choose **Another build / I’m not sure** to
+explore the file without matching. Conflicting metadata and recognized unsupported
+builds also remain available for file exploration only.
+
 Consumer formats are an optional module with format-specific lessons,
 independent processing and sessions. Chapter names match the VCF experience.
 Consumer matching is

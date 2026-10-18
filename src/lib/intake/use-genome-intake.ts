@@ -4,6 +4,15 @@ import * as experiences from "../../experiences/index.ts";
 import { chooseGenomeFile, createIntakeRequests } from "./genome-intake.ts";
 import { RESULTS_STEP } from "../navigation/journey.ts";
 import { publicSampleSource, SAMPLE } from "../catalogues/public-sample.ts";
+import type { OpenedGenome } from "../../experiences/types.ts";
+import type { SupportedBuild } from "../genetics/reference-build.ts";
+
+interface PendingBuild {
+  id: number;
+  opened: OpenedGenome;
+  name: string;
+  request: AbortController;
+}
 
 export function useGenomeIntake(view?: "results") {
   const navigate = useNavigate();
@@ -12,9 +21,11 @@ export function useGenomeIntake(view?: "results") {
   const [preparing, setPreparing] = useState(false);
   const [readProgress, setReadProgress] = useState<number>();
   const [drag, setDrag] = useState(false);
+  const [pendingBuild, setPendingBuild] = useState<PendingBuild | null>(null);
+  const pendingBuildId = useRef(0);
   const fileInput = useRef<HTMLInputElement | null>(null);
   const requests = useRef(createIntakeRequests());
-  const busy = preparing || fetching != null;
+  const busy = preparing || fetching != null || pendingBuild != null;
 
   // Only client-side navigation keeps a selection. A fresh page has no file.
   useEffect(() => {
@@ -22,27 +33,69 @@ export function useGenomeIntake(view?: "results") {
     return () => pending.cancel();
   }, []);
 
-  async function selectFile(f: File, kind: "upload" | "sample", request: AbortController) {
-    const opened = await experiences.openGenomeFile(f, request.signal, (fraction: number) => {
-      if (requests.current.isCurrent(request)) setReadProgress(fraction);
-    });
+  async function finishSelection(
+    opened: OpenedGenome,
+    name: string,
+    kind: "upload" | "sample",
+    request: AbortController,
+  ) {
     if (!requests.current.isCurrent(request)) return;
-    experiences.selectGenome(opened, f.name, kind);
+    experiences.selectGenome(opened, name, kind);
+    setPendingBuild(null);
+    const build = experiences.getExperience().describe().build;
     await navigate({
       to: "/chapter/$n",
-      params: { n: view === "results" ? String(RESULTS_STEP + 1) : "1" },
+      params: {
+        n:
+          view === "results" && (build === "GRCh37" || build === "GRCh38")
+            ? String(RESULTS_STEP + 1)
+            : "1",
+      },
     });
+  }
+
+  async function confirmBuild(build: SupportedBuild | null) {
+    if (!pendingBuild || !requests.current.isCurrent(pendingBuild.request)) return;
+    const { opened, name, request } = pendingBuild;
+    try {
+      await finishSelection(
+        { ...opened, selectedBuild: build || undefined },
+        name,
+        "upload",
+        request,
+      );
+    } catch (error) {
+      if (requests.current.isCurrent(request)) setLoadError((error as Error).message);
+    }
+  }
+
+  function cancelBuild() {
+    requests.current.cancel();
+    setPendingBuild(null);
+    setPreparing(false);
+    setFetching(null);
+    setReadProgress(undefined);
+    setLoadError("");
+    setDrag(false);
   }
 
   async function openFile(files: FileList | null) {
     if (!files?.length) return;
     const request = requests.current.begin();
     setFetching(null);
+    setPendingBuild(null);
     setPreparing(true);
     setReadProgress(undefined);
     setLoadError("");
     try {
-      await selectFile(chooseGenomeFile(files), "upload", request);
+      const file = chooseGenomeFile(files);
+      const opened = await experiences.openGenomeFile(file, request.signal, (fraction) => {
+        if (requests.current.isCurrent(request)) setReadProgress(fraction);
+      });
+      if (!requests.current.isCurrent(request)) return;
+      if (opened.build === "unknown")
+        setPendingBuild({ id: ++pendingBuildId.current, opened, name: file.name, request });
+      else await finishSelection(opened, file.name, "upload", request);
     } catch (error) {
       if (requests.current.isCurrent(request))
         setLoadError(
@@ -68,16 +121,12 @@ export function useGenomeIntake(view?: "results") {
   async function loadSample() {
     if (fetching != null || preparing) return;
     const request = requests.current.begin();
+    setPendingBuild(null);
     setFetching(0);
     setLoadError("");
     try {
       const opened = await experiences.openPublicSample(publicSampleSource(), request.signal);
-      if (!requests.current.isCurrent(request)) return;
-      experiences.selectGenome(opened, SAMPLE.name, "sample");
-      await navigate({
-        to: "/chapter/$n",
-        params: { n: view === "results" ? String(RESULTS_STEP + 1) : "1" },
-      });
+      await finishSelection(opened, SAMPLE.name, "sample", request);
     } catch (error) {
       if (requests.current.isCurrent(request))
         setLoadError(
@@ -103,5 +152,8 @@ export function useGenomeIntake(view?: "results") {
     onPick,
     onDrop,
     loadSample,
+    pendingBuild,
+    confirmBuild,
+    cancelBuild,
   };
 }

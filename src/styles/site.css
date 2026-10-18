@@ -186,10 +186,24 @@
   font-weight: 400;
 }
 .specimen-loader {
+  min-width: 0;
+  container-type: inline-size;
   border: 1px solid var(--wgs-line);
   background: linear-gradient(140deg, var(--wgs-card), oklch(0.96 0.016 85));
   border-radius: 16px;
   overflow: hidden;
+}
+/* Both steps size the same grid cell; only the active step is interactive. */
+.intake-steps {
+  display: grid;
+}
+.intake-step {
+  grid-area: 1 / 1;
+  min-width: 0;
+  align-self: center;
+}
+.intake-step[aria-hidden="true"] {
+  visibility: hidden;
 }
 .loader-top {
   display: flex;

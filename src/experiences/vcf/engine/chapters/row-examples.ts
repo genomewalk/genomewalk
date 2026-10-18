@@ -1,12 +1,11 @@
 import { ensureHeader, rowPreviews } from "../runtime.ts";
-import { ctx } from "../context.ts";
+import { ctx, currentBuild } from "../context.ts";
 import {
   createVcfRowExamples,
   collectVcfRowExample,
   vcfRowDiagram,
   vcfRowExplanations,
 } from "../row-diagram.ts";
-import { detectBuild } from "../reference.ts";
 import { streamVariants } from "../vcf.ts";
 import { el } from "../view/html.ts";
 
@@ -20,8 +19,9 @@ export const rowExamplesChapter = {
     await ensureHeader();
     const source = ctx.source;
     let examples = ctx.stats?.rowExamples || rowPreviews.get(source!);
-    if (!examples) {
-      examples = createVcfRowExamples(detectBuild(ctx.header!.meta));
+    const build = currentBuild();
+    if (!examples || examples.build !== build) {
+      examples = createVcfRowExamples(build);
       const preview = examples;
       const stop = Symbol("enough example rows");
       try {

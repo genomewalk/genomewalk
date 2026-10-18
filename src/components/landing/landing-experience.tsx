@@ -27,18 +27,15 @@ export function LandingShell({ children }: { children: ReactNode }) {
       const heroTravel = hero
         ? Math.max(1, hero.offsetHeight - Math.min(viewport, stageHeight))
         : 1;
-      // Measure the stationary section so its animated child cannot feed back into progress.
+      // Time the hero's pullback to the upload section coming into view.
       const sectionTop = specimen?.getBoundingClientRect().top ?? viewport;
       const contentTop = sectionTop + (specimenContent?.offsetTop ?? 0);
       const arrivalProgress = clamp((viewport - contentTop) / (viewport * 0.8));
       const arrivalEased = arrivalProgress * arrivalProgress * (3 - 2 * arrivalProgress);
       const heroPullback = hero ? clamp(-hero.getBoundingClientRect().top / heroTravel) : 0;
-      // Continue the hero's pullback while the next scene grows into view.
+      // Continue the hero's pullback as the next section comes into view.
       const heroProgress = heroPullback * 0.55 + arrivalEased * 0.45;
-      const departure = specimen ? clamp(-sectionTop / (specimen.offsetHeight * 0.85)) : 0;
       hero?.style.setProperty("--hero-scroll", String(enabled ? heroProgress : 0));
-      specimen?.style.setProperty("--departure", String(enabled ? departure : 0));
-      specimen?.style.setProperty("--arrival", String(enabled ? 1 - arrivalEased : 0));
     };
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(update);

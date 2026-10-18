@@ -6,7 +6,8 @@ export function buildGuard(out: HTMLElement) {
   if (!ctx.source!.capabilities.matching) {
     out.append(
       note(
-        "This file’s reference build or strand is not supported for catalogue matching. You can still explore the file in chapters 1–5.",
+        "This file’s reference build or strand is not supported for catalogue matching. You can still explore the file in chapters 1–6.",
+        "important",
       ),
     );
     return false;
@@ -15,7 +16,7 @@ export function buildGuard(out: HTMLElement) {
     ctx.build = build;
     return true;
   }
-  out.append(note(`Catalogue matching is unavailable for ${escape(build)}.`));
+  out.append(note(`Catalogue matching is unavailable for ${escape(build)}.`, "important"));
   return false;
 }
 export const refUrl = (file: string) => `/ref/${ctx.build}/${file}`;

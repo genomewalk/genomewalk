@@ -329,7 +329,7 @@
   padding-top: 70px;
   padding-bottom: 110px;
 }
-/* Share the existing responsive columns/gap, then zoom both columns as one scene. */
+/* Keep the upload and build-choice section stationary while people interact with it. */
 .landing-experiment :global(.specimen-content) {
   display: grid;
   grid-template-columns: inherit;
@@ -412,11 +412,6 @@
   .landing-experiment:global(.landing-motion-ready) :global(.observatory-footer) {
     transform: translateY(calc(var(--hero-scroll) * 18px));
   }
-  .landing-experiment:global(.landing-motion-ready) :global(.specimen-content) {
-    transform-origin: center 25%;
-    transform: translateY(calc(var(--arrival, 0) * 72px - var(--departure, 0) * 32px))
-      scale(calc(1 - var(--arrival, 0) * 0.18 - var(--departure, 0) * 0.08));
-  }
   .landing-experiment:global(.landing-motion-ready) [data-landing-reveal] {
     opacity: 0;
     transform: translate(24px, 48px);
@@ -440,8 +435,7 @@
     transition-delay: 195ms, 195ms, 0s, 0s;
   }
   .landing-experiment:global(.landing-motion-ready) [data-landing-reveal]:global(.is-revealed),
-  .landing-experiment:global(.landing-motion-ready) [data-landing-reveal]:focus-within,
-  .landing-experiment:global(.landing-motion-ready) [data-landing-arrival]:focus-within {
+  .landing-experiment:global(.landing-motion-ready) [data-landing-reveal]:focus-within {
     opacity: 1;
     transform: none;
   }
@@ -483,14 +477,6 @@
     }
     .landing-experiment:global(.landing-motion-ready) :global(.landing-molecule) {
       opacity: 0.065;
-    }
-    .landing-experiment:global(.landing-motion-ready) :global(.specimen-content) {
-      transform-origin: center top;
-      transform: translateY(calc(var(--arrival, 0) * 40px))
-        scale(calc(1 - var(--arrival, 0) * 0.08));
-    }
-    .landing-experiment:global(.landing-motion-ready) [data-landing-arrival]:focus-within {
-      transform: none;
     }
   }
 }

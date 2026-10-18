@@ -25,7 +25,7 @@ test("header topics precede their labelled excerpt without changing source text"
   assert.ok(html.indexOf("Sequence names") < sourceLabel);
   assert.ok(sourceLabel < html.indexOf("##contig="));
   assert.match(html, /##contig=&lt;ID=chrUn_KI270442v1,length=392061&gt;/);
-  assert.match(html, /aria-label="Header excerpt, line 17\. Scroll sideways for long lines\."/);
+  assert.match(html, /aria-label="Header excerpt, line 17"/);
   assert.match(html, /tabindex="0" role="region"/);
   const columnLine = html.match(/<code><span class="header-map-key">([\s\S]*?)<\/code>/)![1]!;
   assert.equal(columnLine.replace("</span>", ""), "#CHROM\tPOS\tREF\tALT");

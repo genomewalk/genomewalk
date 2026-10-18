@@ -9,7 +9,8 @@ import { openConsumerFile, describeHeader, consumerStats } from "./reader.ts";
 import { findMatches, resultsWithoutConflicts } from "./engine/matching.ts";
 import { findMarkers } from "./engine/markers.ts";
 import { getChapters } from "./engine/learn.ts";
-import { ctx } from "./engine/context.ts";
+import { ctx, ensureStats } from "./engine/context.ts";
+import consumerExperience from "./index.ts";
 import { matchRow } from "./engine/view/results.ts";
 import { meaningIntroduction, meaningChapterHtml } from "../shared/meaning-chapter.ts";
 const text = (rows: string[], extra = "") =>
@@ -112,6 +113,141 @@ test("unknown, conflicting, historical builds and reversed strands never match",
     () => describeHeader(["#MyHeritage"], ["rsid", "chromosome", "position", "genotype"]),
     /not a supported/,
   );
+});
+
+test("a selected build updates an unknown consumer file's examples, scans and matches", async (t) => {
+  t.after(() => consumerExperience.clear());
+  for (const selectedBuild of ["GRCh37", "GRCh38"] as const) {
+    const source = await openConsumerFile(
+      file(text([row(100, "CT")]).replace("assembly build 37", "assembly unspecified")),
+    );
+    assert.equal(source.build, "unknown");
+    assert.equal(source.example!.canMatch, false);
+    consumerExperience.select({ source, header: source.header, selectedBuild }, "synthetic.txt");
+    assert.equal(source.build, selectedBuild);
+    assert.equal(source.buildSource, "selected by you");
+    assert.equal(source.capabilities.matching, true);
+    assert.equal(source.example!.canMatch, true);
+    assert.equal(consumerExperience.describe().build, selectedBuild);
+    assert.equal(consumerExperience.describe().selectedBuild, selectedBuild);
+    consumerExperience.select({ source, header: source.header, selectedBuild }, "synthetic.txt");
+    assert.equal(source.buildSource, "selected by you");
+    assert.equal((await ensureStats()).eligible, 1);
+    const matches = await findMatches(source, catalog(100));
+    assert.equal(matches.length, 1);
+    assert.equal(matches[0]!.call.canMatch, true);
+  }
+});
+
+test("selecting a consumer build cannot override metadata or enable reversed-strand matching", async (t) => {
+  t.after(() => consumerExperience.clear());
+  for (const content of [
+    text([row(100, "CT")]),
+    text([row(100, "CT")], "# build 38\n"),
+    text([row(100, "CT")]).replace("build 37", "build 36"),
+    text([row(100, "CT")]).replace("build 37", "T2T-CHM13"),
+  ]) {
+    const source = await openConsumerFile(file(content));
+    const originalBuild = source.build;
+    consumerExperience.select(
+      { source, header: source.header, selectedBuild: "GRCh38" },
+      "synthetic.txt",
+    );
+    assert.equal(source.build, originalBuild);
+    assert.equal(source.buildSource, "file header");
+    assert.equal(consumerExperience.describe().selectedBuild, undefined);
+    assert.equal(
+      (await findMatches(source, catalog(100))).length,
+      originalBuild === "GRCh37" ? 1 : 0,
+    );
+  }
+  const source = await openConsumerFile(
+    file(
+      text([row(100, "CT")])
+        .replace("assembly build 37", "assembly unspecified")
+        .replace("plus strand", "minus strand"),
+    ),
+  );
+  consumerExperience.select(
+    { source, header: source.header, selectedBuild: "GRCh37" },
+    "synthetic.txt",
+  );
+  assert.equal(source.build, "GRCh37");
+  assert.equal(source.capabilities.matching, false);
+  assert.equal(source.example!.canMatch, false);
+  assert.equal((await ensureStats()).eligible, 0);
+  assert.equal((await findMatches(source, catalog(100))).length, 0);
+});
+
+test("a build selected for one consumer file does not carry to the next file", async (t) => {
+  t.after(() => consumerExperience.clear());
+  const content = text([row(100, "CT")]).replace("assembly build 37", "assembly unspecified");
+  const first = await openConsumerFile(file(content));
+  consumerExperience.select(
+    { source: first, header: first.header, selectedBuild: "GRCh38" },
+    "first.txt",
+  );
+  assert.equal((await ensureStats()).eligible, 1);
+  const second = await openConsumerFile(file(content));
+  consumerExperience.select({ source: second, header: second.header }, "second.txt");
+  assert.equal(consumerExperience.describe().build, "unknown");
+  assert.equal(consumerExperience.describe().selectedBuild, undefined);
+  assert.equal(second.buildSource, "file header");
+  assert.equal(second.example!.canMatch, false);
+  assert.equal((await ensureStats()).eligible, 0);
+  assert.equal((await findMatches(second, catalog(100))).length, 0);
+});
+
+test("consumer build aliases use file metadata before provider defaults", async () => {
+  const references = [
+    ["# reference hg19", "GRCh37"],
+    ["# reference hg38", "GRCh38"],
+    ["# reference build: 38", "GRCh38"],
+    ["# assembly=GRCh38.p14", "GRCh38"],
+    ["# reference NCBI36", "NCBI36"],
+    ["# reference T2T-CHM13v2.0", "T2T-CHM13"],
+    ["# reference hg19\n# assembly GRCh38", "conflicting"],
+    ["# reference custom.fa", "unknown"],
+    ["# reference build: 39", "unknown"],
+    ["# GRCh39", "unknown"],
+    ["# GRCh_39", "unknown"],
+    ["# hg_17", "unknown"],
+    ["# GCF_000001405.40", "unknown"],
+  ];
+  for (const provider of ["23andMe", "AncestryDNA"]) {
+    const columns =
+      provider === "23andMe"
+        ? "rsid\tchromosome\tposition\tgenotype\nrs100\t1\t100\tCT"
+        : "rsid\tchromosome\tposition\tallele1\tallele2\nrs100\t1\t100\tC\tT";
+    for (const [reference, build] of references) {
+      const source = await openConsumerFile(file(`# ${provider}\n${reference}\n${columns}`));
+      const supported = build === "GRCh37" || build === "GRCh38";
+      assert.equal(source.build, build, `${provider}: ${reference}`);
+      assert.equal(source.buildSource, "file header");
+      assert.equal(source.capabilities.matching, supported);
+      assert.equal(source.example!.canMatch, supported);
+      assert.equal((await findMatches(source, catalog(100))).length, supported ? 1 : 0);
+    }
+  }
+});
+
+test("only missing Ancestry build metadata uses its documented export format", () => {
+  const ancestryColumns = ["rsid", "chromosome", "position", "allele1", "allele2"];
+  const ancestry = describeHeader(["# AncestryDNA raw data download"], ancestryColumns);
+  assert.equal(ancestry.build, "GRCh37");
+  assert.equal(ancestry.buildSource, "documented AncestryDNA format");
+  const unknown = describeHeader(
+    ["# AncestryDNA raw data download", "# reference assembly unspecified"],
+    ancestryColumns,
+  );
+  assert.equal(unknown.build, "unknown");
+  assert.equal(unknown.buildSource, "file header");
+  const other = describeHeader(
+    ["# 23andMe raw data download"],
+    ["rsid", "chromosome", "position", "genotype"],
+  );
+  assert.equal(other.build, "unknown");
+  assert.equal(other.buildSource, "not supplied");
 });
 
 test("calls match the exact allele, not the rsID; absent and unsupported sites do not match", async () => {

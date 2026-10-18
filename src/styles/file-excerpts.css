@@ -38,8 +38,8 @@
   overflow-x: auto;
 }
 
-/* Aligned file rows deliberately scroll within the lesson, with a visible
-   cue outside the scrolling area and a focus target for keyboard users. */
+/* Aligned file rows scroll within the lesson, with a cue only when needed
+   and a focus target for keyboard users. */
 .raw,
 .file-excerpt,
 .rawline-scroll {
@@ -92,6 +92,9 @@
 }
 .catalogue-preview .scroll-cue {
   margin: 0;
+}
+.s-out :is(.scroll-cue, .diagram-scroll-hint, .header-map-source-label small):not([data-overflow]) {
+  display: none;
 }
 @media (max-width: 700px) {
   .raw,

@@ -5,13 +5,15 @@ export function describeSelection(experience: Experience): SavedSelection | null
   const { source, header } = experience.context;
   const { fileName, kind } = experience.session;
   if (!source?.file || !header || !fileName) return null;
+  const info = experience.describe();
   return {
     experienceId: experience.id,
     name: fileName,
     kind: kind ?? "upload",
     source,
     header,
-    info: experience.describe(),
+    info,
+    selectedBuild: info.selectedBuild,
   };
 }
 

@@ -58,7 +58,7 @@ export async function openConsumerFile(file: File, signal?: AbortSignal, onProgr
         each(
           decodeConsumerCall(
             line.split("\t").map((s) => s.trim()),
-            profile,
+            source,
           ),
         );
         count++;

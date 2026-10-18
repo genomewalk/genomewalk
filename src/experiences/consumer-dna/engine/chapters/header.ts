@@ -24,12 +24,14 @@ export function renderHeader(source: ConsumerSource, out: HTMLElement) {
     : `<code>${escape(source.build)}</code>`;
   const buildExplanation =
     source.build === "unknown"
-      ? "The file does not state a reference build, so it is shown as unknown."
+      ? "We could not identify the reference build, and you continued without selecting one. You can explore the file, but catalogue matching is unavailable."
       : source.build === "conflicting"
         ? "The header mentions more than one reference build. We cannot select one reliably."
-        : source.buildSource === "file header"
-          ? `Your file's header says it uses ${buildName}.`
-          : `The header does not name a build. ${buildName} comes from the ${escape(source.buildSource)}.`;
+        : source.buildSource === "selected by you"
+          ? `${buildName} was <b>selected by you</b> because we could not identify the build from the file.`
+          : source.buildSource === "file header"
+            ? `Your file's header says it uses ${buildName}.`
+            : `The header does not name a build. ${buildName} comes from the ${escape(source.buildSource)}.`;
   out.append(
     headerDetail(
       "header-source",
@@ -42,9 +44,10 @@ export function renderHeader(source: ConsumerSource, out: HTMLElement) {
     headerDetail(
       "reference-build",
       "Reference build",
-      `<code>${escape(source.build)}</code>`,
+      `<code>${escape(source.build)}</code>${source.buildSource === "selected by you" ? " · Selected by you" : ""}`,
       `<div class="reference-detail">
          <p>A <b>reference genome</b> is a shared DNA sequence that scientists use for comparison. A <b>reference build</b> is a version of it, such as GRCh37 or GRCh38. ${buildExplanation}</p>
+         <p>We look for common build names in the file's comments. When AncestryDNA omits build information, we use its documented export format. If we still cannot identify the build, we ask you before matching. Your selection applies only to this file for this visit.</p>
          <p>A whole-genome results file can save space by listing changes instead of repeating all the matching DNA letters. Here is a made-up example:</p>
 <pre class="align">position   1 2 3 4 5 6 7 8
 reference  A C G <i>T</i> A G T <i>G</i>
