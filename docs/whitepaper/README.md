@@ -1,7 +1,7 @@
 # Genomewalk whitepaper
 
 `genomewalk-whitepaper.tex` is the self-contained manuscript. It contains the
-two diagrams and bibliography, with no external LaTeX assets or bibliography build.
+architecture, offline-build and byte-range diagrams and bibliography, with no external LaTeX assets or bibliography build.
 Local PDF exports belong in `output/pdf/` at the repository root, which is ignored
 by Git. The existing `genomewalk-whitepaper.pdf` can be kept there for reference;
 a fresh checkout contains the manuscript source, not that generated export.
@@ -10,7 +10,7 @@ The manuscript uses a neutral two-column conference format. The revision removes
 the separate cover page, forced section breaks and repeated explanations, reducing
 the text by about one third. It includes architecture and byte-range diagrams,
 related work, implementation methods, preliminary measurements and limitations.
-Before submission, replace the author placeholder, apply the chosen venue's
+Before submission, apply the chosen venue's
 template and check its page limit, anonymisation and disclosure requirements.
 
 [Open the editable Prism project](https://prism.openai.com/?u=51daea6e-75a6-47ab-b407-dafa5f59234e&pg=1&m=main.tex).
@@ -23,7 +23,8 @@ Open the local `.tex` file in Codex's LaTeX editor to edit and compile it, or ed
 source into a ZIP as `main.tex` and choose **Import archive**. No genome files,
 catalogue datasets or credentials belong in the manuscript project.
 
-The paper documents the implementation reviewed on 30 September 2026. It is a
+The paper describes the combined gnomAD v4.1 importer. Its quantitative
+benchmark section explicitly describes an earlier reference snapshot. It is a
 technical draft, not a peer-reviewed paper or clinical validation. Prism's
 editorial review informed wording and explanation improvements; factual claims
 were checked against repository code, existing engineering results and primary
