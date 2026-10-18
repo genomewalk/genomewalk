@@ -141,12 +141,6 @@
   width: max-content;
   min-width: 100%;
 }
-.diagram-scroll-hint {
-  margin: 4px 0 0;
-  color: var(--wgs-mut);
-  font-size: var(--wgs-text-small);
-  line-height: var(--wgs-leading-small);
-}
 .sexcase {
   min-width: 0;
 }

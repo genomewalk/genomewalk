@@ -3,7 +3,6 @@ import { Link } from "@tanstack/react-router";
 import { ArrowLeft, RotateCcw } from "lucide-react";
 import { RESULTS_STEP } from "../lib/navigation/journey.ts";
 import { GeneticsLoader } from "./genetics-loader.tsx";
-import { useScrollCues } from "../lib/view/use-scroll-cues.ts";
 
 export type ResultsRunner = (
   out: HTMLDivElement,
@@ -28,7 +27,6 @@ type ResultsPanelProps = {
 // Both experiences keep their own data/session; this component owns only UI lifecycle.
 export function ResultsPanel({ onComplete, context, session, runResults }: ResultsPanelProps) {
   const outRef = useRef<HTMLDivElement>(null);
-  useScrollCues(outRef);
   const [attempt, setAttempt] = useState(0);
   const [running, setRunning] = useState(() => !session.outputs[RESULTS_STEP]);
   const [error, setError] = useState("");

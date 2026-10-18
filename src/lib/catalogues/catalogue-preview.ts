@@ -1,5 +1,4 @@
 import type { Marker, MarkerData } from "./types.ts";
-import { scrollCue } from "../view/file-excerpt.ts";
 const escape = (value: string) =>
   String(value ?? "").replace(
     /[&<>"']/g,
@@ -43,7 +42,7 @@ function preview({
         <tbody>${rows.map((row) => `<tr>${row.map((value, i) => `<td>${i === 0 ? `<code>${escape(value)}</code>` : escape(value)}</td>`).join("")}</tr>`).join("")}</tbody>
       </table>
     </div>
-    ${scrollCue}
+
     <p class="mini">${explanation} The key is <b>CHROM : POS : REF : ALT</b>.</p>
   </section>`;
 }

@@ -1,11 +1,21 @@
 import { escape } from "./html.ts";
 
-export const scrollCue =
-  '<p class="scroll-cue"><span aria-hidden="true">↔</span> Swipe or scroll sideways for more</p>';
+// Label links are trusted markup; values always remain escaped file text.
+export function fileFields(fields: { labelHtml: string; value: string }[], label: string) {
+  const cells = fields
+    .map(
+      ({ labelHtml, value }) =>
+        `<div class="cell">${labelHtml}<span class="cell-v">${escape(value)}</span></div>`,
+    )
+    .join("");
+  return `<div class="file-fields" role="region" aria-label="${escape(label)}" tabindex="0">
+    <div class="file-fields-row">${cells}</div>
+  </div>`;
+}
 
 // Accept escaped HTML so callers can retain links and highlights in file text.
 export function fileExcerpt(html: string, label = "From the file") {
-  return `<div class="raw"><pre role="region" aria-label="${escape(label)}" tabindex="0">${html}</pre>${scrollCue}</div>`;
+  return `<div class="raw"><pre role="region" aria-label="${escape(label)}" tabindex="0">${html}</pre></div>`;
 }
 
 export function rawBlock(lines: string[], max = 10, label = "From the file") {

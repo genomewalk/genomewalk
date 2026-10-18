@@ -57,7 +57,7 @@ export function headerMap({
           }) => `<div class="header-map-group header-map-${escape(kind)}${left && right ? " has-both-notes" : ""}">
         ${annotation(left, "left")}
         ${annotation(right, "right")}
-        <div class="header-map-lines"><p class="header-map-source-label"><span>From your file</span> <small>Scroll sideways for long lines.</small></p>${lines
+        <div class="header-map-lines"><p class="header-map-source-label"><span>From your file</span></p>${lines
           .map(
             ({ text, number, keyEnd = 0 }) =>
               `<div class="header-map-line${text.includes("\t") ? " header-map-line-tabular" : ""}"><span class="header-map-number" aria-label="Line ${number}" title="Line ${number}">L${number}</span><pre tabindex="0" role="region" aria-label="Header excerpt, line ${number}"><code>${keyEnd ? `<span class="header-map-key">${escape(text.slice(0, keyEnd))}</span>` : ""}${escape(text.slice(keyEnd))}</code></pre></div>`,

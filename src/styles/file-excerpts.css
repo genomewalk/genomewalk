@@ -38,25 +38,41 @@
   overflow-x: auto;
 }
 
-/* Aligned file rows scroll within the lesson, with a cue only when needed
-   and a focus target for keyboard users. */
+/* Keep file fields on one row and scroll only when they exceed the card. */
 .raw,
 .file-excerpt,
-.rawline-scroll {
+.file-row {
   min-width: 0;
   max-width: 100%;
 }
-.rawline.rawline-scroll {
+.rawline.file-row {
   overflow: visible;
+  background: var(--wgs-card);
+  border-color: var(--wgs-line);
 }
-.rawline-scroll .rawline-cells {
+.file-fields {
   min-width: 0;
   max-width: 100%;
   overflow-x: auto;
-  padding-block: 5px;
 }
-.rawline-scroll .cell {
-  flex-shrink: 0;
+.file-fields-row {
+  display: flex;
+  width: max-content;
+  min-width: 100%;
+  gap: 28px;
+}
+.file-fields .cell {
+  flex: 1 0 auto;
+  gap: 8px;
+}
+.file-fields .cell-k {
+  align-self: flex-start;
+  line-height: 1.4;
+}
+.file-fields .cell-v {
+  font-size: max(15px, var(--wgs-text-data));
+  line-height: 1.6;
+  white-space: pre;
 }
 .file-excerpt > pre {
   max-width: 100%;
@@ -67,39 +83,59 @@
   white-space: pre-wrap;
 }
 .raw > pre,
-.rawline-scroll .cell-v,
 .file-excerpt > pre,
 .header-field-example .file-excerpt > pre,
 .catalogue-preview table {
   font-size: max(14px, var(--wgs-text-data));
 }
-.raw > pre,
-.rawline-scroll .rawline-cells,
-.file-excerpt > pre,
-.catalogue-preview-scroll {
-  overscroll-behavior-x: contain;
+/* Native controls keep wheel, touch and keyboard scrolling intact. */
+.s-out {
+  --wgs-scroll-thumb: color-mix(in srgb, var(--wgs-pink) 28%, var(--wgs-card));
 }
-:is(.raw > pre, .rawline-scroll .rawline-cells, .file-excerpt > pre):focus-visible {
+.s-out * {
+  scrollbar-width: auto;
+  scrollbar-color: var(--wgs-scroll-thumb) var(--wgs-pink-bg);
+}
+/* Explicit dimensions keep desktop WebKit/Chromium bars visible at rest.
+   Reset the standard properties so they do not override this styling. */
+@supports selector(::-webkit-scrollbar) {
+  .s-out * {
+    scrollbar-width: auto;
+    scrollbar-color: auto;
+  }
+  .s-out ::-webkit-scrollbar {
+    height: 10px;
+    width: 10px;
+  }
+  .s-out ::-webkit-scrollbar-track {
+    background: var(--wgs-pink-bg);
+    border-radius: 999px;
+  }
+  .s-out ::-webkit-scrollbar-thumb {
+    background: var(--wgs-scroll-thumb);
+    background-clip: padding-box;
+    border: 3px solid var(--wgs-pink-bg);
+    border-radius: 999px;
+    min-width: 36px;
+  }
+  .s-out ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+:is(.raw > pre, .file-excerpt > pre, .file-fields):focus-visible {
   outline: 2px solid var(--wgs-accent);
   outline-offset: 3px;
 }
-.s-out .scroll-cue {
-  display: flex;
-  gap: 6px;
-  margin: 8px 0 0;
-  color: var(--wgs-mut);
-  font: 13px/1.5 var(--wgs-sans);
-}
-.catalogue-preview .scroll-cue {
-  margin: 0;
-}
-.s-out :is(.scroll-cue, .diagram-scroll-hint, .header-map-source-label small):not([data-overflow]) {
-  display: none;
+.raw > pre,
+.file-excerpt > pre,
+.catalogue-preview-scroll,
+.file-fields {
+  overscroll-behavior-x: contain;
 }
 @media (max-width: 700px) {
   .raw,
   .raw-first .raw,
-  .rawline-scroll {
+  .file-row {
     padding: 12px;
   }
   .raw.catalogue-preview {

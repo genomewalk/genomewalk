@@ -1,6 +1,6 @@
 {
-  "src/experiences/vcf/engine/chapters/header.ts": "b1f4f1595dee6d9bce3d637d074d184e6b786aa1ec716006e52b9633f91865fc",
-  "src/experiences/vcf/engine/chapters/variant-line.ts": "4aaba67b34a3bec9cc11ccf6d277b8e03a351c3dede9f4f049bcff96d31d974c",
+  "src/experiences/vcf/engine/chapters/header.ts": "677c66eb8673200413a07cc3a030604969921c4ac9a777f8cb4c31c158445028",
+  "src/experiences/vcf/engine/chapters/variant-line.ts": "07173483680c219699e379ac2dbfcbc864472ce4538ffbebe20e3af55faef33b",
   "src/experiences/vcf/engine/chapters/row-examples.ts": "edd82d1129025e25fc0b70e50772b6bc06cb6f98a5e742efd0814947686cdc17",
   "src/experiences/vcf/engine/chapters/counts.ts": "329e3dc5d9ea2ac94da92aa8736a09403cd890fdb42fb4ae2ca2615ba355550d",
   "src/experiences/vcf/engine/chapters/summary.ts": "67b99a2695c6a2c37ed18357ab5711378ceeb8041edd037eaf71a2917097e5a0",

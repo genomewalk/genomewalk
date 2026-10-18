@@ -20,7 +20,6 @@ import { ResultsPanel } from "./results-panel.tsx";
 import { FILE_CHAPTERS } from "../../lib/navigation/journey.ts";
 import { GeneticsLoader } from "../../components/genetics-loader.tsx";
 import { useLessonNavigation } from "../../lib/navigation/use-lesson-navigation.ts";
-import { useScrollCues } from "../../lib/view/use-scroll-cues.ts";
 
 type StepDef = {
   title: string;
@@ -79,7 +78,6 @@ function ChapterContent({ n }: { n: string }) {
   }, [i, isResults, step]);
 
   const handleLessonLink = useLessonNavigation(outRef, running);
-  useScrollCues(outRef);
 
   if (!step || String(i + 1) !== n) {
     return (

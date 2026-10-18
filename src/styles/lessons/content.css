@@ -112,11 +112,6 @@
   padding: var(--wgs-space-content);
   overflow-x: auto;
 }
-.rawline-cells {
-  display: flex;
-  gap: var(--wgs-space-content);
-  min-width: max-content;
-}
 .cell {
   display: flex;
   flex-direction: column;

@@ -160,9 +160,6 @@
 .header-map-source-label > span {
   display: none;
 }
-.header-map-source-label small {
-  font: inherit;
-}
 .header-map-number {
   display: block;
   text-align: right;

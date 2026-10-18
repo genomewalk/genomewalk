@@ -4,7 +4,7 @@ import { copiesSvg, gtCases, chromoRow } from "../view/genetics.ts";
 import { ctx } from "../context.ts";
 import { firstLines, firstVariant } from "../sampling.ts";
 import { teachingTable } from "../../../../lib/view/teaching-table.ts";
-import { fileExcerpt, scrollCue } from "../../../../lib/view/file-excerpt.ts";
+import { fileExcerpt, fileFields } from "../../../../lib/view/file-excerpt.ts";
 
 export const variantLineChapter = {
   title: "Lets learn to read a variant line",
@@ -35,11 +35,11 @@ export const variantLineChapter = {
     const card = (vals: string[]) =>
       el(
         "div",
-        "rawline rawline-scroll sample-row",
-        `<div class="rawline-cells" role="region" aria-label="VCF example line, all ten columns" tabindex="0">${COLS.map(
-          (k, i) =>
-            `<span class="cell">${columnLink(k, k, "cell-k")}<span class="cell-v">${escape(vals[i])}</span></span>`,
-        ).join("")}</div>${scrollCue}`,
+        "rawline sample-row file-row",
+        fileFields(
+          COLS.map((k, i) => ({ labelHtml: columnLink(k, k, "cell-k"), value: vals[i]! })),
+          "VCF example line, all ten columns",
+        ),
       );
     const swap = [
       "11",
@@ -190,7 +190,7 @@ export const variantLineChapter = {
          position 1). Position <b>${(+sPOS).toLocaleString()}</b> is this one:</p>
 <div class="file-excerpt"><pre class="align posline" role="region" aria-label="Position ${escape(sPOS)} in the reference sequence" tabindex="0">${left}<i class="o0">${escape(sREF)}</i>${right}
 ${" ".repeat(left.length)}↑
-${" ".repeat(left.length - 2)}${escape(sPOS)}</pre>${scrollCue}</div>
+${" ".repeat(left.length - 2)}${escape(sPOS)}</pre></div>
          ${
            chrLen
              ? `<p>Chromosome ${escape(sCHR)} is <b>${chrLen.toLocaleString()}</b> letters long, so
@@ -350,7 +350,7 @@ ${" ".repeat(left.length - 2)}${escape(sPOS)}</pre>${scrollCue}</div>
          </div>
          <p>Line FORMAT up with YOU and each key gets its value:</p>
 <div class="file-excerpt"><pre class="align" role="region" aria-label="FORMAT keys aligned with your sample values" tabindex="0">FORMAT   ${fkeys.map((k, i) => w(k, colw[i]!)).join("")}   ← keys
-YOU      ${fvals.map((v, i) => w(v, colw[i]!)).join("")}   ← values</pre>${scrollCue}</div>
+YOU      ${fvals.map((v, i) => w(v, colw[i]!)).join("")}   ← values</pre></div>
          <p>All the fields on this line, with the header's own description of each:</p>
          ${teachingTable(
            "INFO and FORMAT fields in this example",

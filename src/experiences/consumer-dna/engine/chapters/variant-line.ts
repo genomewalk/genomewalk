@@ -2,7 +2,7 @@ import type { ConsumerCall } from "../../types.ts";
 import { el, escape, ext, fmt, kvx, note, SOURCES } from "../view/html.ts";
 import { chromoRow, callPositionDiagram } from "../view/genetics.ts";
 import type { ConsumerSource } from "../../types.ts";
-import { scrollCue } from "../../../../lib/view/file-excerpt.ts";
+import { fileFields } from "../../../../lib/view/file-excerpt.ts";
 
 function columnExplanation(column: string, source: ConsumerSource) {
   const call = source.example!;
@@ -74,13 +74,14 @@ export function renderVariantLine(source: ConsumerSource, out: HTMLElement) {
   out.append(
     el(
       "div",
-      "rawline rawline-scroll sample-row consumer-example-row",
-      `<div class="rawline-cells" role="region" aria-label="Consumer DNA example line, all columns" tabindex="0">${columns
-        .map(
-          (column, i) =>
-            `<span class="cell"><a class="cell-k" href="#${escape(columnId(column))}">${escape(column)} <span aria-hidden="true">↘</span></a><span class="cell-v">${escape(fields[i])}</span></span>`,
-        )
-        .join("")}</div>${scrollCue}`,
+      "rawline sample-row file-row consumer-example-row",
+      fileFields(
+        columns.map((column, i) => ({
+          labelHtml: `<a class="cell-k" href="#${escape(columnId(column))}">${escape(column)} <span aria-hidden="true">↘</span></a>`,
+          value: fields[i]!,
+        })),
+        "Consumer DNA example line, all columns",
+      ),
     ),
   );
   out.append(

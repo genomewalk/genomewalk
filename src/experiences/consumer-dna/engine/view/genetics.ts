@@ -41,7 +41,7 @@ export function callPositionDiagram(call: ConsumerCall) {
         ${strands}
         <div class="strand mk-arrow" aria-hidden="true"><span class="who"></span><code>${" ".repeat(prefix.length)}↑</code></div>
       </div></div>
-      <p class="diagram-scroll-hint">Scroll sideways to compare the aligned DNA letters.</p>
+
     </div>
     <figcaption class="mini">Your reported letters at this site. ${call.alleles.includes(null) ? "? means no call was reported. " : ""}The dots stand for surrounding DNA, which is not shown. Diagram not to scale.</figcaption>
   </figure>`;
