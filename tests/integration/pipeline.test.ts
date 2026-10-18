@@ -6,7 +6,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { buildPlan } from "../../scripts/lib/plan.ts";
 import { buildMarkers } from "../../scripts/lib/markers.ts";
-import { paths, ROOT } from "../../scripts/lib/config.ts";
+import { paths, ROOT, FREQUENCY_SOURCE } from "../../scripts/lib/config.ts";
 import { inspectCachedInputs, requireCachedInputs } from "../../scripts/lib/preflight.ts";
 
 const temp = (t: test.TestContext) => {
@@ -27,11 +27,11 @@ test("offline plan excludes every network stage and requires cached marker respo
   );
   assert.throws(() => buildPlan({ offline: true, fresh: true }), /cannot be combined/);
 });
-test("full builds pass concurrency and custom tool options to the frequency stage", () => {
-  const stage = buildPlan({ jobs: "3", tool: "/tmp/a tool" }).find(
+test("full builds pass concurrency and refresh options to the frequency stage", () => {
+  const stage = buildPlan({ jobs: "3", fresh: true }).find(
     (stage) => stage.script === "build-freqs.ts",
   );
-  assert.deepEqual(stage!.args, ["--jobs", "3", "--tool", "/tmp/a tool"]);
+  assert.deepEqual(stage!.args, ["--jobs", "3", "--fresh"]);
 });
 test("offline marker builds cannot fall through to HTTP when the cache is missing", async (t) => {
   const directory = temp(t);
@@ -41,7 +41,7 @@ test("offline marker builds cannot fall through to HTTP when the cache is missin
     buildMarkers(
       { paths: files, offline: true },
       {
-        fetcher: () => {
+        extract: () => {
           fetched = true;
           throw Error("network");
         },
@@ -96,8 +96,8 @@ test("offline preflight reports all missing prerequisites before any stage can w
     "GRCh37 needs the GRCh38 join input",
   );
   assert.ok(report.issues.some((issue) => issue.includes("clinvar.GRCh37")));
-  assert.ok(report.issues.some((issue) => issue.includes("freqs.tsv")));
-  assert.ok(report.issues.some((issue) => issue.includes("markers/GRCh37-")));
+  assert.ok(report.issues.some((issue) => issue.includes("freqs.gnomad-v4.1-joint.tsv")));
+  assert.ok(report.issues.some((issue) => issue.includes("markers/gnomad-v4.1-joint-")));
   assert.ok(!report.required.some((file) => file.includes("markers/GRCh38-")));
   assert.throws(() => requireCachedInputs({ paths: files }), /No build stages ran/);
   const result = spawnSync(
@@ -133,10 +133,10 @@ test("offline preflight checks marker cache identity and permits a complete isol
     fs.writeFileSync(file, "synthetic input\n");
   fs.writeFileSync(files.markerBase, JSON.stringify([marker]));
   fs.mkdirSync(path.join(directory, "markers"));
-  const cache = path.join(directory, "markers/GRCh38-rs1.json");
+  const cache = path.join(directory, "markers/gnomad-v4.1-joint-rs1.json");
   fs.writeFileSync(
     cache,
-    JSON.stringify({ dataset: "gnomad_r4", variant: { variant_id: "1-100-C-G" } }),
+    JSON.stringify({ source: FREQUENCY_SOURCE, frequency: { key: "1:100:C:G" } }),
   );
   assert.match(
     inspectCachedInputs({ paths: files, only: "GRCh38" }).issues.join("\n"),
@@ -144,7 +144,7 @@ test("offline preflight checks marker cache identity and permits a complete isol
   );
   fs.writeFileSync(
     cache,
-    JSON.stringify({ dataset: "gnomad_r4", variant: { variant_id: "1-100-C-T" } }),
+    JSON.stringify({ source: FREQUENCY_SOURCE, frequency: { key: "1:100:C:T" } }),
   );
   assert.deepEqual(requireCachedInputs({ paths: files, only: "GRCh38" }).issues, []);
 });

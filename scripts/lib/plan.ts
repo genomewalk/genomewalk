@@ -9,7 +9,6 @@ export function buildPlan({
   frequenciesExist = false,
   consumer = true,
   jobs,
-  tool,
 }: BuildOptions & { frequenciesExist?: boolean; consumer?: boolean }) {
   if (offline && fresh) throw new Error("--offline and --fresh cannot be combined");
   const builds = only ? [only] : BUILDS;
@@ -24,7 +23,7 @@ export function buildPlan({
     plan.push({
       name: "Extract gnomAD frequencies for selected ClinVar alleles",
       script: "build-freqs.ts",
-      args: [...(jobs ? ["--jobs", jobs] : []), ...(tool ? ["--tool", tool] : [])],
+      args: [...(jobs ? ["--jobs", jobs] : []), ...(fresh ? ["--fresh"] : [])],
     });
   plan.push({
     name:

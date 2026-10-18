@@ -1,3 +1,4 @@
+import { frequencySourceNote } from "./frequency-source.ts";
 import type { Marker, MarkerData } from "../catalogues/types.ts";
 import { frequencyEntryPreview } from "../catalogues/catalogue-preview.ts";
 
@@ -23,8 +24,8 @@ export function frequencyExampleBody(
   data: MarkerData,
   { populationFigure, citations }: { populationFigure: string; citations: string },
 ) {
-  const dataset = data.dataset || (data.build === "GRCh37" ? "gnomad_r2_1" : "gnomad_r4");
-  const variant = [marker.chrom, marker.pos, marker.ref, marker.alt].join("-");
+  const dataset = data.dataset || "gnomad_r4";
+  const variant = marker.gnomadKey || [marker.chrom, marker.pos, marker.ref, marker.alt].join("-");
   return `<div class="frequency-example-overview">
       <div class="frequency-example-columns">
         <div class="frequency-example-copy">
@@ -35,9 +36,10 @@ export function frequencyExampleBody(
         ${frequencyEntryPreview(marker, data)}
       </div>
     </div>
-    <p class="sub">How common <span class="o1">${escape(marker.alt)}</span> is, per population${marker.source === "exomes" ? " (exome counts)" : ""}:</p>
+    <p class="sub">How common <span class="o1">${escape(marker.alt)}</span> is, per population:</p>
     ${populationFigure}
     ${marker.af! > 0.5 ? `<p>This alternative allele is more common than the reference in these data. “Alternative” means different from the reference, not necessarily unusual.</p>` : ""}
+    <p class="mini">${escape(frequencySourceNote(marker))}</p>
     <p class="mini">Research sources: ${citations}</p>
     ${marker.studyNote ? `<p class="mini">${escape(marker.studyNote)}</p>` : ""}
     <p class="mini">${link(`https://www.ncbi.nlm.nih.gov/snp/${marker.rs}`, marker.rs)} · ${link(`https://gnomad.broadinstitute.org/variant/${variant}?dataset=${dataset}`, "gnomAD")}</p>`;

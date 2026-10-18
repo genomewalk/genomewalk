@@ -16,7 +16,6 @@ await runCli(
     offline: boolean,
     "dry-run": boolean,
     jobs: string,
-    tool: string,
   },
   async (options) => {
     const started = Date.now();

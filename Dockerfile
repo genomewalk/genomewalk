@@ -7,22 +7,8 @@ RUN --mount=type=cache,target=/root/.npm npm ci
 FROM dependencies AS source
 COPY . .
 
-# Public-reference tools. Keep the Linux executable outside the mounted data cache.
+# Offline public-reference tools use the Node.js dependencies above.
 FROM dependencies AS tools
-ARG TARGETARCH
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl libssl3t64 zlib1g \
-    && rm -rf /var/lib/apt/lists/* \
-    && case "$TARGETARCH" in \
-         amd64) platform=linux.x86_64 ;; \
-         arm64) platform=linux.aarch64.v492 ;; \
-         *) exit 1 ;; \
-       esac \
-    && curl --fail --location --retry 3 \
-       "https://hgdownload.soe.ucsc.edu/admin/exe/$platform/bigBedToBed" \
-       --output /usr/local/bin/bigBedToBed \
-    && chmod 755 /usr/local/bin/bigBedToBed
-ENV BIGBED_TO_BED=/usr/local/bin/bigBedToBed
 COPY . .
 ENTRYPOINT ["npm", "run"]
 CMD ["data"]

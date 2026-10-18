@@ -233,5 +233,8 @@ export function parseCatalogEntry(line: string): CatalogEntry {
     conflictingSig: c[21] || "",
     gnomadKey: c[22] || "",
     conditionMedgenIds: c[23] || "",
+    gnomadAc: numeric(c[24]),
+    gnomadFilter: c[25] || "",
+    gnomadDiscordanceP: numeric(c[26]),
   };
 }

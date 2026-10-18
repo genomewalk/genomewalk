@@ -1,6 +1,7 @@
 {
  "build": "GRCh37",
- "dataset": "gnomad_r2_1",
+ "dataset": "gnomad_r4",
+ "source": "gnomad-v4.1-joint",
  "pops": {
   "afr": "African",
   "amr": "Latino/Admixed American",
@@ -27,16 +28,21 @@
    "ref": "G",
    "alt": "A",
    "effIsAlt": true,
-   "af": 0.4155,
+   "af": 0.396813,
    "pops": {
-    "afr": 0.1228,
-    "amr": 0.2028,
-    "asj": 0.1,
-    "eas": 0.0006,
-    "fin": 0.5709,
-    "nfe": 0.6012
+    "afr": 0.121055,
+    "amr": 0.227457,
+    "asj": 0.130334,
+    "eas": 0.0021211,
+    "fin": 0.577455,
+    "mid": 0.0612245,
+    "nfe": 0.635283,
+    "sas": 0.163485
    },
-   "source": "genomes",
+   "source": "joint",
+   "gnomadKey": "2-135851076-G-A",
+   "gnomadFilter": "PASS",
+   "gnomadDiscordanceP": null,
    "cite": [
     {
      "label": "Enattah et al., Nature Genetics 2002",
@@ -64,16 +70,21 @@
    "ref": "G",
    "alt": "A",
    "effIsAlt": true,
-   "af": 0.0134,
+   "af": 0.00703552,
    "pops": {
-    "afr": 0.0002,
-    "amr": 0.0012,
+    "afr": 0.00017356,
+    "amr": 0.000471873,
     "asj": 0,
-    "eas": 0.2671,
-    "fin": 0.0003,
-    "nfe": 0
+    "eas": 0.243642,
+    "fin": 0.0000471446,
+    "mid": 0.000165235,
+    "nfe": 0.0000356807,
+    "sas": 0.000254678
    },
-   "source": "genomes",
+   "source": "joint",
+   "gnomadKey": "12-111803962-G-A",
+   "gnomadFilter": "PASS",
+   "gnomadDiscordanceP": 0.00316138,
    "cite": {
     "label": "Brooks et al., PLoS Medicine 2009",
     "url": "https://doi.org/10.1371/journal.pmed.1000050"
@@ -95,16 +106,21 @@
    "ref": "C",
    "alt": "T",
    "effIsAlt": true,
-   "af": 0.1604,
+   "af": 0.165535,
    "pops": {
-    "afr": 0.0302,
-    "amr": 0.156,
-    "asj": 0.1069,
-    "eas": 0.8715,
-    "fin": 0.2442,
-    "nfe": 0.1425
+    "afr": 0.0255173,
+    "amr": 0.147985,
+    "asj": 0.109144,
+    "eas": 0.870854,
+    "fin": 0.231292,
+    "mid": 0.0836358,
+    "nfe": 0.127804,
+    "sas": 0.405242
    },
-   "source": "genomes",
+   "source": "joint",
+   "gnomadKey": "16-48224287-C-T",
+   "gnomadFilter": "PASS",
+   "gnomadDiscordanceP": 3.35073e-15,
    "cite": [
     {
      "label": "Yoshiura et al., Nature Genetics 2006",
@@ -132,16 +148,21 @@
    "ref": "A",
    "alt": "G",
    "effIsAlt": true,
-   "af": 0.5626,
+   "af": 0.486506,
    "pops": {
-    "afr": 0.125,
-    "amr": 0.2229,
-    "asj": 0.5483,
-    "eas": 0.0006,
-    "fin": 0.8835,
-    "nfe": 0.804
+    "afr": 0.126084,
+    "amr": 0.242906,
+    "asj": 0.572005,
+    "eas": 0.00173678,
+    "fin": 0.885456,
+    "mid": 0.210884,
+    "nfe": 0.76357,
+    "sas": 0.0909656
    },
-   "source": "genomes",
+   "source": "joint",
+   "gnomadKey": "15-28120472-A-G",
+   "gnomadFilter": "PASS",
+   "gnomadDiscordanceP": null,
    "cite": {
     "label": "Sturm et al., American Journal of Human Genetics 2008",
     "url": "https://doi.org/10.1016/j.ajhg.2007.11.005"
@@ -152,10 +173,6 @@
    "rs": "rs9923231",
    "cat": "pgx",
    "gene": "VKORC1",
-   "cite": {
-    "label": "Sconce et al., Blood 2005",
-    "url": "https://doi.org/10.1182/blood-2005-03-1108"
-   },
    "title": "Warfarin dose sensitivity",
    "read": [
     "lower warfarin sensitivity than T carriers in the study",
@@ -167,16 +184,25 @@
    "ref": "C",
    "alt": "T",
    "effIsAlt": true,
-   "af": 0.326,
+   "af": 0.319017,
    "pops": {
-    "afr": 0.1009,
-    "amr": 0.4444,
-    "asj": 0.4759,
-    "eas": 0.8996,
-    "fin": 0.3892,
-    "nfe": 0.3686
+    "afr": 0.0997735,
+    "amr": 0.39143,
+    "asj": 0.499424,
+    "eas": 0.891725,
+    "fin": 0.390888,
+    "mid": 0.534247,
+    "nfe": 0.377916,
+    "sas": 0.178068
    },
-   "source": "genomes",
+   "source": "joint",
+   "gnomadKey": "16-31096368-C-T",
+   "gnomadFilter": "PASS",
+   "gnomadDiscordanceP": null,
+   "cite": {
+    "label": "Sconce et al., Blood 2005",
+    "url": "https://doi.org/10.1182/blood-2005-03-1108"
+   },
    "studyNote": "Warfarin dose requirements also depended on other genes, age and body size in this study. This variant alone does not determine a dose."
   }
  ]

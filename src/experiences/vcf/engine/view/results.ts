@@ -1,3 +1,4 @@
+import { frequencySourceNote } from "../../../../lib/genetics/frequency-source.ts";
 import type { VcfMatch } from "../../types.ts";
 import { resultSources } from "../../../../lib/results/sources.ts";
 import { ext, escape, kvx, fmt, rawBlock, SOURCES } from "./html.ts";
@@ -105,7 +106,7 @@ export function matchRow(h: VcfMatch) {
            : "The submitter did not name a condition."
        }</td></tr>
        <tr><td class="fk">Trust</td><td class="fd"><span class="stars">${stars(h.stars)}</span> ${h.stars} ${h.stars === 1 ? "star" : "stars"} — ${escape(reviewText(h))}. ${ext(SOURCES.clinvarStars, "About the stars")}</td></tr>
-       <tr><td class="fk">Frequency</td><td class="fd">${frequency}</td></tr>
+       <tr><td class="fk">Frequency</td><td class="fd">${frequency}<p class="mini">${escape(frequencySourceNote(h))}</p></td></tr>
        <tr><td class="fk">Sources</td><td class="fd">${resultSources(h)}</td></tr>
      </tbody></table>`,
   );

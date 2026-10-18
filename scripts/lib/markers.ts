@@ -1,4 +1,13 @@
 import type { StudyCitation } from "../../src/lib/catalogues/types.ts";
+import type { JointFrequency } from "./reference/gnomad-joint.ts";
+import type { ResolvedOptions } from "./types.ts";
+import fs from "node:fs";
+import path from "node:path";
+import { DATASETS, FREQUENCY_SOURCE } from "./config.ts";
+import { POPULATIONS, jointExtractor } from "./reference/gnomad-joint.ts";
+import { hasStudyEvidence } from "./reference/study-evidence.ts";
+import { retry, writeAtomic, log } from "./util.ts";
+
 export interface BaseMarker {
   rs: string;
   cat: string;
@@ -9,52 +18,7 @@ export interface BaseMarker {
   studyNote?: string;
   targets: Record<string, { variant: string; effectAllele: string }>;
 }
-interface AlleleCounts {
-  ac: number;
-  an: number;
-}
-interface FrequencyCounts extends AlleleCounts {
-  populations?: (AlleleCounts & { id: string })[];
-}
-interface GnomadVariant {
-  variant_id: string;
-  ref: string;
-  alt: string;
-  genome?: FrequencyCounts | null;
-  exome?: FrequencyCounts | null;
-}
-import type { ResolvedOptions } from "./types.ts";
-import fs from "node:fs";
-import path from "node:path";
-import { DATASETS, SOURCES } from "./config.ts";
-import { hasStudyEvidence } from "./reference/study-evidence.ts";
-import { retry, writeAtomic, log } from "./util.ts";
-
-const POPULATIONS: Record<string, string> = {
-  afr: "African",
-  amr: "Latino/Admixed American",
-  asj: "Ashkenazi Jewish",
-  eas: "East Asian",
-  fin: "Finnish",
-  mid: "Middle Eastern",
-  nfe: "European (non-Finnish)",
-  sas: "South Asian",
-};
 export const VARIANT_ID = /^(?:[1-9]|1[0-9]|2[0-2]|X|Y)-[1-9]\d*-[ACGT]+-[ACGT]+$/;
-const FIELDS =
-  "variant_id ref alt genome { ac an populations { id ac an } } exome { ac an populations { id ac an } }";
-
-function alleleFrequency(counts: AlleleCounts) {
-  if (
-    !Number.isSafeInteger(counts.an) ||
-    counts.an <= 0 ||
-    !Number.isSafeInteger(counts.ac) ||
-    counts.ac < 0 ||
-    counts.ac > counts.an
-  )
-    throw new Error("Invalid gnomAD allele counts");
-  return +(counts.ac / counts.an).toFixed(4);
-}
 export function markerTarget(marker: BaseMarker, build: string) {
   const target = marker.targets?.[build];
   if (
@@ -67,23 +31,31 @@ export function markerTarget(marker: BaseMarker, build: string) {
     );
   return target;
 }
+export const markerCache = (data: string, rs: string) =>
+  path.join(data, "markers", `${FREQUENCY_SOURCE}-${rs}.json`);
+
 export function markerOutput(
   marker: BaseMarker,
   build: string,
-  variant: GnomadVariant | null | undefined,
+  frequency: JointFrequency | null | undefined,
 ) {
   const target = markerTarget(marker, build);
-  if (!variant || variant.variant_id !== target.variant)
+  const source = markerTarget(marker, "GRCh38");
+  if (!frequency || frequency.key !== source.variant.replaceAll("-", ":"))
     throw new Error(`${marker.rs}: gnomAD returned a different or missing variant`);
+  if (
+    !Number.isFinite(+frequency.af) ||
+    +frequency.af < 0 ||
+    +frequency.af > 1 ||
+    frequency.an <= 0 ||
+    frequency.ac > frequency.an
+  )
+    throw new Error(`${marker.rs}: invalid gnomAD counts`);
   const [chrom, position, ref, alt] = target.variant.split("-");
-  if (variant.ref !== ref || variant.alt !== alt)
-    throw new Error(`${marker.rs}: gnomAD allele mismatch`);
-  const frequency = (variant.genome?.an ?? 0) > 0 ? variant.genome : variant.exome;
-  if (!frequency) throw new Error(`${marker.rs}: frequency data unavailable`);
-  const pops: Record<string, number> = {};
-  for (const population of frequency.populations || [])
-    if (POPULATIONS[population.id] && population.an)
-      pops[population.id] = alleleFrequency(population);
+  const [, , sourceRef, sourceAlt] = source.variant.split("-");
+  // Curated targets may move coordinates, but must describe the same oriented allele.
+  if (ref !== sourceRef || alt !== sourceAlt || target.effectAllele !== source.effectAllele)
+    throw new Error(`${marker.rs}: cross-build marker alleles require verification`);
   return {
     rs: marker.rs,
     cat: marker.cat,
@@ -95,9 +67,12 @@ export function markerOutput(
     ref,
     alt,
     effIsAlt: target.effectAllele === alt,
-    af: alleleFrequency(frequency),
-    pops,
-    source: frequency === variant.genome ? "genomes" : "exomes",
+    af: +frequency.af,
+    pops: frequency.pops,
+    source: "joint",
+    gnomadKey: source.variant,
+    gnomadFilter: frequency.filter,
+    gnomadDiscordanceP: frequency.discordanceP === "." ? null : +frequency.discordanceP,
     cite: marker.cite,
     ...(marker.studyNote ? { studyNote: marker.studyNote } : {}),
   };
@@ -105,7 +80,7 @@ export function markerOutput(
 
 export async function buildMarkers(
   { paths, build = "GRCh38", fresh = false, offline = false }: ResolvedOptions,
-  { fetcher = fetch } = {},
+  { extract = jointExtractor() } = {},
 ) {
   if (offline && fresh) throw new Error("--offline and --fresh cannot be combined");
   const base = (JSON.parse(fs.readFileSync(paths.markerBase, "utf8")) as BaseMarker[]).filter(
@@ -114,54 +89,54 @@ export async function buildMarkers(
   if (!base.length) throw new Error("No cited markers; previous marker index was not changed");
   const markers = [];
   for (const marker of base) {
-    const target = markerTarget(marker, build);
+    const target = markerTarget(marker, "GRCh38");
     if (!/^rs\d+$/.test(marker.rs)) throw new Error("Invalid marker rsID");
-    const cache = path.join(paths.data, "markers", `${build}-${marker.rs}.json`);
-    let variant;
+    const cache = markerCache(paths.data, marker.rs);
+    let frequency: JointFrequency | undefined;
     if (!fresh && fs.existsSync(cache)) {
       const saved = JSON.parse(fs.readFileSync(cache, "utf8"));
-      if (saved.dataset === DATASETS[build] && saved.variant?.variant_id === target.variant)
-        variant = saved.variant;
+      if (
+        saved.source === FREQUENCY_SOURCE &&
+        saved.frequency?.key === target.variant.replaceAll("-", ":")
+      )
+        frequency = saved.frequency;
     }
-    if (!variant) {
+    if (!frequency) {
       if (offline)
         throw new Error(
-          `No compatible cached marker response at ${cache}. Run npm run data:markers -- --build ${build} first.`,
+          `No compatible cached marker response at ${cache}. Run npm run data:markers first.`,
         );
-      variant = await retry(async () => {
-        const response = await fetcher(SOURCES.gnomad, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          signal: AbortSignal.timeout(30_000),
-          body: JSON.stringify({
-            query: `{ variant(variantId: ${JSON.stringify(target.variant)}, dataset: ${DATASETS[build]}) { ${FIELDS} } }`,
-          }),
+      const [chrom, pos, ref, alt] = target.variant.split("-");
+      frequency = await retry(async () => {
+        const rows = await extract({
+          chrom: chrom!,
+          start: +pos! - 1,
+          end: +pos!,
+          keys: new Set([`${pos}:${ref}:${alt}`]),
         });
-        if (!response.ok) throw new Error(`gnomAD: HTTP ${response.status}`);
-        const result = (await response.json()) as {
-          errors?: { message: string }[];
-          data?: { variant?: GnomadVariant | null };
-        };
-        if (result.errors?.length)
-          throw new Error(result.errors.map((error) => error.message).join("; "));
-        markerOutput(marker, build, result.data?.variant); // Never cache invalid responses.
-        return result.data?.variant;
+        if (rows.length !== 1) throw new Error(`${marker.rs}: expected one joint frequency record`);
+        markerOutput(marker, build, rows[0]);
+        return rows[0];
       });
       writeAtomic(
         cache,
-        JSON.stringify(
-          { dataset: DATASETS[build], fetchedAt: new Date().toISOString(), variant },
-          null,
-          2,
-        ) + "\n",
+        JSON.stringify({
+          source: FREQUENCY_SOURCE,
+          fetchedAt: new Date().toISOString(),
+          frequency,
+        }) + "\n",
       );
     }
-    markers.push(markerOutput(marker, build, variant));
-    log(`${marker.rs}: ${target.variant}`);
+    markers.push(markerOutput(marker, build, frequency));
+    log(`${marker.rs}: ${target.variant} (joint GRCh38 source)`);
   }
   writeAtomic(
     paths.markers(build),
-    JSON.stringify({ build, dataset: DATASETS[build], pops: POPULATIONS, markers }, null, 1) + "\n",
+    JSON.stringify(
+      { build, dataset: DATASETS[build], source: FREQUENCY_SOURCE, pops: POPULATIONS, markers },
+      null,
+      1,
+    ) + "\n",
   );
   log(`${build}: ${markers.length} cited markers → ${paths.markers(build)}`);
   return markers;

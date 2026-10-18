@@ -3,18 +3,18 @@
 This is an engineering inventory for maintainers. The site's Privacy Policy and
 Terms remain in `src/content/policies.tsx`.
 
-| Location                                   | Contents                                                          | Release treatment                                             |
-| ------------------------------------------ | ----------------------------------------------------------------- | ------------------------------------------------------------- |
-| `src/`, `scripts/`                         | Application and reference-building source                         | MIT source, subject to third-party notices                    |
-| `src/experiences/consumer-dna/fixtures/`   | Tiny invented genotype exports                                    | Safe synthetic fixtures; never replace with personal data     |
-| `public/ref/GRCh37/`, `public/ref/GRCh38/` | Generated ClinVar and gnomAD teaching catalogues                  | Public scientific data; retain provenance and upstream terms  |
-| `public/samples/`                          | Public NIST GIAB HG002 benchmark VCF and provenance               | Explicitly public sample; retain its README and checksums     |
-| `data/`                                    | Reference downloads, intermediate tables and downloaded UCSC tool | Local build cache, ignored; not required to run the app       |
-| `public/ref/publications/`                 | Shared compact PubMed citation labels, manifest and hashed shards | Public metadata; generated offline and deployed with the site |
-| `node_modules/`                            | Installed dependencies and their licenses                         | Recreate with `npm ci`; do not commit                         |
-| `dist/`, `.tanstack/`                      | Generated build/router/platform state                             | Generated, ignored                                            |
-| `tmp/`, `output/`, `coverage/`             | Local scratch files, document exports and test reports            | Generated or local-only, ignored                              |
-| User-selected files                        | A browser File handle and derived calls                           | Never copy into the repo, public assets or test fixtures      |
+| Location                                   | Contents                                                                   | Release treatment                                             |
+| ------------------------------------------ | -------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `src/`, `scripts/`                         | Application and reference-building source                                  | MIT source, subject to third-party notices                    |
+| `src/experiences/consumer-dna/fixtures/`   | Tiny invented genotype exports                                             | Safe synthetic fixtures; never replace with personal data     |
+| `public/ref/GRCh37/`, `public/ref/GRCh38/` | Generated ClinVar and gnomAD teaching catalogues                           | Public scientific data; retain provenance and upstream terms  |
+| `public/samples/`                          | Public NIST GIAB HG002 benchmark VCF and provenance                        | Explicitly public sample; retain its README and checksums     |
+| `data/`                                    | Reference downloads, intermediate tables and joint-frequency region caches | Local build cache, ignored; not required to run the app       |
+| `public/ref/publications/`                 | Shared compact PubMed citation labels, manifest and hashed shards          | Public metadata; generated offline and deployed with the site |
+| `node_modules/`                            | Installed dependencies and their licenses                                  | Recreate with `npm ci`; do not commit                         |
+| `dist/`, `.tanstack/`                      | Generated build/router/platform state                                      | Generated, ignored                                            |
+| `tmp/`, `output/`, `coverage/`             | Local scratch files, document exports and test reports                     | Generated or local-only, ignored                              |
+| User-selected files                        | A browser File handle and derived calls                                    | Never copy into the repo, public assets or test fixtures      |
 
 ## Automatic browser requests
 

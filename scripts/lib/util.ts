@@ -4,7 +4,6 @@ export { atomicWriter, writeAtomic } from "./io/atomic.ts";
 export { textLines, readLines } from "./io/lines.ts";
 export { bgzfWriter, bgzfWrite } from "./io/bgzf.ts";
 export { retry, download } from "./network.ts";
-export { ensureTool } from "./tool.ts";
 export { log, mb } from "./log.ts";
 
 export function requireFiles(...files: string[]) {

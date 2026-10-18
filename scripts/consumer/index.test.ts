@@ -6,7 +6,7 @@ import path from "node:path";
 import os from "node:os";
 import { spawnSync } from "node:child_process";
 import { gzipSync } from "node:zlib";
-import { paths, DATASETS, ROOT } from "../lib/config.ts";
+import { paths, FREQUENCY_SOURCE, ROOT } from "../lib/config.ts";
 import { markerTarget } from "../lib/markers.ts";
 import { hasStudyEvidence } from "../lib/reference/study-evidence.ts";
 import { buildPlan } from "../lib/plan.ts";
@@ -138,7 +138,7 @@ test("data:rebuild creates every index through the real CLI using cached synthet
     );
   fs.writeFileSync(
     files.frequencies,
-    "#chrom\tpos\tref\talt\taf\tgrp\tafmax\tan\n1\t100\tC\tT\t0.01\tafr\t0.02\t100\n",
+    "#chrom\tpos\tref\talt\taf\tgrp\tafmax\tan\tac\tfilter\tdiscordancep\n1\t100\tC\tT\t0.01\tafr\t0.02\t100\t1\tPASS\t.\n",
   );
   fs.writeFileSync(
     files.citations,
@@ -163,23 +163,26 @@ test("data:rebuild creates every index through the real CLI using cached synthet
   for (const marker of JSON.parse(fs.readFileSync(files.markerBase, "utf8")).filter(
     hasStudyEvidence,
   )) {
-    for (const build of ["GRCh37", "GRCh38"]) {
-      const target = markerTarget(marker, build),
-        [, , ref, alt] = target.variant.split("-");
-      fs.writeFileSync(
-        path.join(files.data, "markers", `${build}-${marker.rs}.json`),
-        JSON.stringify({
-          dataset: DATASETS[build],
-          variant: {
-            variant_id: target.variant,
-            ref,
-            alt,
-            genome: { ac: 1, an: 100, populations: [] },
-          },
-        }),
-      );
-    }
+    const target = markerTarget(marker, "GRCh38");
+    fs.writeFileSync(
+      path.join(files.data, "markers", `gnomad-v4.1-joint-${marker.rs}.json`),
+      JSON.stringify({
+        source: FREQUENCY_SOURCE,
+        frequency: {
+          key: target.variant.replaceAll("-", ":"),
+          ac: 1,
+          an: 100,
+          af: "0.01",
+          grp: ".",
+          afmax: ".",
+          filter: "PASS",
+          discordanceP: ".",
+          pops: {},
+        },
+      }),
+    );
   }
+
   const result = spawnSync(
     "npm",
     ["run", "data:rebuild", "--", "--data-dir", files.data, "--out-dir", files.output],

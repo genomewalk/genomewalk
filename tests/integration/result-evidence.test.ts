@@ -94,6 +94,9 @@ test("catalogue decoding preserves all reference fields, measured zero and align
     "",
     "9-72694578-C-T",
     "C1832394|",
+    "0",
+    "PASS",
+    "0.00001",
   ];
   assert.deepEqual(parseCatalogEntry(row.join("\t")), {
     chrom: "9",
@@ -120,6 +123,9 @@ test("catalogue decoding preserves all reference fields, measured zero and align
     conflictingSig: "",
     gnomadKey: "9-72694578-C-T",
     conditionMedgenIds: "C1832394|",
+    gnomadAc: 0,
+    gnomadFilter: "PASS",
+    gnomadDiscordanceP: 0.00001,
   });
 });
 

@@ -13,7 +13,6 @@ export interface BuildOptions {
   help?: boolean | undefined;
   jobs?: string | undefined;
   chrom?: string | undefined;
-  tool?: string | undefined;
   paths?: ReturnType<typeof paths>;
 }
 export type ResolvedOptions = BuildOptions & { paths: ReturnType<typeof paths> };

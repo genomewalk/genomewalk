@@ -25,6 +25,9 @@ export interface CatalogEntry extends VariantIdentity {
   conflictingSig: string;
   gnomadKey: string;
   conditionMedgenIds: string;
+  gnomadAc?: number | null;
+  gnomadFilter?: string;
+  gnomadDiscordanceP?: number | null;
 }
 export interface Evidence {
   sig: string;
@@ -69,6 +72,9 @@ export interface Marker extends VariantIdentity {
   af: number | null;
   pops: Record<string, number | null>;
   source?: string;
+  gnomadKey?: string;
+  gnomadFilter?: string;
+  gnomadDiscordanceP?: number | null;
   cite?: StudyCitation | StudyCitation[];
   studyNote?: string;
 }

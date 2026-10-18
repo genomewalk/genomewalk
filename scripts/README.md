@@ -1,7 +1,7 @@
 # Offline reference indexes
 
-With Docker, run any target below through the tools service; Node and the UCSC
-executable are included:
+With Docker, run any target below through the tools service; Node and the indexed-file reader
+are included:
 
 ```sh
 docker compose run --build --rm tools data:build
@@ -32,7 +32,7 @@ npm run data:inputs                  # inspect cached prerequisites for offline 
 
 Use `npm run data:rebuild` for a **network-free** rebuild from an existing cache.
 It requires cached ClinVar VCF files, frequencies, citation lists, PubMed labels and compatible
-marker API responses. A missing input is an error; it never falls back to HTTP. Before running any
+marker frequency records. A missing input is an error; it never falls back to HTTP. Before running any
 stage, the offline command checks required input files, marker-cache identities
 and publication metadata coverage. Run `npm run data:inputs`
 to do this check on its own; it writes nothing. The builders still validate
@@ -54,7 +54,7 @@ Use `npm run data:refresh` when you intend to fetch a new reference release.
 | `npm run data:download`                  | Cache ClinVar VCF/XML; extract germline citation lists                                        | For missing inputs    |
 | `npm run data:citations`                 | Download ClinVar VCV XML and extract its germline publication lists                           | For missing input     |
 | `npm run data:publications`              | Build compact citation labels for existing catalogues; cache PubMed metadata                  | For missing metadata  |
-| `npm run data:frequencies`               | Extract gnomAD v4.1 frequencies for selected ClinVar records                                  | Yes                   |
+| `npm run data:frequencies`               | Extract published gnomAD v4.1 combined frequencies for selected ClinVar records               | Yes                   |
 | `npm run data:catalog -- --build GRCh38` | Build one catalogue from cached inputs                                                        | No                    |
 | `npm run data:markers -- --build GRCh38` | Build cited examples from exact variant IDs                                                   | For missing responses |
 | `npm run data:check`                     | Validate catalogues, markers and consumer rsID lookups                                        | No                    |
@@ -73,12 +73,16 @@ npm run data:frequencies -- --chrom 21 --jobs 4
 npm run data:check -- --only GRCh38
 ```
 
-The first complete run can take an hour or more, mostly remote frequency
-extraction. `--chrom 21` performs real network requests and writes
-`data/freqs.tsv.chr21`; it never replaces the complete `freqs.tsv` cache.
-`--jobs` accepts 1–16 concurrent extractions and defaults to 6. The full
-`data:build` / `data:refresh` commands also accept `--jobs` and `--tool`; these are
-forwarded to the frequency stage.
+The first complete run is dominated by remote frequency extraction. `--chrom 21` performs real network requests and writes
+`data/freqs.gnomad-v4.1-joint.tsv.chr21`; it never replaces the complete joint-frequency cache.
+`--jobs` accepts 1–16 concurrent extractions and defaults to 3. The full
+`data:build` / `data:refresh` commands also accept `--jobs`. Extraction uses
+standard Tabix indexes and HTTP byte ranges to read the official joint VCFs.
+The first extraction can take many hours: the source rows contain considerably
+more information than the small published Genomewalk catalogue. Completed regions
+are cached under `data/gnomad-v4.1-joint/`; rerunning resumes those results.
+`--fresh` deliberately bypasses this cache. Neither the full VCFs nor these
+intermediate caches are shipped to the browser.
 
 Download and marker commands reuse completed cache files. `--fresh` refreshes
 those inputs. To refresh the entire pipeline consistently, use
@@ -89,15 +93,15 @@ stages remain reusable; retry the command after addressing the error.
 ## Inputs, dependencies and outputs
 
 ```text
-ClinVar GRCh38 VCF ── gnomAD bigBed regions ── freqs.tsv
+ClinVar GRCh38 VCF ── gnomAD joint VCF regions ── joint frequency cache
         │                                      │
         ├────────── GRCh38 catalogue ───────────┘
-        └────────── freqs.by-alleleid.tsv
+        └────────── freqs.gnomad-v4.1-joint.by-alleleid.tsv
                               │
 ClinVar GRCh37 VCF ── GRCh37 catalogue
 
 ClinVar VCV XML ── aggregate germline citations ── PubMed references in both catalogues
-markers.base.json + gnomAD API ── cited markers for each build
+markers.base.json + GRCh38 joint VCF ── cited markers for each build
 ```
 
 Each output directory contains `catalog.tsv.gz` (about 26 MB),
@@ -220,23 +224,21 @@ This selection is not a comprehensive clinical screen. Only single alternate
 sequence alleles up to 50 bases are included; symbolic and multiallelic rows are
 not guessed into individual alleles.
 
-The earlier frequency script searched for `pathogenic` anywhere in INFO and
-could miss other retained categories. Fresh frequency builds now use the shared
-selection. Existing caches remain readable; missing frequency stays unknown
-until rebuilt. This cleanup does not refresh the shipped scientific data.
+The extractor matches chromosome, position, REF and ALT in the official GRCh38
+gnomAD v4.1 joint sites VCFs. It retains published `AF_joint`, `AC_joint`,
+`AN_joint`, `grpmax_joint`, `AF_grpmax_joint`, the VCF `FILTER` status and
+`stat_union_p_value`. It does not choose between exomes and genomes, average their
+percentages, or substitute filtering allele frequency (`faf95`) for observed AF.
+Zero is a measured value; missing data remains missing. Source filter warnings
+and gnomAD's discordance threshold (`p < 0.0001`) are explained in both results
+views. These annotations do not automatically dismiss a ClinVar claim.
 
-The frequency extractor clusters nearby targets, streams UCSC bigBed rows and
-keeps the exome or genome observation with the greater allele number (AN).
-Genomes win equal-AN ties deterministically. These datasets are not added
-together. Overall AF and the highest population AF remain separate. Zero is a
-measured value; unavailable population data remains missing. Frequency does not
-automatically dismiss a ClinVar claim.
-
-`bigBedToBed` is the only external executable. It is downloaded from UCSC into
-`data/tools/` for macOS arm64/x64 or Linux x64. Other platforms can supply a
-compatible executable with `data:frequencies -- --tool <path>`. Downloads use
-Node's HTTP client; curl, bgzip, tabix and Python are not build prerequisites.
-Each extraction has a two-minute timeout and up to three attempts.
+`@gmod/tabix` is an offline development dependency; no external executable is
+needed. Nearby targets share 16,384-base queries. Failed region reads get up to
+six attempts, with increasing pauses of 5–25 seconds between attempts,
+and the complete frequency cache is published only after all regions succeed.
+The joint cache has a separate filename and expanded schema, so an old
+exome/genome-selection cache cannot silently be reused as joint data.
 
 ## Cited examples
 
@@ -252,12 +254,17 @@ must also have a `targets` entry for each supported build:
 
 These are exact forward-strand source alleles, not inferred parental alleles.
 The current targets preserve the identities in the already-shipped marker files.
-The builder requests that exact variant and checks the returned identity. It
-never chooses an arbitrary rsID alternative or guesses strand from the effect
-letter. Genome frequencies are preferred when available, otherwise exomes.
-Raw API responses are cached under `data/markers/` with dataset and fetch time;
-`--fresh` replaces them. The browser still receives only the small final index.
+The builder reads the exact GRCh38 variant from the same published joint VCFs
+used for catalogue annotations. Both builds use these frequencies; the curated
+GRCh37 target supplies the display/matching coordinate. The builder checks that
+REF, ALT and the effect allele agree across the curated targets and refuses
+unverified allele changes. This small curated map is separate from the catalogue's
+ClinVar AlleleID join. Population figures use `AF_joint_<group>` when that group's
+`AN_joint_<group>` is positive. No rounding is applied to the saved frequencies.
 
+Completed marker records are cached under `data/markers/gnomad-v4.1-joint-rs*.json`.
+`--fresh` refreshes them; `--offline` requires a compatible cache. The browser
+receives only the compact marker index and links back to its GRCh38 source.
 Candidates without cited interpretations stay excluded. When adding an example,
 verify variant, build, effect allele, study population and wording. `cite` may
 contain several sources, and `studyNote` records qualifications. See
@@ -273,12 +280,12 @@ in `lib/`:
 | `preflight.ts`                              | Read-only prerequisite checks for cached rebuilds              |
 | `config.ts`, `cli.ts`                       | Source URLs, paths, strict options and help                    |
 | `plan.ts`                                   | Ordered prerequisites and single-build behavior                |
-| `downloads.ts`, `network.ts`, `tool.ts`     | Public input downloads, HTTP retry and the UCSC executable     |
+| `downloads.ts`, `network.ts`                | Public input downloads and HTTP retry                          |
 | `io/atomic.ts`, `io/lines.ts`, `io/bgzf.ts` | Atomic files, streaming lines and bounded BGZF reading/writing |
 | `util.ts`, `log.ts`                         | Small compatibility API and progress logging                   |
 | `clinvar.ts`, `catalog.ts`                  | Shared record selection, evidence fields and joins             |
-| `frequencies.ts`                            | Regions, bounded extraction jobs and dataset selection         |
-| `markers.ts`                                | Exact marker identities, cached requests and output            |
+| `frequencies.ts`                            | Resumable regions and bounded extraction jobs                  |
+| `markers.ts`                                | Verified cross-build marker identities and cached output       |
 | `validate.ts`                               | Schema, frequency, identity and evidence checks                |
 
 `reference-data.test.ts` exercises synthetic builds, corrupt inputs, failed
@@ -291,9 +298,9 @@ files separately and makes no network requests.
 - [ClinVar GRCh38](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/) and
   [GRCh37](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/)
 - [ClinVar VCV XML release](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/xml/ClinVarVCVRelease_00-latest.xml.gz)
-- [UCSC gnomAD v4.1 bigBeds](https://hgdownload.soe.ucsc.edu/gbdb/hg38/gnomAD/v4.1/)
-- [gnomAD API](https://gnomad.broadinstitute.org/api)
-- [UCSC executables](https://hgdownload.soe.ucsc.edu/admin/exe/)
+- [gnomAD v4.1 combined frequencies](https://gnomad.broadinstitute.org/news/2024-04-gnomad-v4-1)
+- [Official joint VCF directory](https://storage.googleapis.com/storage/v1/b/gcp-public-data--gnomad/o?prefix=release/4.1/vcf/joint/)
+- [Tabix reader](https://github.com/GMOD/tabix-js)
 
 `data/` contains downloaded public inputs, intermediate joins and tool caches.
 It is ignored by Git and can be recreated. Keep public sample provenance and

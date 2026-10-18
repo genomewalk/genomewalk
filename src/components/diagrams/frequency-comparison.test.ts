@@ -18,10 +18,10 @@ const reference = (build: string | undefined) =>
     ),
   );
 
-test("available formats use the loaded build's frequencies in the same comparison", () => {
+test("both builds and file formats use the same published joint frequencies", () => {
   for (const [build, eastAsian] of [
-    ["GRCh37", "27%"],
-    ["GRCh38", "22%"],
+    ["GRCh37", "24%"],
+    ["GRCh38", "24%"],
   ]) {
     const data = reference(build);
     const html = vcfStory(data);

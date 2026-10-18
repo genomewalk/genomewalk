@@ -32,6 +32,16 @@ export function validateCatalogRow(line: string) {
     throw new Error("Frequency is missing its GRCh38 source key");
   if (fields[7]!.split("|").length !== fields[23]!.split("|").length)
     throw new Error("Condition names and identifier groups are misaligned");
+  if (
+    !/^(?:\.|\d+)$/.test(fields[24]!) ||
+    !validFraction(fields[26]!) ||
+    ![".", "PASS", "EXOMES_FILTERED", "GENOMES_FILTERED", "BOTH_FILTERED"].includes(fields[25]!)
+  )
+    throw new Error("Invalid gnomAD joint counts, filters or discordance statistic");
+  if (fields[24] !== "." && (+fields[24]! > +fields[11]! || fields[11] === "."))
+    throw new Error("gnomAD allele count exceeds measured copies");
+  if (fields[8] !== "." && (fields[24] === "." || fields[25] === "."))
+    throw new Error("Frequency lacks joint source metadata; rebuild the catalogue");
   return fields;
 }
 export async function checkReference({ paths, build }: ResolvedOptions & { build: string }) {
@@ -78,7 +88,9 @@ export async function checkReference({ paths, build }: ResolvedOptions & { build
       (marker.effIsAlt ? marker.alt : marker.ref) !== target.effectAllele ||
       JSON.stringify(marker.read) !== JSON.stringify(original.read) ||
       JSON.stringify(marker.cite) !== JSON.stringify(original.cite) ||
-      marker.studyNote !== original.studyNote
+      marker.studyNote !== original.studyNote ||
+      marker.source !== "joint" ||
+      marker.gnomadKey !== markerTarget(original, "GRCh38").variant
     )
       throw new Error(`${build} ${marker.rs}: marker identity or evidence changed`);
     if (

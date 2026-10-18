@@ -1,13 +1,14 @@
 import { catalogConditionReferences } from "./reference/condition-links.ts";
 
 export const CATALOG_COLUMNS =
-  "chrom pos ref alt sig stars gene conditions af grp afmax an variationid alleleid classification reviewstatus rsids hgvs pmids releasedate citationdate conflictingclassifications gnomadkey conditionmedgenids".split(
+  "chrom pos ref alt sig stars gene conditions af grp afmax an variationid alleleid classification reviewstatus rsids hgvs pmids releasedate citationdate conflictingclassifications gnomadkey conditionmedgenids gnomadac gnomadfilter gnomaddiscordancep".split(
     " ",
   );
 export const CATALOG_HEADER = "#" + CATALOG_COLUMNS.join("\t");
-export const FREQUENCY_HEADER = "#chrom\tpos\tref\talt\taf\tgrp\tafmax\tan";
-export const ALLELE_HEADER = "#alleleid\taf\tgrp\tafmax\tan\tgnomadkey";
-export const MISSING_FREQUENCY = [".", ".", ".", "."];
+export const FREQUENCY_HEADER =
+  "#chrom\tpos\tref\talt\taf\tgrp\tafmax\tan\tac\tfilter\tdiscordancep";
+export const ALLELE_HEADER = "#alleleid\taf\tgrp\tafmax\tan\tac\tfilter\tdiscordancep\tgnomadkey";
+export const MISSING_FREQUENCY = [".", ".", ".", ".", ".", ".", "."];
 const STARS: Record<string, number> = {
   practice_guideline: 4,
   reviewed_by_expert_panel: 3,
@@ -93,7 +94,7 @@ export function catalogFields(
     STARS[info["CLNREVSTAT"] || ""] || 0,
     (info["GENEINFO"] || "").split("|")[0]!.split(":")[0],
     conditions.map((c) => c.name).join("|"),
-    ...frequency,
+    ...frequency.slice(0, 4),
     variationId,
     info["ALLELEID"] || "",
     info["CLNSIG"] || "",
@@ -106,5 +107,6 @@ export function catalogFields(
     info["CLNSIGCONF"] || "",
     frequencyKey,
     conditions.map((c) => c.ids.join(",")).join("|"),
+    ...[4, 5, 6].map((index) => frequency[index] || "."),
   ];
 }

@@ -1,8 +1,7 @@
 import type { ResolvedOptions } from "./types.ts";
 import fs from "node:fs";
-import path from "node:path";
-import { BUILDS, DATASETS } from "./config.ts";
-import { markerTarget } from "./markers.ts";
+import { BUILDS, FREQUENCY_SOURCE } from "./config.ts";
+import { markerTarget, markerCache } from "./markers.ts";
 import { hasStudyEvidence } from "./reference/study-evidence.ts";
 
 /** Check offline prerequisites up front, without creating output or making requests. */
@@ -33,12 +32,16 @@ export function inspectCachedInputs({ paths, only }: ResolvedOptions) {
   }
   for (const build of builds) {
     for (const marker of markers) {
-      const file = path.join(paths.data, "markers", `${build}-${marker.rs}.json`);
+      const file = markerCache(paths.data, marker.rs);
       required.push(file);
       try {
-        const target = markerTarget(marker, build);
+        markerTarget(marker, build);
+        const target = markerTarget(marker, "GRCh38");
         const cached = JSON.parse(fs.readFileSync(file, "utf8"));
-        if (cached.dataset !== DATASETS[build] || cached.variant?.variant_id !== target.variant)
+        if (
+          cached.source !== FREQUENCY_SOURCE ||
+          cached.frequency?.key !== target.variant.replaceAll("-", ":")
+        )
           issues.push(`${file}: cached dataset or variant does not match the marker definition`);
       } catch {
         issues.push(`${file}: missing or invalid marker cache`);

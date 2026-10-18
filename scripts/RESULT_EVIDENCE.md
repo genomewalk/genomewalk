@@ -77,3 +77,13 @@ retain a minimum visual fill, disclosed next to the figures; the printed number
 is authoritative. Missing frequencies are not drawn as zero.
 
 The consumer experience owns a separate copy of its evidence renderer.
+
+## Combined population frequencies
+
+The joint gnomAD v4.1 source supplies observed frequency and allele counts.
+The catalogue appends `gnomadac`, `gnomadfilter` and `gnomaddiscordancep`;
+existing identity and annotation columns retain their positions. Both results
+views show source filter warnings and substantial exome/genome disagreement
+(`stat_union_p_value < 0.0001`). A missing statistic is not a negative result.
+GRCh37 retains the same GRCh38 source frequency and quality metadata through
+ClinVar AlleleID. Teaching markers use their verified GRCh38 target too.

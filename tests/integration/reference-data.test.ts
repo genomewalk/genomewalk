@@ -22,12 +22,7 @@ import {
   FREQUENCY_HEADER,
 } from "../../scripts/lib/clinvar.ts";
 import { buildCatalog } from "../../scripts/lib/catalog.ts";
-import {
-  clusterTargets,
-  parseBigBed,
-  collectFrequencies,
-  extractRegion,
-} from "../../scripts/lib/frequencies.ts";
+import { clusterTargets, collectFrequencies } from "../../scripts/lib/frequencies.ts";
 import { markerOutput, buildMarkers } from "../../scripts/lib/markers.ts";
 import { validateCatalogRow, checkReference } from "../../scripts/lib/validate.ts";
 
@@ -39,14 +34,15 @@ function temporary(t: test.TestContext) {
 const vcfRow = (pos: number, sig: string, extra = "", alt = "T") =>
   `1\t${pos}\t123\tC\t${alt}\t.\t.\tCLNSIG=${sig};ALLELEID=456;CLNREVSTAT=criteria_provided,_single_submitter;GENEINFO=GENE:1;CLNDN=First_condition|Second_condition;CLNDISDB=MedGen:C001|MedGen:C002${extra}`;
 const variant = {
-  variant_id: "1-10-C-T",
-  ref: "C",
-  alt: "T",
-  genome: {
-    ac: 0,
-    an: 100,
-    populations: [{ id: "afr", ac: 0, an: 40 }],
-  },
+  key: "1:10:C:T",
+  af: "0",
+  grp: ".",
+  afmax: ".",
+  ac: 0,
+  an: 100,
+  filter: "PASS",
+  discordanceP: ".",
+  pops: { afr: 0 },
 };
 const marker = {
   rs: "rs123",
@@ -71,7 +67,10 @@ function fixture(t: test.TestContext) {
     files.citations,
     "#ClinVar germline citations v1\t2026-09-18\n#VariationID\tPMIDs\n123\t111,222\n#Complete\t1\n",
   );
-  fs.writeFileSync(files.frequencies, FREQUENCY_HEADER + "\n1\t10\tC\tT\t0\tafr\t0\t100\n");
+  fs.writeFileSync(
+    files.frequencies,
+    FREQUENCY_HEADER + "\n1\t10\tC\tT\t0\tafr\t0\t100\t0\tPASS\t.\n",
+  );
   for (const build of ["GRCh38", "GRCh37"])
     bgzfWrite(
       "##fileDate=20260918\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n" +
@@ -237,7 +236,7 @@ test("frequency targets use the same selected classifications as the catalogue",
 
 test("catalogue fields retain zero frequency, independent dates, citations and condition links", () => {
   const fields = catalogFields(partialFixture(parseClinvar(vcfRow(10, "Pathogenic"))), {
-    frequency: ["0", "afr", "0", "100"],
+    frequency: ["0", "afr", "0", "100", "0", "PASS", "."],
     frequencyKey: "1-10-C-T",
     pmids: new Set(["111", "222"]),
     releaseDate: "20260918",
@@ -249,7 +248,7 @@ test("catalogue fields retain zero frequency, independent dates, citations and c
   assert.equal(fields[20], "2026-09-18");
   assert.equal(fields[7], "First condition|Second condition");
   assert.equal(fields[23], "C001|C002");
-  assert.equal(validateCatalogRow(fields.join("\t")).length, 24);
+  assert.equal(validateCatalogRow(fields.join("\t")).length, 27);
 });
 
 test("offline catalogue builds join GRCh37 by allele ID and preserve its GRCh38 source link", async (t) => {
@@ -300,69 +299,29 @@ test("region grouping handles unordered targets and clamps chromosome starts", (
   assert.deepEqual([...regions[0]!.keys], ["1:G:A", "2:C:T"]);
 });
 
-test("bigBed schema validation keeps measured zero distinct from missing group data", () => {
-  const fields = Array(27).fill(".");
-  Object.assign(fields, { 9: "C", 10: "T", 13: "100", 14: "0", 21: "10", 23: "N/A", 26: "N/A" });
-  const region = { chrom: "1", keys: new Set(["10:C:T"]) };
-  assert.deepEqual(parseBigBed(fields.join("\t"), partialFixture(region)), {
-    key: "1:10:C:T",
-    af: "0",
-    grp: "N/A",
-    afmax: ".",
-    an: 100,
-  });
-  assert.throws(() => parseBigBed("changed\tschema", partialFixture(region)), /schema/);
-  fields[14] = "2";
-  assert.throws(() => parseBigBed(fields.join("\t"), partialFixture(region)), /Invalid AF/);
-});
-
-test("failed extraction fails the build; successful ties deterministically prefer genomes", async () => {
-  const regions = [{ chrom: "1", start: 0, end: 20 }];
+test("failed joint extraction rejects and duplicate records are never silently selected", async () => {
+  const regions = [{ chrom: "1", start: 0, end: 20, keys: new Set(["10:C:T"]) }];
   await assert.rejects(
-    collectFrequencies(partialFixture(regions), {
-      extract: async () => {
+    collectFrequencies(regions, {
+      makeExtractor: () => async () => {
         throw new Error("fetch failed");
       },
     }),
     /fetch failed/,
   );
-  const best = await collectFrequencies(partialFixture(regions), {
-    extract: async (url) => [
-      {
-        key: "1:10:C:T",
-        an: 100,
-        grp: ".",
-        afmax: ".",
-        af: url.includes("genomes") ? "0.2" : "0.1",
-      },
-    ],
-  });
-  assert.equal(best.get("1:10:C:T")!.af, "0.2");
-});
-
-test("missing extractor executable rejects instead of accepting an empty region", async (t) => {
   await assert.rejects(
-    extractRegion(path.join(temporary(t), "absent"), "https://example.org/public.bb", {
-      chrom: "1",
-      start: 0,
-      end: 20,
-      keys: new Set(),
-    }),
-    /ENOENT/,
+    collectFrequencies(regions, { makeExtractor: () => async () => [variant, variant] }),
+    /Duplicate/,
   );
+  const rows = await collectFrequencies(regions, { makeExtractor: () => async () => [variant] });
+  assert.equal(rows.get("1:10:C:T")!.af, "0");
 });
 
 test("marker building requires exact IDs and valid counts rather than guessing an rsID alternative", () => {
   assert.equal(markerOutput(marker, "GRCh38", variant).af, 0);
   assert.throws(() => markerOutput(marker, "GRCh37", variant), /verified/);
-  assert.throws(
-    () => markerOutput(marker, "GRCh38", { ...variant, variant_id: "1-10-C-G" }),
-    /different/,
-  );
-  assert.throws(
-    () => markerOutput(marker, "GRCh38", { ...variant, genome: { ac: 101, an: 100 } }),
-    /counts/,
-  );
+  assert.throws(() => markerOutput(marker, "GRCh38", { ...variant, key: "1:10:C:G" }), /different/);
+  assert.throws(() => markerOutput(marker, "GRCh38", { ...variant, ac: 101, an: 100 }), /counts/);
 });
 
 test("marker refresh and cached rebuild keep original evidence; validator detects corrupted fields", async (t) => {
@@ -372,16 +331,16 @@ test("marker refresh and cached rebuild keep original evidence; validator detect
   await buildMarkers(
     { paths: files },
     {
-      fetcher: async () => {
+      extract: async () => {
         requests++;
-        return Response.json({ data: { variant } });
+        return [variant];
       },
     },
   );
   await buildMarkers(
     { paths: files },
     {
-      fetcher: () => {
+      extract: () => {
         throw new Error("should use cache");
       },
     },
