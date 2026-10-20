@@ -22,7 +22,8 @@ No personal genome or network rebuild is needed.
 
 `npm run benchmark` compares complete and selective catalogue downloads using the
 bundled HG002 sample. The manual **Benchmarks** GitHub workflow runs the same
-command in Docker and publishes a summary and downloadable reports. See
+command in Docker and publishes a summary and downloadable reports. Select the
+`giab-grch38` suite to test all seven public v4.2.1 samples sequentially. See
 [BENCHMARKS.md](BENCHMARKS.md) for scope and reproducibility details. This is
 separate from ordinary release checks.
 

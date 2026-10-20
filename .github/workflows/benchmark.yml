@@ -2,14 +2,20 @@ name: Benchmarks
 
 on:
   workflow_dispatch:
+    inputs:
+      suite:
+        description: Public sample suite
+        type: choice
+        options: [hg002, giab-grch38]
+        default: hg002
 
 permissions:
   contents: read
 
 jobs:
-  hg002:
+  catalogue:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -19,12 +25,13 @@ jobs:
       - name: Compare full and selective catalogue downloads
         env:
           BENCHMARK_COMMIT: ${{ github.sha }}
+          BENCHMARK_SUITE: ${{ inputs.suite }}
         run: |
           mkdir -p "$RUNNER_TEMP/benchmark"
-          docker run --rm --network none \
+          docker run --rm \
             --env BENCHMARK_COMMIT --env BENCHMARK_WORKING_TREE=clean \
             --mount type=bind,source="$RUNNER_TEMP/benchmark",target=/output \
-            genomewalk-benchmark --out-dir /output
+            genomewalk-benchmark --suite "$BENCHMARK_SUITE" --out-dir /output
       - name: Show benchmark results
         if: always()
         run: |
@@ -35,7 +42,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: hg002-benchmark
+          name: ${{ inputs.suite }}-benchmark
           path: ${{ runner.temp }}/benchmark/
           if-no-files-found: warn
           retention-days: 30

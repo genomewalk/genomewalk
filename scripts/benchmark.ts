@@ -4,79 +4,79 @@ import { execFileSync } from "node:child_process";
 import { parseArgs } from "node:util";
 import { ROOT } from "./lib/config.ts";
 import { compareCatalogues } from "./benchmark/compare.ts";
-import { SAMPLE } from "../src/lib/catalogues/public-sample.ts";
+import { suites } from "./benchmark/samples.ts";
+import { withSampleFile } from "./benchmark/sample-file.ts";
+import { markdownReport, savingsSummary, scope } from "./benchmark/report.ts";
+import type { SuiteReport } from "./benchmark/report.ts";
 
 const { values } = parseArgs({
-  options: { "out-dir": { type: "string", default: "output/benchmarks/hg002" } },
+  options: { suite: { type: "string", default: "hg002" }, "out-dir": { type: "string" } },
   allowPositionals: false,
 });
-const output = path.resolve(ROOT, values["out-dir"]);
+const samples = suites[values.suite];
+if (!samples) throw new Error(`Unknown suite: ${values.suite}. Use hg002 or giab-grch38.`);
+const output = path.resolve(ROOT, values["out-dir"] || `output/benchmarks/${values.suite}`);
 await fs.mkdir(output, { recursive: true });
-// Clear only this command's previous reports, so a failed run cannot publish stale success.
-for (const name of ["report.json", "summary.md"])
-  await fs.rm(path.join(output, name), { force: true });
-
-try {
-  const commit =
-    process.env["BENCHMARK_COMMIT"] ||
-    execFileSync("git", ["rev-parse", "HEAD"], { cwd: ROOT, encoding: "utf8" }).trim();
-  const workingTree = process.env["BENCHMARK_COMMIT"]
-    ? process.env["BENCHMARK_WORKING_TREE"] || "not available (Git metadata excluded)"
-    : execFileSync("git", ["status", "--porcelain"], { cwd: ROOT, encoding: "utf8" }).trim()
-      ? "modified"
-      : "clean";
-  const comparison = await compareCatalogues({
-    publicDirectory: path.join(ROOT, "public"),
-    sampleFile: path.join(ROOT, "public", SAMPLE.url),
-    expectedSampleSha256: "c7f9d7a4781f1f0a8a42ec54b051d6b95db1935c5e12318bae219740f9c50dc8",
-    build: "GRCh38",
-    onStatus: console.log,
-  });
-  const report = {
-    schema: 1,
-    passed: comparison.results.identical && comparison.results.fullCount > 0,
-    createdAt: new Date().toISOString(),
-    commit,
-    workingTree,
-    runtime: { node: process.version, platform: process.platform, arch: process.arch },
-    sampleName: SAMPLE.name,
-    sampleUrl:
-      "https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/release/AshkenazimTrio/HG002_NA24385_son/v5.0q/HG002_GRCh38_v5.0q_smvar.vcf.gz",
-    scope:
-      "HTTP response-body bytes only; excludes sample, website assets, publication-label sidecars, other reference files and HTTP/TLS overhead. Fresh catalogue readers; Node fetch has no persistent HTTP cache. No browser timing, memory or clinical-accuracy claim.",
-    ...comparison,
-  };
-  const d = report.downloads;
-  const summary = [
-    "# HG002 catalogue download benchmark",
-    "",
-    `Result equivalence: **${report.passed ? "PASS" : "FAIL"}** (complete result objects, including annotations and order).`,
-    "",
-    "| Measurement | Result |",
-    "| --- | ---: |",
-    `| Full-catalogue matches | ${report.results.fullCount} |`,
-    `| Selective-download matches | ${report.results.selectiveCount} |`,
-    `| Complete catalogue | ${d.fullBytes.toLocaleString("en-US")} bytes |`,
-    `| Index | ${d.indexBytes.toLocaleString("en-US")} bytes |`,
-    `| Required blocks | ${d.blockBytes.toLocaleString("en-US")} bytes |`,
-    `| Index + required blocks | ${d.selectiveBytes.toLocaleString("en-US")} bytes |`,
-    `| Download savings | ${d.savingsPercent.toFixed(2)}% |`,
-    `| Range requests | ${d.rangeRequests} |`,
-    "",
-    `Sample: ${report.sampleName}. Build: ${report.build}.`,
-    `Commit: \`${commit}\`. Working tree: ${workingTree}.`,
-    "",
-    report.scope,
-    "",
-    "File checksums, result digests and individual request measurements are in report.json.",
-    "",
-  ].join("\n");
+const commit =
+  process.env["BENCHMARK_COMMIT"] ||
+  execFileSync("git", ["rev-parse", "HEAD"], { cwd: ROOT, encoding: "utf8" }).trim();
+const workingTree = process.env["BENCHMARK_COMMIT"]
+  ? process.env["BENCHMARK_WORKING_TREE"] || "not available (Git metadata excluded)"
+  : execFileSync("git", ["status", "--porcelain"], { cwd: ROOT, encoding: "utf8" }).trim()
+    ? "modified"
+    : "clean";
+const report: SuiteReport = {
+  schema: 2,
+  suite: values.suite,
+  createdAt: new Date().toISOString(),
+  commit,
+  workingTree,
+  runtime: { node: process.version, platform: process.platform, arch: process.arch },
+  expectedSamples: samples.length,
+  passed: false,
+  scope,
+  results: [],
+  savings: null,
+};
+async function saveReport() {
+  report.passed =
+    report.results.length === report.expectedSamples && report.results.every((r) => r.passed);
+  report.savings = savingsSummary(report.results);
   await fs.writeFile(path.join(output, "report.json"), JSON.stringify(report, null, 2) + "\n");
-  await fs.writeFile(path.join(output, "summary.md"), summary);
-  console.log(summary);
-  if (!report.passed) process.exitCode = 1;
-} catch (error) {
-  const message = error instanceof Error ? error.message : String(error);
-  await fs.writeFile(path.join(output, "summary.md"), `# HG002 benchmark failed\n\n${message}\n`);
-  throw error;
+  await fs.writeFile(path.join(output, "summary.md"), markdownReport(report));
 }
+await saveReport(); // Replace stale reports immediately; retain partial results if interrupted.
+const publicDirectory = path.join(ROOT, "public");
+for (const sample of samples) {
+  console.log(`\n${sample.id}: ${sample.name}`);
+  try {
+    const comparison = await withSampleFile(sample, publicDirectory, (sampleFile) =>
+      compareCatalogues({
+        publicDirectory,
+        sampleFile,
+        build: sample.build,
+        ...(sample.sha256 ? { expectedSampleSha256: sample.sha256 } : {}),
+        onStatus: console.log,
+      }),
+    );
+    const first = report.results.find((r) => r.comparison)?.comparison;
+    if (
+      first &&
+      (first.catalogue.sha256 !== comparison.catalogue.sha256 ||
+        first.index.sha256 !== comparison.index.sha256)
+    )
+      throw new Error("Catalogue or index changed between samples");
+    const passed = comparison.results.identical && comparison.results.fullCount > 0;
+    report.results.push({ sample, passed, comparison });
+    console.log(
+      `${sample.id}: ${passed ? "PASS" : "FAIL"}; ${comparison.results.fullCount} / ${comparison.results.selectiveCount} matches; ${comparison.downloads.savingsPercent.toFixed(2)}% savings`,
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    report.results.push({ sample, passed: false, error: message });
+    console.error(`${sample.id}: ${message}`);
+  }
+  await saveReport();
+}
+console.log(markdownReport(report));
+if (!report.passed) process.exitCode = 1;

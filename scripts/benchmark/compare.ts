@@ -46,12 +46,12 @@ function measuredFetch(origin: string, transfers: Transfer[]): Fetcher {
 export async function compareCatalogues(options: {
   publicDirectory: string;
   sampleFile: string;
-  expectedSampleSha256: string;
+  expectedSampleSha256?: string;
   build: string;
   onStatus?: (message: string) => void;
 }) {
   const sampleSha256 = await fileSha256(options.sampleFile);
-  if (sampleSha256 !== options.expectedSampleSha256)
+  if (options.expectedSampleSha256 && sampleSha256 !== options.expectedSampleSha256)
     throw new Error("Public sample checksum mismatch");
   const blob = await openAsBlob(options.sampleFile);
   const source = {
