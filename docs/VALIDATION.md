@@ -18,6 +18,14 @@ No personal genome or network rebuild is needed.
 | `npm run data:inputs`   | Cached prerequisites for network-free reference rebuilds  |
 | `npm run data:plan`     | Named rebuild stages without writes or requests           |
 
+## Download benchmark
+
+`npm run benchmark` compares complete and selective catalogue downloads using the
+bundled HG002 sample. The manual **Benchmarks** GitHub workflow runs the same
+command in Docker and publishes a summary and downloadable reports. See
+[BENCHMARKS.md](BENCHMARKS.md) for scope and reproducibility details. This is
+separate from ordinary release checks.
+
 ## Automated coverage
 
 Tests import the production modules and use synthetic BGZF/TXT/ZIP/gzip inputs,

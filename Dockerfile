@@ -13,6 +13,10 @@ COPY . .
 ENTRYPOINT ["npm", "run"]
 CMD ["data"]
 
+# Reproducible public-sample benchmarks; reports are written to a mounted output folder.
+FROM source AS benchmark
+ENTRYPOINT ["npm", "run", "benchmark", "--"]
+
 # Local previews and CI use the same release checks and static build.
 FROM source AS build
 RUN npm run check:release

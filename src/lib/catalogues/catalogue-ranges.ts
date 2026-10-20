@@ -144,11 +144,16 @@ export class RangeCatalogue extends Map<string, RowLocator> {
   }
 }
 
-export async function loadRangeCatalogue(build: string, signal?: AbortSignal, onStatus?: Status) {
+export async function loadRangeCatalogue(
+  build: string,
+  signal?: AbortSignal,
+  onStatus?: Status,
+  fetcher: Fetcher = fetch,
+) {
   signal?.throwIfAborted();
   onStatus?.(`Loading the ${build} catalogue index…`);
   const started = performance.now();
-  const response = await fetch(`/ref/${build}/catalog.index.json.gz`, {
+  const response = await fetcher(`/ref/${build}/catalog.index.json.gz`, {
     signal: signal ?? null,
   });
   if (!response.ok)
@@ -158,7 +163,11 @@ export async function loadRangeCatalogue(build: string, signal?: AbortSignal, on
   const index: CatalogueIndex = JSON.parse(new TextDecoder().decode(json));
   if (index.build !== build) throw new Error("Catalogue index reference-build mismatch");
   signal?.throwIfAborted();
-  const map = new RangeCatalogue(index, `/ref/${build}/catalog.tsv.gz?v=${index.source.sha256}`);
+  const map = new RangeCatalogue(
+    index,
+    `/ref/${build}/catalog.tsv.gz?v=${index.source.sha256}`,
+    fetcher,
+  );
   return {
     build,
     map,

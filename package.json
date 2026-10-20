@@ -31,7 +31,8 @@
     "data:ranges": "node scripts/build-catalog-ranges.ts",
     "test:consumer": "node scripts/test.ts --scope consumer",
     "check:release": "npm run check && npm run data:check && npm run check:deploy",
-    "check:deploy": "node scripts/check-deployment.ts"
+    "check:deploy": "node scripts/check-deployment.ts",
+    "benchmark": "node scripts/benchmark.ts"
   },
   "overrides": {
     "rolldown": "1.2.1"
