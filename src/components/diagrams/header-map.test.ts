@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { headerMap, headerNote } from "./header-map.ts";
 
-test("header topics precede their labelled excerpt without changing source text", () => {
+test("header sheet keeps shared headings and labelled excerpts without changing source text", () => {
   const html = headerMap({
     label: "A sample header",
     caption: "Real lines from the file.",
@@ -20,10 +20,10 @@ test("header topics precede their labelled excerpt without changing source text"
     ],
   });
 
-  const sourceLabel = html.indexOf("From your file");
-  assert.ok(html.indexOf("Reference build") < sourceLabel);
-  assert.ok(html.indexOf("Sequence names") < sourceLabel);
-  assert.ok(sourceLabel < html.indexOf("##contig="));
+  assert.match(html, /class="header-map-scroll" role="region" aria-label="A sample header — annotated header" tabindex="0"/);
+  assert.equal(html.split("From the file").length - 1, 1);
+  assert.doesNotMatch(html, /From your file/);
+  assert.ok(html.indexOf("From the file") < html.indexOf("##contig="));
   assert.match(html, /##contig=&lt;ID=chrUn_KI270442v1,length=392061&gt;/);
   assert.match(html, /aria-label="Header excerpt, line 17"/);
   assert.match(html, /tabindex="0" role="region"/);

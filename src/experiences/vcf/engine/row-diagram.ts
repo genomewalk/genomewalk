@@ -187,7 +187,7 @@ export function vcfRowDiagram(state: VcfRowExamples, sampleName = "", { showSumm
     .join("");
   return `<figure class="file-row-map vcf-row-map">
     <figcaption><strong>${showSummary ? "Your file, at a glance" : "Rows side by side"}</strong><span>${showSummary ? "Real rows, grouped by example." : `Selected examples from the first ${fmt(state.records)} rows read.`} Selected columns are shown${sampleName ? `; GT is for ${escape(sampleName)}` : ""}.</span></figcaption>
-    <div class="row-map-layout"><div class="row-map-entries">
+    <div class="row-map-layout" role="region" aria-label="VCF rows and matching checks" tabindex="0"><div class="row-map-entries">
       <div class="row-map-head" aria-hidden="true"><span>Reading the rows</span><div class="row-map-data"><div class="row-map-cells">${columns.map((c) => `<span>${c}</span>`).join("")}</div><span>Row check</span></div><span class="row-map-check-heading">Why?</span></div>
       ${groupsHtml}${state.records > groups.length ? '<div class="row-map-end" aria-hidden="true"><span>⋮</span></div>' : ""}
     </div></div>

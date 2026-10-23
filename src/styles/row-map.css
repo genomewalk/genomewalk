@@ -2,6 +2,7 @@
    stay attached to their examples when text wraps or font sizes change. */
 .file-row-map {
   container-type: inline-size;
+  min-width: 0;
   --row-map-note-width: 172px;
   --row-map-check-width: 170px;
   --row-map-columns: minmax(0, 1.4fr) minmax(0, 1.15fr) minmax(0, 1.2fr)
@@ -25,11 +26,18 @@
 }
 .row-map-layout {
   min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+.row-map-layout:focus-visible {
+  outline: 2px solid var(--wgs-accent);
+  outline-offset: -2px;
 }
 .row-map-entries {
   position: relative;
   isolation: isolate;
-  min-width: 0;
+  min-width: 950px;
 }
 .row-map-entries::before {
   content: "";
@@ -250,98 +258,35 @@
   line-height: var(--wgs-leading-small);
   color: var(--wgs-faint);
 }
-/* Stack the explanations before their fixed columns squeeze the record. */
+/* Summary counts can reflow independently of the scrollable file columns. */
 @container (max-width: 900px) {
-  .row-map-head,
-  .row-map-entries::before,
-  .row-map-note::before,
-  .row-map-end {
-    display: none;
-  }
-  .row-map-entries {
-    display: grid;
-    gap: 24px;
-  }
-  .row-map-group {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .step .file-row-map .row-map-note {
-    margin: 0;
-    padding: 0 0 22px;
-  }
-  .row-map-note p {
-    margin-top: 3px;
-  }
-  .row-map-note::after {
-    left: 14px;
-    top: auto;
-    bottom: 0;
-    width: 1px;
-    height: 15px;
-  }
-  .row-map-records {
-    padding: 14px 12px;
-    background: var(--wgs-card);
-    border: 1px solid var(--wgs-line);
-    border-bottom: 0;
-    border-radius: 5px 5px 0 0;
-  }
-  .row-map-check {
-    grid-column: 1;
-    padding: 0 12px 14px;
-    background: var(--wgs-card);
-    border: 1px solid var(--wgs-line);
-    border-top: 0;
-    border-radius: 0 0 5px 5px;
-  }
-  .row-map-cells {
-    gap: 8px;
-  }
-  .row-map-record {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 8px;
-    align-items: center;
-  }
-  .consumer-row-map .row-map-number {
-    grid-column: 1;
-    grid-row: 1;
-    margin: 0;
-  }
-  .row-map-data {
-    display: contents;
-  }
-  .row-map-status {
-    grid-column: 2;
-    grid-row: 1;
-  }
-  .row-map-data > .row-map-cells {
-    grid-column: 1 / -1;
-  }
-  .file-row-map[data-allele-columns="2"] .row-map-cells {
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.1fr) minmax(0, 1.2fr);
-    row-gap: 14px;
-  }
-  .row-map-cells dt {
-    position: static;
-    width: auto;
-    height: auto;
-    margin-bottom: 7px;
-    overflow: visible;
-    clip-path: none;
-    white-space: normal;
-    color: var(--wgs-faint);
-    font: var(--wgs-text-label)/1.4 var(--wgs-mono);
-  }
-  .row-map-cells dd {
-    font-size: 12px;
-  }
   .row-map-totals {
     gap: 8px;
     font-size: var(--wgs-text-label);
   }
   .row-map-totals strong {
     font-size: 27px;
+  }
+}
+@container (max-width: 440px) {
+  .row-map-totals {
+    grid-template-columns: minmax(0, 1fr);
+    text-align: left;
+  }
+  .row-map-totals > div {
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 16px;
+    padding: 12px;
+    border: 1px solid var(--wgs-line-soft);
+    border-radius: 6px;
+  }
+  .row-map-totals strong {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    align-self: center;
+  }
+  .row-map-totals span {
+    grid-column: 1;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -412,38 +357,9 @@
 .vcf-count-detail code {
   overflow-wrap: anywhere;
 }
-@container (max-width: 900px) {
-  .vcf-row-map .row-map-record {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
-  }
-  .vcf-row-map .row-map-meta {
-    display: block;
-    grid-column: 1 / -1;
-    grid-row: 1;
-    margin: 0;
-  }
-  .vcf-row-map .row-map-status {
-    grid-column: 3;
-    justify-self: end;
-    align-self: start;
-  }
-  .vcf-row-map .row-map-cells {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    align-items: start;
-    row-gap: 14px;
-  }
-}
 /* Coordinates are identifiers: keep every digit together. */
 .vcf-row-map .row-map-cells > div:nth-child(2) dd,
 .consumer-row-map .row-map-cells > div:nth-child(3) dd {
   white-space: nowrap;
   overflow-wrap: normal;
-}
-@container (max-width: 440px) {
-  .file-row-map[data-allele-columns] .row-map-cells,
-  .vcf-row-map .row-map-cells {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    row-gap: 14px;
-  }
 }

@@ -135,7 +135,7 @@ export function rowDiagram(
       <strong>${showSummary ? "Your file, at a glance" : "Rows side by side"}</strong>
       <span>${showSummary ? "Real rows, grouped by example." : `Selected examples from the first ${fmt(stats.records)} rows read.`}</span>
     </figcaption>
-    <div class="row-map-layout">
+    <div class="row-map-layout" role="region" aria-label="DNA rows and matching checks" tabindex="0">
       <div class="row-map-entries">
         <div class="row-map-head" aria-hidden="true"><span>Reading the rows</span><div class="row-map-data"><div class="row-map-cells">${columns.map((column: unknown) => `<span>${escape(column)}</span>`).join("")}</div><span>Row check</span></div><span class="row-map-check-heading">Why?</span></div>
         ${groups

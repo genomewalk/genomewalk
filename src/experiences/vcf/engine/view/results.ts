@@ -87,7 +87,7 @@ export function matchRow(h: VcfMatch) {
     `<span class="mh"><code title="${escape(fullClass)}">${escape(shortClass)}</code><span class="stars" title="${escape(reviewText(h))}">${stars(h.stars)}</span><span class="mh-z">${zyg}</span></span>`,
     `${h.recordCount > 1 ? `<p class="match-record-note">${fmt(h.recordCount)} file records for this variant are shown as one result.${h.conflictingRecords ? " They contain different genotypes." : " The called alleles agree."}</p>` : ""}
      <div class="raw-first">${rawBlock(["#" + ctx.header!.columns.join("\t"), ...(h.sourceCalls || [h.f]).map((f) => f.join("\t"))])}</div>
-     <table class="fmt fmt-result"><tbody>
+     <div class="table-scroll" role="region" aria-label="Variant evidence" tabindex="0"><table class="fmt fmt-result"><tbody>
        <tr><td class="fk">Bottom line</td><td class="fd">${escape(v.why)}</td></tr>
        <tr><td class="fk">You & ClinVar</td><td class="fd">
          <p>${h.conflictingRecords ? "Your file reports conflicting allele calls. See the original lines above." : `Your ${called.length === 1 ? "allele" : "alleles"}: <b>${letters}</b>${h.partialCall ? " (incomplete call)" : ""}.`}</p>
@@ -108,7 +108,7 @@ export function matchRow(h: VcfMatch) {
        <tr><td class="fk">Trust</td><td class="fd"><span class="stars">${stars(h.stars)}</span> ${h.stars} ${h.stars === 1 ? "star" : "stars"} — ${escape(reviewText(h))}. ${ext(SOURCES.clinvarStars, "About the stars")}</td></tr>
        <tr><td class="fk">Frequency</td><td class="fd">${frequency}<p class="mini">${escape(frequencySourceNote(h))}</p></td></tr>
        <tr><td class="fk">Sources</td><td class="fd">${resultSources(h)}</td></tr>
-     </tbody></table>`,
+     </tbody></table></div>`,
   );
   row.classList.add("match-row");
   row.dataset["variantKey"] = matchKey(h);

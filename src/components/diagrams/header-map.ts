@@ -44,6 +44,7 @@ export function headerMap({
 
   return `<figure class="header-map" aria-label="${escape(label)}">
     <figcaption><strong>Your header, at a glance</strong><span>Selected lines from your file, grouped by topic. Follow a topic link for more detail.</span></figcaption>
+    <div class="header-map-scroll" role="region" aria-label="${escape(label)} — annotated header" tabindex="0">
     <div class="header-map-sheet">
       <div class="header-map-heading"><span>Reading the header</span><span>From the file</span></div>
       ${groups
@@ -54,10 +55,10 @@ export function headerMap({
             left,
             right,
             lines,
-          }) => `<div class="header-map-group header-map-${escape(kind)}${left && right ? " has-both-notes" : ""}">
+          }) => `<div class="header-map-group header-map-${escape(kind)}">
         ${annotation(left, "left")}
         ${annotation(right, "right")}
-        <div class="header-map-lines"><p class="header-map-source-label"><span>From your file</span></p>${lines
+        <div class="header-map-lines">${lines
           .map(
             ({ text, number, keyEnd = 0 }) =>
               `<div class="header-map-line${text.includes("\t") ? " header-map-line-tabular" : ""}"><span class="header-map-number" aria-label="Line ${number}" title="Line ${number}">L${number}</span><pre tabindex="0" role="region" aria-label="Header excerpt, line ${number}"><code>${keyEnd ? `<span class="header-map-key">${escape(text.slice(0, keyEnd))}</span>` : ""}${escape(text.slice(keyEnd))}</code></pre></div>`,
@@ -66,6 +67,7 @@ export function headerMap({
       </div>`,
         )
         .join("")}
+    </div>
     </div>
     <p class="header-map-caption">${caption}</p>
   </figure>`;

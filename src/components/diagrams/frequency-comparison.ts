@@ -28,7 +28,7 @@ export function frequencyComparison(
   return `<p>Imagine Mei and Tom each carry one copy of allele <b class="o1">${escape(marker.alt)}</b>
       in the <b>${escape(marker.gene)}</b> gene. Here is how the population context differs.</p>
     <div class="frequency-comparison">
-      <div class="frequency-comparison-body">
+      <div class="frequency-comparison-body" role="region" aria-label="Population frequency comparison" tabindex="0">
         <table role="table" aria-label="Mei and Tom: same variant, different ancestry groups">
           <colgroup><col class="frequency-comparison-topic"><col><col></colgroup>
           <thead><tr>
@@ -41,7 +41,7 @@ export function frequencyComparison(
               <td colspan="2">${people}</td>
             </tr>
             <tr><th scope="row">Is this allele unusual in their ancestry group?</th>
-              <td><span class="frequency-comparison-person"><b>Mei</b> · East Asian ancestry</span>${context(marker.pops["eas"])}</td><td><span class="frequency-comparison-person"><b>Tom</b> · European ancestry</span>${context(marker.pops["nfe"])}</td>
+              <td>${context(marker.pops["eas"])}</td><td>${context(marker.pops["nfe"])}</td>
             </tr>
             <tr><th scope="row">Could this be a reading error?</th>
               <td colspan="2">Frequency alone cannot tell us. Check the quality of the call.</td>

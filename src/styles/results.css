@@ -93,6 +93,7 @@
 .ml-rows .match-row .fmt-result {
   display: table;
   table-layout: fixed;
+  min-width: 500px;
   width: 100%;
   margin: 0;
 }
@@ -149,26 +150,6 @@
   }
   .ml-rows .match-row .kvx-caret {
     grid-row: 1 / 4;
-  }
-  .ml-rows .match-row .fmt-result,
-  .ml-rows .match-row .fmt-result tbody,
-  .ml-rows .match-row .fmt-result tr,
-  .ml-rows .match-row .fmt-result td {
-    display: block;
-    width: 100%;
-  }
-  .ml-rows .match-row .fmt-result td {
-    border: 0;
-  }
-  .ml-rows .match-row .fmt-result tr + tr {
-    border-top: 1px solid var(--wgs-line-soft);
-  }
-  .ml-rows .match-row .fmt-result .fk {
-    width: 100%;
-    padding-bottom: 2px;
-  }
-  .ml-rows .match-row .fmt-result .fd {
-    padding-top: 4px;
   }
   .mlist .ml-bar {
     display: grid;
