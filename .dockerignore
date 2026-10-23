@@ -11,6 +11,7 @@
 !public/favicon.svg
 !public/robots.txt
 !public/icons/**
+!public/demos/**
 !public/ref/**
 !public/samples/README.md
 !public/samples/HG002_GRCh38.vcf.gz
