@@ -1,10 +1,12 @@
 import type { ConsumerSource } from "../../types.ts";
+import { detectReferenceBuild } from "../../../../lib/genetics/reference-build.ts";
 import { consumerHeaderDiagram } from "../view/header-diagram.ts";
 import { el, escape, fmt, kvx, ext, SOURCES } from "../view/html.ts";
 
 export function renderHeader(source: ConsumerSource, out: HTMLElement) {
-  const headerDetail = (id: string, title: string, value: string, body: string) => {
-    const card = kvx(title, value, body);
+  const comments = source.header.lines.filter((line) => !line.columns).map((line) => line.text);
+  const headerDetail = (id: string, title: string, value: string, body: string, raw?: string[]) => {
+    const card = kvx(title, value, body, raw?.length ? raw : undefined);
     card.id = id;
     return card;
   };
@@ -38,6 +40,9 @@ export function renderHeader(source: ConsumerSource, out: HTMLElement) {
       "Source",
       escape(source.label),
       `<p>The header names <b>${escape(source.label)}</b> as the source of this raw genotype export.</p>`,
+      comments
+        .filter((line) => line.toLowerCase().includes(source.label.toLowerCase()))
+        .slice(0, 1),
     ),
   );
   out.append(
@@ -58,6 +63,11 @@ position 8:  <i>G</i> → <i>T</i></pre>
          <p>Using the wrong reference build when matching your DNA to condition records can lead to <b>incorrect or missed matches</b>.</p>
          <p><b>Your ${escape(source.label)} file works differently.</b> It lists selected tested sites, including ones that match the reference. The build still tells us where those sites are. A site may also have a name called an <b>rsID</b>, such as ${ext(`${SOURCES.dbsnp}rs4988235`, "<code>rs4988235</code>")}. That gives us another way to find it, even if its position changes between builds. We will explore rsIDs later.</p>
          </div>`,
+      comments.filter(
+        (line) =>
+          detectReferenceBuild([line]) !== "unknown" ||
+          /\b(?:reference|assembly|build)\b/i.test(line),
+      ),
     ),
   );
   const strandExplanation =
@@ -76,6 +86,9 @@ position 8:  <i>G</i> → <i>T</i></pre>
           ? "DNA has two complementary strands; <b>forward</b> means the letters are reported in the same orientation as the reference genome. Our catalogues use this convention too."
           : "Catalogue matching requires the forward strand."
       }</p>`,
+      comments.filter((line) =>
+        /(?:plus|positive|forward|minus|negative|reverse|\([+-]\))\s+strand/i.test(line),
+      ),
     ),
   );
   const ancestry = source.provider === "AncestryDNA";
@@ -89,6 +102,7 @@ position 8:  <i>G</i> → <i>T</i></pre>
           ? "<code>allele1</code> and <code>allele2</code> hold the reported alleles in separate columns"
           : "<code>genotype</code> holds the reported alleles together in one column"
       } (or no-call codes when missing).</p>`,
+      source.header.lines.filter((line) => line.columns).map((line) => line.text),
     ),
   );
 }

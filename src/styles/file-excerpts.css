@@ -132,6 +132,17 @@
 .file-fields {
   overscroll-behavior-x: contain;
 }
+/* One horizontal scroll area per nested diagram. Keep the original text in
+   the DOM; the topic links expose complete source lines in their detail cards. */
+.s-out pre[data-scroll-ellipsis],
+.s-out .raw pre[data-scroll-ellipsis] {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: pre;
+}
+.s-out pre[data-scroll-ellipsis] code {
+  white-space: inherit;
+}
 @media (max-width: 700px) {
   .raw,
   .raw-first .raw,

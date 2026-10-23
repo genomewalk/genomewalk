@@ -39,8 +39,14 @@ export const headerChapter = {
       const l = meta.find((x) => x.startsWith("##" + key + "="));
       return l ? l.slice(key.length + 3) : null;
     };
-    const headerDetail = (id: string, title: string, value: string, body: string) => {
-      const card = kvx(title, value, body);
+    const headerDetail = (
+      id: string,
+      title: string,
+      value: string,
+      body: string,
+      raw?: string[],
+    ) => {
+      const card = kvx(title, value, body, raw?.length ? raw : undefined);
       card.id = id;
       return card;
     };
@@ -97,6 +103,12 @@ POS 8     REF <i>G</i>   ALT <i>T</i></pre></div>
            <p>The six matching positions are never written down. That is why a VCF is small
            enough to open in a browser.</p>
          </div>`,
+        [
+          ...meta.filter((line) =>
+            /^##(?:reference|reference[_-]?build|genome[_-]?build)\s*=/i.test(line),
+          ),
+          ...meta.filter((line) => line.startsWith("##contig=")).slice(0, 2),
+        ],
       ),
     );
     out.append(
@@ -110,6 +122,7 @@ POS 8     REF <i>G</i>   ALT <i>T</i></pre></div>
          the ${ext(SOURCES.vcfSpec(version), `${escape(version)} specification`)}.</p>
          <p><code>##fileformat</code> declares the version. The other header lines describe
          this file using those rules; their values do not determine the version.</p>`,
+        meta.filter((line) => line.startsWith("##fileformat=")).slice(0, 1),
       ),
     );
     if (made || date)
@@ -120,6 +133,7 @@ POS 8     REF <i>G</i>   ALT <i>T</i></pre></div>
           escape(made || date),
           `${made ? `<p id="header-made-by"><b>Made by ${escape(made)}.</b> The header’s <code>##source</code> names the lab or software that produced this file.</p>` : ""}
          ${date ? `<p id="header-date-created"><b>Created ${escape(date)}.</b> <code>##fileDate</code> records when the file was generated, not when your DNA was collected.</p>` : ""}`,
+          meta.filter((line) => /^##(?:source|fileDate)=/.test(line)),
         ),
       );
 
@@ -145,6 +159,7 @@ POS 8     REF <i>G</i>   ALT <i>T</i></pre></div>
          data row: chromosome, position, alleles, quality, filters and annotations.</p>
          <p>A sample ID is the label the lab gave that sample. It is not a genotype or a finding.
          ${samples.length === 1 ? "This file has one sample column." : `This file has ${samples.length} sample columns.`}</p>`,
+        ctx.header.columns.length ? [`#${ctx.header.columns.join("\t")}`] : [],
       ),
     );
 
@@ -172,6 +187,7 @@ POS 8     REF <i>G</i>   ALT <i>T</i></pre></div>
          all applied quality checks; a filter name identifies a check it failed. This describes
          the quality of the call, not your health.</p>
          ${headerFilterExamples(examples, filters, ctx.header.columns)}`,
+        meta.filter((line) => line.startsWith("##FILTER=")).slice(0, 2),
       ),
     );
 
@@ -193,6 +209,7 @@ POS 8     REF <i>G</i>   ALT <i>T</i></pre></div>
           "Not listed in the header",
           `<p>This file does not declare primary chromosomes in <code>##contig</code> lines.
           You can still explore its records, but we cannot draw a chromosome map from the header.</p>`,
+          contigs.slice(0, 2).map((contig) => contig.line),
         ),
       );
     } else {
@@ -297,6 +314,10 @@ POS 8     REF <i>G</i>   ALT <i>T</i></pre></div>
          that do not belong to any chromosome. We ignore them.</p>`
              : ""
          }`,
+          contigs
+            .slice(0, 2)
+            .filter((contig) => contig !== mapExample)
+            .map((contig) => contig.line),
         ),
       );
     }
@@ -336,6 +357,10 @@ POS 8     REF <i>G</i>   ALT <i>T</i></pre></div>
           : `There are two kinds of these files. This is a plain <b>VCF</b>: it only lists the
              places where you differ from the reference. If a place is missing, you cannot
              tell whether you match the reference there or it was simply never read.`,
+        [
+          ...meta.filter((line) => line.startsWith("##fileformat=")).slice(0, 1),
+          ...clues.slice(0, 2),
+        ],
       ),
     );
 

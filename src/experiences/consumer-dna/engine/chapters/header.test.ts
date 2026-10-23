@@ -55,6 +55,11 @@ for (const provider of ["23andMe", "AncestryDNA"]) {
         `Missing explanation ${id}`,
       );
     }
+    const details = new Map(children.map((child) => [child.id, child.innerHTML]));
+    assert.ok(details.get("header-source")!.includes(`# Synthetic ${provider} &lt;example&gt;`));
+    for (const id of ["reference-build", "header-strand"])
+      assert.ok(details.get(id)!.includes("# reference build 37; plus strand"));
+    assert.ok(details.get("header-columns")!.includes(columns));
     assert.ok(children.some((child) => child.innerHTML?.includes("File size")));
     assert.doesNotMatch(preview, /File size/);
     assert.equal(source.capabilities.matching, true);
@@ -76,4 +81,18 @@ test("provider defaults are explained without inventing header comments", async 
     children.find((child) => child.id === "header-strand")!.innerHTML,
     /comments do not state a strand/,
   );
+});
+
+test("long source comments remain complete in the linked detail cards", async (t) => {
+  const suffix = "the original provider note ".repeat(20) + "END_OF_ORIGINAL_LINE";
+  const sourceLine = `# Synthetic 23andMe: ${suffix}`;
+  const buildLine = `# assembly hg38; forward strand: ${suffix}`;
+  const { children } = await render(
+    t,
+    `${sourceLine}\n${buildLine}\n# rsid\tchromosome\tposition\tgenotype\nrs1\t1\t100\tCT`,
+  );
+  const details = new Map(children.map((child) => [child.id, child.innerHTML]));
+  assert.ok(details.get("header-source")!.includes(sourceLine));
+  assert.ok(details.get("reference-build")!.includes(buildLine));
+  assert.ok(details.get("header-strand")!.includes(buildLine));
 });

@@ -1,5 +1,5 @@
 {
-  "src/experiences/vcf/engine/chapters/header.ts": "677c66eb8673200413a07cc3a030604969921c4ac9a777f8cb4c31c158445028",
+  "src/experiences/vcf/engine/chapters/header.ts": "7a9f1ea5dafd00e6bcf0d266c5c23cbf16f0e720a0e6fdf1411a0d372d6eeec6",
   "src/experiences/vcf/engine/chapters/variant-line.ts": "07173483680c219699e379ac2dbfcbc864472ce4538ffbebe20e3af55faef33b",
   "src/experiences/vcf/engine/chapters/row-examples.ts": "edd82d1129025e25fc0b70e50772b6bc06cb6f98a5e742efd0814947686cdc17",
   "src/experiences/vcf/engine/chapters/counts.ts": "329e3dc5d9ea2ac94da92aa8736a09403cd890fdb42fb4ae2ca2615ba355550d",

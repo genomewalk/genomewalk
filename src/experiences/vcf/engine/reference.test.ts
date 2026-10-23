@@ -222,3 +222,49 @@ test("selected VCF builds cannot replace recognized, conflicting or unsupported 
   assert.equal(ctx.selectedBuild, undefined);
   vcfExperience.clear();
 });
+
+test("header topic cards retain complete original lines beyond the overview excerpts", async () => {
+  globalThis.document = testDocument();
+  const suffix = "long original header text ".repeat(20) + "END_OF_ORIGINAL_LINE";
+  const columns = [...header.columns.slice(0, 9), `SAMPLE_${"long_".repeat(30)}END`];
+  const meta = [
+    "##fileformat=VCFv4.2",
+    `##reference=file:///reference/GRCh38/${"folder/".repeat(20)}genome.fa`,
+    `##source=synthetic-pipeline ${suffix}`,
+    "##fileDate=20260101",
+    `##contig=<ID=1,length=248956422,Description="${suffix}">`,
+    `##contig=<ID=2,length=242193529,Description="${suffix}">`,
+    `##FORMAT=<ID=GT,Number=1,Type=String,Description="${suffix}">`,
+    `##FILTER=<ID=PASS,Description="${suffix}">`,
+    `##FILTER=<ID=LowQual,Description="${suffix}">`,
+  ];
+  const source = vcfSource([], { text: `${meta.join("\n")}\n#${columns.join("\t")}\n` });
+  selectSource(source, { meta, columns });
+  const out = testElement("div");
+  try {
+    await headerChapter.run(out);
+    const details = new Map(out.children.map((child) => [child.id, child.innerHTML]));
+    const escaped = (line: string) =>
+      line.replaceAll('"', "&quot;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+    for (const [id, lines] of [
+      ["header-format", [meta[0]!]],
+      ["header-file-type", [meta[0]!]],
+      ["reference-build", [meta[1]!, meta[4]!, meta[5]!]],
+      ["header-origin", [meta[2]!, meta[3]!]],
+      ["header-genome-map", [meta[4]!, meta[5]!]],
+      ["header-filters", [meta[7]!, meta[8]!]],
+      ["header-sample", [`#${columns.join("\t")}`]],
+    ] as const) {
+      for (const line of lines)
+        assert.ok(
+          details.get(id)!.includes(escaped(line)),
+          `${id} must retain its complete source line`,
+        );
+    }
+    // The existing highlighted field example already contains the full definition.
+    assert.ok(details.get("header-fields")!.includes(suffix));
+    assert.equal((details.get("header-fields")!.match(/END_OF_ORIGINAL_LINE/g) || []).length, 1);
+  } finally {
+    vcfExperience.clear();
+  }
+});
