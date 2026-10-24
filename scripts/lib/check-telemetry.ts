@@ -150,13 +150,14 @@ export async function checkTelemetry(browser: Browser, origin: string) {
       ),
     );
     for (const frame of exception.stacktrace?.frames || []) {
+      assert.equal(frame.function, "<anonymous>");
       assert.match(
         frame.filename || "",
         /^https:\/\/(?:www\.)?genomewalk\.com\/assets\/[\w.-]+\.m?js$/,
       );
       assert.ok(
         Object.keys(frame).every((key) =>
-          ["filename", "lineno", "colno", "in_app", "platform"].includes(key),
+          ["filename", "lineno", "colno", "in_app", "platform", "function"].includes(key),
         ),
       );
     }

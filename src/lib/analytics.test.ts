@@ -190,6 +190,7 @@ test("exception events retain useful reviewed diagnostics and rebuild exceptions
         frames: [
           {
             platform: "web:javascript",
+            function: "<anonymous>",
             filename: "https://genomewalk.com/assets/app-abc.js",
             in_app: true,
             lineno: 7,
@@ -268,6 +269,7 @@ test("stack allowlist excludes personal, extension, alternate-port and external 
     [
       {
         platform: "web:javascript",
+        function: "<anonymous>",
         filename: "https://genomewalk.com/assets/app.js",
         in_app: true,
       },
@@ -277,4 +279,28 @@ test("stack allowlist excludes personal, extension, alternate-port and external 
 
 test("analytics stays inactive in non-production Node contexts", () => {
   assert.equal(initAnalytics(), false);
+});
+
+test("raw JavaScript frames meet ingestion requirements without exposing function names", () => {
+  const filename = "https://genomewalk.com/assets/app.js";
+  const base = { platform: "web:javascript", function: "<anonymous>", filename, in_app: true };
+  for (const position of [
+    { lineno: 1 },
+    { colno: 1 },
+    { lineno: 0, colno: 1 },
+    { lineno: 0x100000000, colno: 1 },
+    { lineno: 1, colno: 0x100000000 },
+    { lineno: 1, colno: -1 },
+    { lineno: 1.5, colno: 1 },
+  ]) {
+    assert.deepEqual(safeAssetFrames([{ filename, function: privateText, ...position }]), [base]);
+  }
+  for (const position of [
+    { lineno: 1, colno: 0 },
+    { lineno: 0xffffffff, colno: 0xffffffff },
+  ]) {
+    assert.deepEqual(safeAssetFrames([{ filename, function: privateText, ...position }]), [
+      { ...base, ...position },
+    ]);
+  }
 });

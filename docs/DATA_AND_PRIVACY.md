@@ -101,10 +101,11 @@ counts remain independent of error-report deduplication.
 Replay, automatic click capture, tracing, logs, surveys, feature flags and remote
 SDK configuration are disabled. Only explicit reviewed events are sent; selecting
 products in PostHog onboarding does not enable them in Genomewalk. The client does
-not create person profiles or enrich events with IP-based location. Reporting
-requests omit credentials and referrers. PostHog still receives connection
-metadata, including the network IP; this is distinct from including an IP address
-in an event. The browser deployment check intercepts requests locally and checks
+not create person profiles or enrich events with IP-based location. The PostHog
+project also has **Discard client IP data** enabled, preventing server-added IP
+addresses from being stored with new events. Reporting requests omit credentials
+and referrers. PostHog still receives the network IP when accepting the connection.
+The browser deployment check intercepts requests locally and checks
 the final transmitted payloads. It never sends CI test events to PostHog.
 
 Outbound source links open the cited public resource when the reader clicks.

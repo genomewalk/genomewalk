@@ -126,7 +126,7 @@ export const privacyPolicy: PolicyDocument = {
             It resets when the page reloads; it is not stored in cookies or browser storage to
             recognise you on a later visit. PostHog receives ordinary network information such as
             your IP address when your browser connects. Genomewalk disables IP-based location
-            enrichment and does not add your IP address to events. See{" "}
+            enrichment and configures PostHog to discard IP addresses from stored events. See{" "}
             <a href="https://posthog.com/privacy" target="_blank" rel="noopener noreferrer">
               PostHog’s Privacy Policy
             </a>

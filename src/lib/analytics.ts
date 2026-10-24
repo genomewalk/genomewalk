@@ -89,17 +89,26 @@ export function safeAssetFrames(input: unknown): Properties[] {
         !/^\/assets\/[\w.-]+\.m?js$/.test(url.pathname)
       )
         return [];
+      const line = value["lineno"];
+      const column = value["colno"];
+      // PostHog's RawJSFrame requires a function; never preserve the original name.
+      // Its optional FrameLocation contains a complete pair of unsigned 32-bit values.
+      const hasLocation =
+        typeof line === "number" &&
+        Number.isInteger(line) &&
+        line > 0 &&
+        line <= 0xffffffff &&
+        typeof column === "number" &&
+        Number.isInteger(column) &&
+        column >= 0 &&
+        column <= 0xffffffff;
       return [
         {
           platform: "web:javascript",
+          function: "<anonymous>",
           filename: `${url.origin}${url.pathname}`,
           in_app: true,
-          ...(Number.isSafeInteger(value["lineno"]) && (value["lineno"] as number) > 0
-            ? { lineno: value["lineno"] }
-            : {}),
-          ...(Number.isSafeInteger(value["colno"]) && (value["colno"] as number) > 0
-            ? { colno: value["colno"] }
-            : {}),
+          ...(hasLocation ? { lineno: line, colno: column } : {}),
         },
       ];
     } catch {

@@ -74,6 +74,11 @@ as the release identifier; only the
 live domain sends events. No source-map upload is configured. See the
 [reporting data inventory](DATA_AND_PRIVACY.md#usage-and-error-reporting).
 
+Keep **Settings → Project → Privacy → Discard client IP data** enabled in PostHog.
+This is separate from the client's `$geoip_disable` flag: it prevents PostHog from
+adding the connection's IP address to stored events. Enable it before sending
+events if the project is replaced. The deprecated SDK `ip` option has no effect.
+
 PostHog receives explicit page views and journey milestones so funnels can compare
 personal-file attempts with public-sample use, chapter runs and results preparation.
 Identifiers last only for the current loaded page; counts do not identify distinct
