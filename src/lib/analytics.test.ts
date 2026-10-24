@@ -143,6 +143,7 @@ test("exception events retain useful reviewed diagnostics and rebuild exceptions
       area: "results",
       stage: "reference-index",
       resource: "catalogue-index",
+      public_file: `https://genomewalk.com/ref/GRCh38/catalog.index.json.gz?secret=${privateText}`,
       http_status: 503,
       chapter: 7,
       file_extension: ".vcf.gz",
@@ -174,6 +175,7 @@ test("exception events retain useful reviewed diagnostics and rebuild exceptions
   )!;
   assert.equal(clean.properties["error_code"], "HTTP_ERROR");
   assert.equal(clean.properties["http_status"], 503);
+  assert.equal(clean.properties["public_file"], "/ref/GRCh38/catalog.index.json.gz");
   assert.equal(clean.properties["file_size_band"], "1-GB-or-more");
   assert.equal(clean.properties["$exception_level"], "error");
   assert.equal(
@@ -202,6 +204,54 @@ test("exception events retain useful reviewed diagnostics and rebuild exceptions
   ]);
   assert.equal(JSON.stringify(clean).includes(privateText), false);
   assert.equal(JSON.stringify(clean).includes("token=secret"), false);
+});
+
+test("exception boundary revalidates server files without exposing private request details", () => {
+  const failures = [
+    privateText,
+    `https://private.example/ref/GRCh38/catalog.index.json.gz?${privateText}`,
+    `/ref/GRCh38/${privateText}`,
+    "/samples/HG002_GRCh38.vcf.gz",
+    { path: "/ref/GRCh38/catalog.index.json.gz" },
+  ];
+  for (const publicFile of failures) {
+    const clean = sanitize(
+      event("$exception", {
+        error_code: "NETWORK_FAILED",
+        resource: "catalogue-index",
+        public_file: publicFile,
+      }),
+    )!;
+    assert.equal(clean.properties["public_file"], undefined);
+    assert.equal(JSON.stringify(clean).includes(privateText), false);
+  }
+  assert.equal(
+    sanitize(
+      event("$exception", {
+        error_code: "NETWORK_FAILED",
+        public_file: "/ref/GRCh38/catalog.index.json.gz",
+      }),
+    )?.properties["public_file"],
+    undefined,
+  );
+  const clean = sanitize(
+    event("$exception", {
+      error_code: "NETWORK_FAILED",
+      resource: "publication-labels",
+      public_file: "/ref/publications/[shard].json.gz",
+      range: "bytes=12345-23456",
+      headers: { Range: "bytes=12345-23456" },
+      response_body: privateText,
+    }),
+  )!;
+  assert.equal(clean.properties["public_file"], "/ref/publications/[shard].json.gz");
+  assert.equal(JSON.stringify(clean).includes("12345"), false);
+  assert.equal(JSON.stringify(clean).includes(privateText), false);
+  assert.equal(
+    sanitize(event("genome_open_started", { public_file: "/samples/HG002_GRCh38.vcf.gz" }))
+      ?.properties["public_file"],
+    undefined,
+  );
 });
 
 test("exception boundary rejects unknown codes and invalid resource, status or file metadata", () => {

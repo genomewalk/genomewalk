@@ -122,3 +122,89 @@ test("invalid public JSON and gzip expose only a fixed reference decoding diagno
       diagnostic("REFERENCE_DECODE_FAILED", { resource: "consumer-lookup" }),
     );
 });
+
+test("failed public downloads identify the requested file without request parameters", async () => {
+  const publicFile = "/ref/GRCh38/catalog.index.json.gz";
+  for (const [fetcher, code, extra] of [
+    [
+      async () => {
+        throw new TypeError(secret);
+      },
+      "NETWORK_FAILED",
+      {},
+    ],
+    [
+      async () => {
+        throw new DOMException(secret, "TimeoutError");
+      },
+      "NETWORK_TIMEOUT",
+      {},
+    ],
+    [async () => new Response(secret, { status: 503 }), "HTTP_ERROR", { httpStatus: 503 }],
+  ] as const)
+    await assert.rejects(
+      fetchPublic(
+        `https://genomewalk.com${publicFile}?token=${secret}`,
+        "catalogue-index",
+        {
+          headers: { "X-Private": secret },
+        },
+        fetcher,
+      ),
+      diagnostic(code, { resource: "catalogue-index", publicFile, ...extra }),
+    );
+});
+
+test("interrupted bodies retain the original safe request path even without a response URL", async () => {
+  const publicFile = "/ref/GRCh37/catalog.tsv.gz";
+  const response = await fetchPublic(
+    `${publicFile}?v=${secret}`,
+    "catalogue-entries",
+    undefined,
+    async () =>
+      new Response(
+        new ReadableStream({
+          start(controller) {
+            controller.error(new TypeError(secret));
+          },
+        }),
+        { status: 206 },
+      ),
+  );
+  assert.equal(response.url, "");
+  await assert.rejects(
+    readPublicBytes(response, "catalogue-entries"),
+    diagnostic("NETWORK_FAILED", {
+      resource: "catalogue-entries",
+      publicFile,
+      httpStatus: 206,
+    }),
+  );
+});
+
+test("public range failures identify the file without exposing selected byte offsets", async () => {
+  const publicFile = "/ref/GRCh38/catalog.tsv.gz";
+  for (const [response, code, httpStatus] of [
+    [new Response(secret), "RANGE_RESPONSE_INVALID", 200],
+    [
+      new Response(new Uint8Array(2), {
+        status: 206,
+        headers: { "Content-Range": "bytes 10-12/20" },
+      }),
+      "RANGE_RESPONSE_INCOMPLETE",
+      206,
+    ],
+  ] as const)
+    await assert.rejects(
+      readByteRange(`${publicFile}?v=${secret}`, 10, 13, {
+        size: 20,
+        resource: "catalogue-entries",
+        fetcher: async () => response,
+      }),
+      diagnostic(code, { resource: "catalogue-entries", publicFile, httpStatus }),
+    );
+  await assert.rejects(
+    readByteRange(publicFile, -1, 0, { resource: "catalogue-entries" }),
+    diagnostic("RANGE_REQUEST_INVALID", { resource: "catalogue-entries", publicFile }),
+  );
+});

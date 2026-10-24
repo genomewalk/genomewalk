@@ -9,6 +9,7 @@ test("typed errors retain reviewed diagnosis without the original message or cau
   const original = new AppError("HTTP_ERROR", privateText, {
     resource: "catalogue-index",
     httpStatus: 503,
+    publicFile: "https://genomewalk.com/ref/GRCh38/catalog.index.json.gz?token=private#private",
   });
   original.cause = new Error(privateText);
   original.stack = `AppError: ${privateText}\n    at read (https://genomewalk.com/assets/reference-abc.js:5:17)`;
@@ -18,12 +19,39 @@ test("typed errors retain reviewed diagnosis without the original message or cau
   assert.equal(report.error.message, errorDefinitions.HTTP_ERROR[0]);
   assert.equal(report.error.cause, undefined);
   assert.equal(report.properties.resource, "catalogue-index");
+  assert.equal(report.properties.public_file, "/ref/GRCh38/catalog.index.json.gz");
   assert.equal(report.properties.http_status, 503);
   assert.equal(report.properties.chapter, 7);
   assert.match(report.error.stack!, /assets\/reference-abc\.js:5:17/);
   assert.equal(JSON.stringify(report).includes(privateText), false);
   assert.equal(report.error.stack!.includes(privateText), false);
   assert.equal(original.message, privateText);
+});
+
+test("error preparation excludes unknown, mismatched and private download paths", () => {
+  for (const publicFile of [
+    privateText,
+    `/ref/GRCh38/${privateText}`,
+    "https://private.example/ref/GRCh38/catalog.index.json.gz",
+    "/samples/HG002_GRCh38.vcf.gz",
+  ]) {
+    const report = prepareErrorReport(
+      new AppError("NETWORK_FAILED", privateText, { resource: "catalogue-index", publicFile }),
+      "results",
+      "reference-index",
+    );
+    assert.equal(report?.properties.public_file, undefined);
+    assert.equal(JSON.stringify(report).includes(privateText), false);
+  }
+  assert.equal(
+    prepareErrorReport(
+      new AppError("NETWORK_FAILED", undefined, {
+        publicFile: "/ref/GRCh38/catalog.index.json.gz",
+      }),
+      "results",
+    )?.properties.public_file,
+    undefined,
+  );
 });
 
 test("all supported diagnostics produce fixed safe exception names and messages", () => {

@@ -80,7 +80,11 @@ Before sending, every SDK event is rebuilt from an allowlist. Error events inclu
 a predefined code/description/severity, fixed operation/stage/category, chapter
 number (1–9) when relevant, build identifier, and application asset URLs with
 numeric code locations. Public downloads can also include a fixed resource
-category and numeric HTTP status. Grouping keys contain only these reviewed
+category, numeric HTTP status and a reviewed server file path (`public_file`),
+such as `/ref/GRCh38/catalog.index.json.gz`. Only known public sample/reference
+paths are accepted; query strings and fragments are removed. Publication label
+paths are normalized to `/ref/publications/[shard].json.gz`, so the selected
+citation shard is not reported. Grouping keys contain only reviewed diagnostic
 values. Coarse diagnostics include allowlisted browser name, major version
 (1–999), operating-system family and broad device type. Detection is best effort;
 the original user-agent string, OS version, device model and screen details are
@@ -90,10 +94,11 @@ File errors add only a recognized extension (`.vcf.gz`, `.vcf.bgz`, `.txt`, `.ts
 `.zip`, `.gz`, or `other`), format (VCF, 23andMe, AncestryDNA, unrecognized or
 unknown), and size band. Decimal bands are empty, under 1 MB, 1 MB to under 100 MB,
 100 MB to under 1 GB, and 1 GB or more; invalid sizes are unknown. Formats come
-from validated readers, never filenames. Exact sizes and filenames are excluded.
+from validated readers, never filenames. Exact sizes and personal filenames are
+excluded.
 Original messages, arbitrary exception/function names, variables, source snippets,
-causes, request data, query strings, referrers, range headers and attachments are
-excluded. Aborts are ignored. Expected input-validation failures are warnings;
+causes, request/response bodies, query strings, referrers, range headers and
+attachments are excluded. Aborts are ignored. Expected input-validation failures are warnings;
 repeated warnings are deduplicated, with at most three warning kinds per page
 load. Actual failures have a separate ten-event limit. Usage attempt/failure
 counts remain independent of error-report deduplication.

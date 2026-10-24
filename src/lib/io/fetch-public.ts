@@ -1,24 +1,29 @@
 import { gunzipSync } from "fflate";
-import { AppError, type ErrorResource } from "../app-error.ts";
+import { AppError, type ErrorDetails, type ErrorResource } from "../app-error.ts";
+import { safePublicFile } from "../public-file.ts";
 import type { Fetcher } from "./types.ts";
 
-function downloadFailure(error: unknown, resource: ErrorResource, httpStatus?: number): never {
+const responseFiles = new WeakMap<Response, string>();
+
+function downloadFailure(error: unknown, details: ErrorDetails): never {
   // Cancellation is control flow, not a failed download. Timeouts remain actionable.
   if (error instanceof Error && error.name === "AbortError") throw error;
   throw new AppError(
     error instanceof Error && error.name === "TimeoutError" ? "NETWORK_TIMEOUT" : "NETWORK_FAILED",
     undefined,
-    { resource, ...(httpStatus == null ? {} : { httpStatus }) },
+    details,
   );
 }
 
-/** Callers supply a fixed resource category; request URLs, bodies and headers are never retained. */
+/** Retain only a reviewed public path; full request URLs, bodies and headers are never retained. */
 export async function fetchPublic(
   input: string | URL | Request,
   resource: ErrorResource,
   init?: RequestInit,
   fetcher: Fetcher = fetch,
 ): Promise<Response> {
+  const publicFile = safePublicFile(input, resource);
+  const details = { resource, ...(publicFile ? { publicFile } : {}) };
   let response: Response;
   try {
     init?.signal?.throwIfAborted();
@@ -28,14 +33,15 @@ export async function fetchPublic(
     if (init?.signal?.aborted) {
       const reason = init.signal.reason;
       if (!(reason instanceof Error && reason.name === "TimeoutError")) throw reason;
-      downloadFailure(reason, resource);
+      downloadFailure(reason, details);
     }
-    downloadFailure(error, resource);
+    downloadFailure(error, details);
   }
   if (!response.ok) {
     await response.body?.cancel().catch(() => {});
-    throw new AppError("HTTP_ERROR", undefined, { resource, httpStatus: response.status });
+    throw new AppError("HTTP_ERROR", undefined, { ...details, httpStatus: response.status });
   }
+  if (publicFile) responseFiles.set(response, publicFile);
   return response;
 }
 
@@ -43,7 +49,12 @@ export async function readPublicBytes(response: Response, resource: ErrorResourc
   try {
     return new Uint8Array(await response.arrayBuffer());
   } catch (error) {
-    downloadFailure(error, resource, response.status);
+    const publicFile = safePublicFile(responseFiles.get(response), resource);
+    downloadFailure(error, {
+      resource,
+      httpStatus: response.status,
+      ...(publicFile ? { publicFile } : {}),
+    });
   }
 }
 

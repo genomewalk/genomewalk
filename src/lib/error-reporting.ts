@@ -7,6 +7,7 @@ import {
   safeAssetFrames,
 } from "./analytics.ts";
 import type { FileDiagnostics } from "./diagnostics/file-context.ts";
+import { safePublicFile } from "./public-file.ts";
 
 export type ErrorArea = (typeof errorAreas)[number];
 export type ErrorStage = (typeof errorStages)[number];
@@ -39,6 +40,7 @@ function diagnostic(error: unknown, type?: string, message?: string) {
   return {
     code,
     resource,
+    publicFile: safePublicFile(details?.publicFile, resource),
     httpStatus:
       resource &&
       typeof status === "number" &&
@@ -65,7 +67,7 @@ export function prepareErrorReport(
   file?: FileDiagnostics,
 ) {
   if (error instanceof Error && error.name === "AbortError") return null;
-  const { code, resource, httpStatus } = diagnostic(
+  const { code, resource, publicFile, httpStatus } = diagnostic(
     error,
     error instanceof Error ? error.name : undefined,
     error instanceof Error ? error.message : undefined,
@@ -101,6 +103,7 @@ export function prepareErrorReport(
       stage,
       ...(chapter === undefined ? {} : { chapter }),
       ...(resource ? { resource } : {}),
+      ...(publicFile ? { public_file: publicFile } : {}),
       ...(httpStatus === undefined ? {} : { http_status: httpStatus }),
     },
   };

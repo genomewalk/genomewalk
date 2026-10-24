@@ -112,7 +112,11 @@ test("publication failures report once per shared request and preserve fallback 
   const error = errors[0];
   assert.ok(error instanceof AppError);
   assert.equal(error.code, "HTTP_ERROR");
-  assert.deepEqual(error.details, { resource: "publication-labels", httpStatus: 503 });
+  assert.deepEqual(error.details, {
+    resource: "publication-labels",
+    publicFile: "/ref/publications/[shard].json.gz",
+    httpStatus: 503,
+  });
   assert.ok(!JSON.stringify(error).includes("PRIVATE_RESPONSE_BODY"));
 
   const indexErrors: unknown[] = [];
@@ -124,5 +128,9 @@ test("publication failures report once per shared request and preserve fallback 
   assert.ok(failed.every((result) => result.status === "rejected"));
   assert.equal(indexErrors.length, 1);
   assert.ok(indexErrors[0] instanceof AppError);
-  assert.deepEqual(indexErrors[0].details, { resource: "publication-index", httpStatus: 404 });
+  assert.deepEqual(indexErrors[0].details, {
+    resource: "publication-index",
+    publicFile: "/ref/publications/index.json",
+    httpStatus: 404,
+  });
 });

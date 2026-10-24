@@ -73,6 +73,7 @@ export type ErrorResource = (typeof errorResources)[number];
 export interface ErrorDetails {
   resource?: ErrorResource;
   httpStatus?: number;
+  publicFile?: string;
 }
 
 /** The message is for the local UI. Reporting uses only the reviewed code and details. */

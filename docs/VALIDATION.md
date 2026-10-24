@@ -97,8 +97,9 @@ useful.
 The browser check also exercises the production PostHog configuration against
 local files. Every telemetry request is intercepted locally. Synthetic uncaught,
 invalid-file, sample-download, invalid-range and catalogue-download failures verify
-useful codes, severity, resource categories, HTTP status, browser/OS/device
-categories and per-operation file metadata. Fake private text in filenames,
+useful codes, severity, resource categories, reviewed public server file paths,
+HTTP status, browser/OS/device categories and per-operation file metadata.
+Fake private text in filenames,
 contents, user-agent strings, errors, page URLs and cookies must not appear in
 transmitted events. Only a browser major version and file-size band are allowed.
 Switching from an invalid private file to the public sample must replace the file

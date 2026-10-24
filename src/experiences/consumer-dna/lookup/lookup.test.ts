@@ -246,6 +246,10 @@ test("lookup downloads contain no personal identifiers and reject mismatched sou
   await assert.rejects(loadLookup("GRCh37", "catalog", sourceBytes), {
     name: "AppError",
     code: "HTTP_ERROR",
-    details: { resource: "consumer-lookup", httpStatus: 404 },
+    details: {
+      resource: "consumer-lookup",
+      publicFile: "/ref/consumer-dna/GRCh37/rsids.json.gz",
+      httpStatus: 404,
+    },
   });
 });

@@ -1,5 +1,6 @@
 import type { ByteSource, Fetcher } from "./types.ts";
 import { AppError, type ErrorResource } from "../app-error.ts";
+import { safePublicFile } from "../public-file.ts";
 import { fetchPublic, readPublicBytes } from "./fetch-public.ts";
 
 interface RangeOptions {
@@ -17,8 +18,10 @@ export async function readByteRange(
   { size, signal, fetcher = fetch, resource = "public-sample" }: RangeOptions = {},
 ) {
   signal?.throwIfAborted();
+  const publicFile = safePublicFile(url, resource);
+  const details = { resource, ...(publicFile ? { publicFile } : {}) };
   if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || end <= start)
-    throw new AppError("RANGE_REQUEST_INVALID", "Invalid byte range", { resource });
+    throw new AppError("RANGE_REQUEST_INVALID", "Invalid byte range", details);
   const response = await fetchPublic(
     url,
     resource,
@@ -43,14 +46,14 @@ export async function readByteRange(
     throw new AppError(
       "RANGE_RESPONSE_INVALID",
       "The static host must serve unchanged files with HTTP 206 byte-range support.",
-      { resource, httpStatus: response.status },
+      { ...details, httpStatus: response.status },
     );
   }
   const bytes = await readPublicBytes(response, resource);
   signal?.throwIfAborted();
   if (bytes.length !== end - start)
     throw new AppError("RANGE_RESPONSE_INCOMPLETE", "The byte-range response was incomplete.", {
-      resource,
+      ...details,
       httpStatus: response.status,
     });
   return bytes;

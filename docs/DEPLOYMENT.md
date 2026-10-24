@@ -88,9 +88,12 @@ disabled even when selected during PostHog onboarding.
 Error Tracking uses predefined codes in `src/lib/app-error.ts`. For example,
 `DNA_HEADER_MISSING` is an expected file-validation warning; `HTTP_ERROR` with
 `resource=catalogue-entries` and `http_status=503` identifies a failed public
-catalogue download. Inspect `area`, `stage`, `chapter`, and `release` to locate the
-operation. `UNEXPECTED_ERROR` and `JS_*` retain sanitized asset line/column
-locations, not source-mapped stacks.
+catalogue download. `public_file` identifies the reviewed server path, for example
+`/ref/GRCh38/catalog.index.json.gz`; it excludes queries, byte ranges and personal
+filenames. Publication labels use `/ref/publications/[shard].json.gz` without the
+selected shard. Inspect `area`, `stage`, `chapter`, and `release` to locate the
+operation. Older events do not gain this property retroactively. `UNEXPECTED_ERROR`
+and `JS_*` retain sanitized asset line/column locations, not source-mapped stacks.
 
 Reports carry `browser_name`, `browser_major` when available, `os_name` and
 `device_type`. File-related failures carry `file_extension`, `file_format` and

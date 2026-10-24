@@ -8,6 +8,7 @@ import {
   type ClientEnvironment,
 } from "./diagnostics/client-environment.ts";
 import { fileExtensions, fileFormats, fileSizeBands } from "./diagnostics/file-context.ts";
+import { safePublicFile } from "./public-file.ts";
 
 // Public ingestion identifiers, not authentication secrets. Kept in the static build.
 const projectToken = "phc_utRMfZS8cjErMnW89GxrJMEx7rHfCZA9XciPXV4aGh7M";
@@ -159,6 +160,10 @@ export function sanitizeAnalyticsEvent(
     const area = errorAreas.find((value) => value === input["area"]) || "unhandled";
     const stage = errorStages.find((value) => value === input["stage"]) || "prepare";
     const resource = errorResources.find((value) => value === input["resource"]);
+    const publicFile = safePublicFile(
+      typeof input["public_file"] === "string" ? input["public_file"] : undefined,
+      resource,
+    );
     const extension = fileExtensions.find((value) => value === input["file_extension"]);
     const format = fileFormats.find((value) => value === input["file_format"]);
     const size = fileSizeBands.find((value) => value === input["file_size_band"]);
@@ -189,6 +194,7 @@ export function sanitizeAnalyticsEvent(
       ],
       ...chapterProperty(input["chapter"]),
       ...(resource ? { resource } : {}),
+      ...(publicFile ? { public_file: publicFile } : {}),
       ...(resource &&
       typeof status === "number" &&
       Number.isInteger(status) &&

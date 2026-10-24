@@ -84,6 +84,7 @@ export async function checkTelemetry(browser: Browser, origin: string) {
       "category",
       "error_code",
       "resource",
+      "public_file",
       "http_status",
       "chapter",
       "file_extension",
@@ -180,6 +181,24 @@ export async function checkTelemetry(browser: Browser, origin: string) {
     assert.ok(
       p["resource"] === undefined || errorResources.some((value) => value === p["resource"]),
     );
+    if (p["public_file"] !== undefined) {
+      const publicFiles: Record<string, string[]> = {
+        "public-sample": ["/samples/HG002_GRCh38.vcf.gz"],
+        "catalogue-index": [
+          "/ref/GRCh37/catalog.index.json.gz",
+          "/ref/GRCh38/catalog.index.json.gz",
+        ],
+        "catalogue-entries": ["/ref/GRCh37/catalog.tsv.gz", "/ref/GRCh38/catalog.tsv.gz"],
+        "consumer-lookup": [
+          "/ref/consumer-dna/GRCh37/rsids.json.gz",
+          "/ref/consumer-dna/GRCh38/rsids.json.gz",
+        ],
+        markers: ["/ref/GRCh37/markers.json", "/ref/GRCh38/markers.json"],
+        "publication-index": ["/ref/publications/index.json"],
+        "publication-labels": ["/ref/publications/[shard].json.gz"],
+      };
+      assert.ok(publicFiles[String(p["resource"])]?.includes(String(p["public_file"])));
+    }
     assert.ok(
       p["http_status"] === undefined ||
         (p["resource"] &&
@@ -371,6 +390,7 @@ export async function checkTelemetry(browser: Browser, origin: string) {
     );
     assert.equal(sample["error_code"], "NETWORK_FAILED");
     assert.equal(sample["resource"], "public-sample");
+    assert.equal(sample["public_file"], "/samples/HG002_GRCh38.vcf.gz");
     assert.equal(sample["file_extension"], ".vcf.gz");
     assert.equal(sample["file_format"], "unknown");
     assert.equal(sample["file_size_band"], "1-100-MB");
@@ -381,6 +401,7 @@ export async function checkTelemetry(browser: Browser, origin: string) {
     );
     assert.equal(range["error_code"], "RANGE_RESPONSE_INVALID");
     assert.equal(range["http_status"], 200);
+    assert.equal(range["public_file"], "/samples/HG002_GRCh38.vcf.gz");
     assert.equal(count("genome_open_failed", "sample"), 2);
     assert.ok(
       events.every((event) => event.properties["distinct_id"] === firstIdentity),
@@ -407,6 +428,7 @@ export async function checkTelemetry(browser: Browser, origin: string) {
     assert.equal(chapter["stage"], "reference-index");
     assert.equal(chapter["chapter"], 8);
     assert.equal(chapter["resource"], "catalogue-index");
+    assert.equal(chapter["public_file"], "/ref/GRCh38/catalog.index.json.gz");
     assert.equal(chapter["http_status"], 503);
     assert.equal(chapter["file_format"], "VCF");
     assert.equal(count("chapter_run_completed"), 1);
@@ -419,6 +441,7 @@ export async function checkTelemetry(browser: Browser, origin: string) {
     assert.equal(result["stage"], "reference-entries");
     assert.equal(result["error_code"], "HTTP_ERROR");
     assert.equal(result["resource"], "catalogue-entries");
+    assert.equal(result["public_file"], "/ref/GRCh38/catalog.tsv.gz");
     assert.equal(result["http_status"], 503);
     assert.equal(result["file_format"], "VCF");
     assert.equal(count("genome_opened", "sample"), 1);
