@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 import { reportError } from "../lib/error-reporting.ts";
+import { ErrorNotice } from "../components/error-notice.tsx";
 
 import appCss from "../styles.css?url";
 
@@ -39,26 +40,27 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
-        </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <button
-            onClick={() => {
-              router.invalidate();
-              reset();
-            }}
-            className="btn"
-          >
-            Try again
-          </button>
-          <a href="/" className="btn rerun">
-            Go home
-          </a>
-        </div>
+        <ErrorNotice
+          title="This page couldn’t be loaded"
+          action={
+            <>
+              <button
+                onClick={() => {
+                  router.invalidate();
+                  reset();
+                }}
+                className="btn"
+              >
+                Try again
+              </button>
+              <a href="/" className="btn rerun">
+                Go home
+              </a>
+            </>
+          }
+        >
+          Something went wrong. Try again or return to the field guide.
+        </ErrorNotice>
       </div>
     </div>
   );

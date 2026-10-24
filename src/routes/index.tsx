@@ -4,6 +4,7 @@ import { GenomeExplorer } from "../components/genome-explorer/genome-explorer.ts
 import { ImmersiveHero, LandingShell } from "../components/landing/landing-experience.tsx";
 import { GeneticsLoader } from "../components/genetics-loader.tsx";
 import { BuildChoice } from "../components/build-choice.tsx";
+import { ErrorNotice } from "../components/error-notice.tsx";
 import { SiteHeader, SiteFooter } from "../components/brand.tsx";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as experiences from "../experiences/index.ts";
@@ -246,9 +247,9 @@ function Index() {
                   </div>
                 </div>
                 {loadError && (
-                  <p className="err specimen-error" role="alert">
+                  <ErrorNotice title="We couldn’t open this genome" className="specimen-error">
                     {loadError}
-                  </p>
+                  </ErrorNotice>
                 )}
               </div>
             </div>

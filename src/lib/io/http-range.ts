@@ -1,9 +1,12 @@
 import type { ByteSource, Fetcher } from "./types.ts";
+import { AppError, type ErrorResource } from "../app-error.ts";
+import { fetchPublic, readPublicBytes } from "./fetch-public.ts";
 
 interface RangeOptions {
   size?: number | undefined;
   signal?: AbortSignal | undefined;
   fetcher?: Fetcher;
+  resource?: ErrorResource;
 }
 
 /** Fetch a single [start, end) range; never silently download an entire large file. */
@@ -11,15 +14,20 @@ export async function readByteRange(
   url: string | URL | Request,
   start: number,
   end: number,
-  { size, signal, fetcher = fetch }: RangeOptions = {},
+  { size, signal, fetcher = fetch, resource = "public-sample" }: RangeOptions = {},
 ) {
   signal?.throwIfAborted();
   if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || end <= start)
-    throw new Error("Invalid byte range");
-  const response = await fetcher(url, {
-    headers: { Range: `bytes=${start}-${end - 1}` },
-    signal: signal ?? null,
-  });
+    throw new AppError("RANGE_REQUEST_INVALID", "Invalid byte range", { resource });
+  const response = await fetchPublic(
+    url,
+    resource,
+    {
+      headers: { Range: `bytes=${start}-${end - 1}` },
+      signal: signal ?? null,
+    },
+    fetcher,
+  );
   const range = /^bytes (\d+)-(\d+)\/(\d+)$/.exec(response.headers.get("content-range") || "");
   const encoding = response.headers.get("content-encoding");
   if (
@@ -31,12 +39,20 @@ export async function readByteRange(
     +range[3]! < end ||
     (encoding && encoding !== "identity")
   ) {
-    await response.body?.cancel();
-    throw new Error("The static host must serve unchanged files with HTTP 206 byte-range support.");
+    await response.body?.cancel().catch(() => {});
+    throw new AppError(
+      "RANGE_RESPONSE_INVALID",
+      "The static host must serve unchanged files with HTTP 206 byte-range support.",
+      { resource, httpStatus: response.status },
+    );
   }
-  const bytes = new Uint8Array(await response.arrayBuffer());
+  const bytes = await readPublicBytes(response, resource);
   signal?.throwIfAborted();
-  if (bytes.length !== end - start) throw new Error("The byte-range response was incomplete.");
+  if (bytes.length !== end - start)
+    throw new AppError("RANGE_RESPONSE_INCOMPLETE", "The byte-range response was incomplete.", {
+      resource,
+      httpStatus: response.status,
+    });
   return bytes;
 }
 
@@ -59,7 +75,11 @@ export class HttpRangeSource implements ByteSource {
     if (start === end) return new Uint8Array();
     const key = `${start}:${end}`;
     if (this.cache.has(key)) return this.cache.get(key)!;
-    const bytes = await readByteRange(this.url, start, end, { size: this.size, signal });
+    const bytes = await readByteRange(this.url, start, end, {
+      size: this.size,
+      signal,
+      resource: "public-sample",
+    });
     this.bytesRead += bytes.length;
     // Bound memory to four requested chunks; HTTP caching can handle later rereads.
     if (this.cache.size === 4) this.cache.delete(this.cache.keys().next().value!);

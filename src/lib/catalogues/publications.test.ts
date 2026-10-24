@@ -6,6 +6,7 @@ import { PublicationCatalogue } from "./publications.ts";
 import { publicationShard, publicationManifest, publicationLabels } from "./publication-format.ts";
 import type { PublicationManifest, PublicationLabels } from "./publication-format.ts";
 import type { Fetcher } from "../io/types.ts";
+import { AppError } from "../app-error.ts";
 
 function fixture(labels: PublicationLabels) {
   const shards: Record<string, Uint8Array> = {};
@@ -93,4 +94,35 @@ test("concurrent result-page loads keep publication downloads bounded to four", 
   const reader = new PublicationCatalogue(fetcher);
   await Promise.all([reader.load(ids.slice(0, 10)), reader.load(ids.slice(10))]);
   assert.equal(peak, 4);
+});
+
+test("publication failures report once per shared request and preserve fallback links", async () => {
+  const { manifest } = fixture({ "1": "Example, Journal 2000" });
+  const errors: unknown[] = [];
+  const reader = new PublicationCatalogue(
+    async (url) =>
+      String(url).endsWith("index.json")
+        ? Response.json(manifest)
+        : new Response("PRIVATE_RESPONSE_BODY", { status: 503 }),
+    (error) => errors.push(error),
+  );
+  const results = await Promise.all([reader.load(["1"]), reader.load(["1"])]);
+  assert.deepEqual(results, [{ "1": null }, { "1": null }]);
+  assert.equal(errors.length, 1);
+  const error = errors[0];
+  assert.ok(error instanceof AppError);
+  assert.equal(error.code, "HTTP_ERROR");
+  assert.deepEqual(error.details, { resource: "publication-labels", httpStatus: 503 });
+  assert.ok(!JSON.stringify(error).includes("PRIVATE_RESPONSE_BODY"));
+
+  const indexErrors: unknown[] = [];
+  const unavailable = new PublicationCatalogue(
+    async () => new Response(null, { status: 404 }),
+    (error) => indexErrors.push(error),
+  );
+  const failed = await Promise.allSettled([unavailable.load(["1"]), unavailable.load(["2"])]);
+  assert.ok(failed.every((result) => result.status === "rejected"));
+  assert.equal(indexErrors.length, 1);
+  assert.ok(indexErrors[0] instanceof AppError);
+  assert.deepEqual(indexErrors[0].details, { resource: "publication-index", httpStatus: 404 });
 });

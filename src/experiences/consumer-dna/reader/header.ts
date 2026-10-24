@@ -1,3 +1,4 @@
+import { AppError } from "../../../lib/app-error.ts";
 import { detectReferenceBuild } from "../../../lib/genetics/reference-build.ts";
 
 export function describeHeader(meta: string[], columns: string[]) {
@@ -15,7 +16,8 @@ export function describeHeader(meta: string[], columns: string[]) {
     !provider ||
     columns.map((x) => x.toLowerCase().replace(/\s+/g, "")).join("|") !== expected.join("|")
   )
-    throw new Error(
+    throw new AppError(
+      "DNA_FORMAT_UNSUPPORTED",
       "This is not a supported 23andMe or AncestryDNA raw export. Keep the original header and column names.",
     );
   const headerBuild = detectReferenceBuild(meta);

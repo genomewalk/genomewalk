@@ -367,9 +367,6 @@ a.sidebar-chapter:hover {
 .results-output {
   margin-top: var(--wgs-space-section);
 }
-.results-error .btn {
-  margin-top: 16px;
-}
 .btn-next {
   background: var(--wgs-pink);
   border-color: var(--wgs-pink);
@@ -395,11 +392,6 @@ a.sidebar-chapter:hover {
   color: var(--wgs-accent);
   text-decoration: underline;
   text-underline-offset: 3px;
-}
-.err {
-  color: var(--wgs-bad);
-  font-size: 16px;
-  margin-top: 15px;
 }
 .empty-route {
   max-width: 690px;

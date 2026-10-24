@@ -38,6 +38,26 @@ test("VCF selection activates its engine and a fresh chapter session", async () 
   assert.deepEqual(vcf.session.done, {});
 });
 
+test("file intake distinguishes unsupported formats, invalid VCF headers and missing samples", async () => {
+  await assert.rejects(openGenomeFile(new File(["synthetic"], "synthetic.pdf")), {
+    name: "AppError",
+    code: "FILE_TYPE_UNSUPPORTED",
+  });
+  await assert.rejects(openGenomeFile(fixture("# unrelated file header\nsynthetic\n")), {
+    name: "AppError",
+    code: "VCF_HEADER_INVALID",
+  });
+  await assert.rejects(
+    openGenomeFile(
+      fixture("##fileformat=VCFv4.2\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n"),
+    ),
+    {
+      name: "AppError",
+      code: "VCF_SAMPLE_MISSING",
+    },
+  );
+});
+
 test("switching experiences isolates every chapter, session and personal result", async () => {
   const consumer = optionalExperiences.find((x) => x.id === "consumer");
   if (!consumer) return;

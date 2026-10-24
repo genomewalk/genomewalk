@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { AppError } from "../../lib/app-error.ts";
+import { reportError } from "../../lib/error-reporting.ts";
 
 /** Original decorative DNA sculpture. No specimen data enters this component. */
 export function LandingMolecule({ animated = true }: { animated?: boolean }) {
@@ -21,7 +23,8 @@ export function LandingMolecule({ animated = true }: { animated?: boolean }) {
         }
       })
       .catch(() => {
-        /* Keep the static illustration if WebGL is unavailable. */
+        if (!cancelled) reportError(new AppError("GRAPHICS_UNAVAILABLE"), "illustration");
+        // Keep the static illustration usable after a failed import or initialization.
       });
     return () => {
       cancelled = true;

@@ -1,5 +1,6 @@
-import { gunzipSync } from "fflate";
 import type { Fetcher } from "../io/types.ts";
+import { AppError } from "../app-error.ts";
+import { fetchPublic, readPublicBytes, decodePublicJson } from "../io/fetch-public.ts";
 import {
   publicationManifest,
   publicationLabels,
@@ -15,22 +16,33 @@ export class PublicationCatalogue {
   private active = 0;
   private waiting: (() => void)[] = [];
   private readonly fetcher: Fetcher;
+  private readonly onError: (error: unknown) => void;
 
-  constructor(fetcher: Fetcher = (input, init) => fetch(input, init)) {
+  constructor(
+    fetcher: Fetcher = (input, init) => fetch(input, init),
+    onError: (error: unknown) => void = () => {},
+  ) {
     this.fetcher = fetcher;
+    this.onError = onError;
   }
 
   private index() {
-    this.manifest ??= this.fetcher("/ref/publications/index.json", {
-      cache: "no-cache",
-      signal: AbortSignal.timeout(15_000),
-    })
+    this.manifest ??= fetchPublic(
+      "/ref/publications/index.json",
+      "publication-index",
+      {
+        cache: "no-cache",
+        signal: AbortSignal.timeout(15_000),
+      },
+      this.fetcher,
+    )
       .then(async (response) => {
-        if (!response.ok) throw new Error("Publication labels unavailable");
-        return publicationManifest(await response.json());
+        const bytes = await readPublicBytes(response, "publication-index");
+        return publicationManifest(decodePublicJson(bytes, "publication-index"));
       })
       .catch((error: unknown) => {
         this.manifest = undefined;
+        this.onError(error);
         throw error;
       });
     return this.manifest;
@@ -40,16 +52,25 @@ export class PublicationCatalogue {
     if (this.active >= 4) await new Promise<void>((resolve) => this.waiting.push(resolve));
     else this.active++;
     try {
-      const response = await this.fetcher(`/ref/publications/${key}.${sha}.json.gz`, {
-        signal: AbortSignal.timeout(15_000),
-      });
-      if (!response.ok) throw new Error("Publication shard unavailable");
-      const bytes = new Uint8Array(await response.arrayBuffer());
+      const response = await fetchPublic(
+        `/ref/publications/${key}.${sha}.json.gz`,
+        "publication-labels",
+        {
+          signal: AbortSignal.timeout(15_000),
+        },
+        this.fetcher,
+      );
+      const bytes = await readPublicBytes(response, "publication-labels");
       const digest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))]
         .map((n) => n.toString(16).padStart(2, "0"))
         .join("");
-      if (digest !== sha) throw new Error("Publication shard does not match its manifest");
-      return publicationLabels(JSON.parse(new TextDecoder().decode(gunzipSync(bytes))), key);
+      if (digest !== sha)
+        throw new AppError(
+          "REFERENCE_INTEGRITY_FAILED",
+          "Publication shard does not match its manifest",
+          { resource: "publication-labels" },
+        );
+      return publicationLabels(decodePublicJson(bytes, "publication-labels"), key);
     } finally {
       const next = this.waiting.shift();
       if (next) next();
@@ -68,6 +89,7 @@ export class PublicationCatalogue {
         if (!pending) {
           pending = this.readShard(key, manifest.shards[key]!).catch((error: unknown) => {
             this.shards.delete(key); // A later visit may retry; never cache a failed download.
+            this.onError(error);
             throw error;
           });
           this.shards.set(key, pending);

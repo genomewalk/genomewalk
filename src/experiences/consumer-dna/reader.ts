@@ -1,3 +1,4 @@
+import { AppError } from "../../lib/app-error.ts";
 import type { ConsumerSource, ConsumerHeader } from "./types.ts";
 import type { Progress } from "../../lib/io/types.ts";
 import { unpack, textLines, MAX_BYTES } from "./containers.ts";
@@ -7,10 +8,13 @@ import { decodeConsumerCall } from "./reader/call.ts";
 export { describeHeader, decodeConsumerCall };
 export { consumerStats } from "./engine/statistics.ts";
 
+const missingHeaderMessage =
+  "We couldn’t find the expected DNA file header. Choose a raw 23andMe or AncestryDNA export, or try the public sample.";
+
 export async function openConsumerFile(file: File, signal?: AbortSignal, onProgress?: Progress) {
   const text = await unpack(file, signal, onProgress);
   if (!text.size || text.size > MAX_BYTES)
-    throw new Error("Choose a non-empty consumer DNA file under 128 MB.");
+    throw new AppError("FILE_SIZE_INVALID", "Choose a non-empty consumer DNA file under 128 MB.");
   const meta = [];
   const headerLines: ConsumerHeader["lines"] = [];
   let columns = null;
@@ -26,10 +30,11 @@ export async function openConsumerFile(file: File, signal?: AbortSignal, onProgr
     if (line.startsWith("#")) {
       meta.push(line);
       headerLines.push({ text: line, number: lineNumber });
-    } else if (line.trim()) throw new Error("The raw DNA header or column names are missing.");
-    if (meta.length > 1000) throw new Error("The DNA file header is too large.");
+    } else if (line.trim()) throw new AppError("DNA_HEADER_MISSING", missingHeaderMessage);
+    if (meta.length > 1000)
+      throw new AppError("DNA_HEADER_TOO_LARGE", "The DNA file header is too large.");
   }
-  if (!columns) throw new Error("The raw DNA column header could not be found.");
+  if (!columns) throw new AppError("DNA_HEADER_MISSING", missingHeaderMessage);
   const profile = describeHeader(meta, columns);
   const source: ConsumerSource = {
     file,
@@ -62,9 +67,13 @@ export async function openConsumerFile(file: File, signal?: AbortSignal, onProgr
           ),
         );
         count++;
-        if (count > 2000000) throw new Error("This export exceeds the supported two million rows.");
+        if (count > 2000000)
+          throw new AppError(
+            "DNA_ROW_LIMIT",
+            "This export exceeds the supported two million rows.",
+          );
       }
-      if (!count) throw new Error("This DNA export has no data rows.");
+      if (!count) throw new AppError("DNA_NO_ROWS", "This DNA export has no data rows.");
     },
   };
   // Validate the first row during selection without retaining the entire genome.

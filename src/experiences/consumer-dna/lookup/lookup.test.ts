@@ -243,5 +243,9 @@ test("lookup downloads contain no personal identifiers and reject mismatched sou
     /reference release/,
   );
   globalThis.fetch = async () => new Response("missing", { status: 404 });
-  await assert.rejects(loadLookup("GRCh37", "catalog", sourceBytes), /unavailable/);
+  await assert.rejects(loadLookup("GRCh37", "catalog", sourceBytes), {
+    name: "AppError",
+    code: "HTTP_ERROR",
+    details: { resource: "consumer-lookup", httpStatus: 404 },
+  });
 });

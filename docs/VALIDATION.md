@@ -10,17 +10,17 @@ the Docker export target installs it automatically.
 
 ## Focused commands
 
-| Command                 | Coverage                                                  |
-| ----------------------- | --------------------------------------------------------- |
-| `npm test`              | All application and offline pipeline regression tests     |
-| `npm run test:vcf`      | VCF behavior and shared integration                       |
-| `npm run test:consumer` | Consumer behavior and shared integration                  |
-| `npm run test:data`     | Synthetic offline builds, errors and cache behavior       |
-| `npm run data:check`    | Real shipped catalogue, marker and sidecar integrity      |
-| `npm run check:deploy`  | Static pages and asset inventory for the production build |
+| Command                 | Coverage                                                    |
+| ----------------------- | ----------------------------------------------------------- |
+| `npm test`              | All application and offline pipeline regression tests       |
+| `npm run test:vcf`      | VCF behavior and shared integration                         |
+| `npm run test:consumer` | Consumer behavior and shared integration                    |
+| `npm run test:data`     | Synthetic offline builds, errors and cache behavior         |
+| `npm run data:check`    | Real shipped catalogue, marker and sidecar integrity        |
+| `npm run check:deploy`  | Static pages and asset inventory for the production build   |
 | `npm run check:browser` | Built-site HG002 journey and catalogue byte-range downloads |
-| `npm run data:inputs`   | Cached prerequisites for network-free reference rebuilds  |
-| `npm run data:plan`     | Named rebuild stages without writes or requests           |
+| `npm run data:inputs`   | Cached prerequisites for network-free reference rebuilds    |
+| `npm run data:plan`     | Named rebuild stages without writes or requests             |
 
 ## Download benchmark
 
@@ -95,10 +95,12 @@ CDN or every browser and file format; the broader manual procedure below remains
 useful.
 
 The browser check also exercises the production Sentry configuration against
-local files. Every report is intercepted locally. Synthetic uncaught, sample
-download and results-download failures verify that reporting works, while fake
-private text in errors, page URLs and cookies must not appear in the transmitted
-envelope. Healthy pages must not emit telemetry. No CI reports reach Sentry.
+local files. Every report is intercepted locally. Synthetic uncaught, invalid-file,
+sample-download, invalid-range and results-download failures verify useful codes,
+severity, resource categories and HTTP status. Fake private text in file names,
+file contents, errors, page URLs and cookies must not appear in the transmitted
+envelope. Repeated validation warnings must not crowd out actual failures.
+Healthy pages must not emit telemetry. No CI reports reach Sentry.
 
 Use the bundled [public HG002 sample](../public/samples/README.md) and
 [invented consumer fixtures](CONSUMER_FILES.md#synthetic-fixtures). Keep personal

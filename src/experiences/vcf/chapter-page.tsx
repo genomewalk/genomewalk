@@ -18,9 +18,10 @@ import { session, RESULTS_STEP } from "./engine/session.ts";
 import { ResultsPanel } from "./results-panel.tsx";
 import { FILE_CHAPTERS } from "../../lib/navigation/journey.ts";
 import { GeneticsLoader } from "../../components/genetics-loader.tsx";
+import { ErrorNotice } from "../../components/error-notice.tsx";
 import { useLessonNavigation } from "../../lib/navigation/use-lesson-navigation.ts";
 import { useExcerptOverflow } from "../../lib/view/use-excerpt-overflow.ts";
-import { reportError } from "../../lib/error-reporting.ts";
+import { reportError, reportingStage, type ErrorStage } from "../../lib/error-reporting.ts";
 
 type StepDef = {
   title: string;
@@ -114,15 +115,18 @@ function ChapterContent({ n }: { n: string }) {
     setStatus("");
     setError("");
     const source = ctx.source;
+    let errorStage: ErrorStage = "prepare";
     try {
       await step.run(out, {
         onProgress: (fraction) => {
+          errorStage = "read-file";
           if (active.current && ctx.source === source) {
             setStatus("");
             setProgress(fraction);
           }
         },
         onStatus: (label) => {
+          errorStage = reportingStage(label);
           if (active.current && ctx.source === source) {
             setProgress(undefined);
             setStatus(label);
@@ -135,7 +139,7 @@ function ChapterContent({ n }: { n: string }) {
       force();
     } catch (err) {
       if (active.current && ctx.source === source) {
-        reportError(err, "chapter");
+        reportError(err, "chapter", errorStage, i + 1);
         setError((err as Error)?.message ?? String(err));
       }
     } finally {
@@ -225,9 +229,9 @@ function ChapterContent({ n }: { n: string }) {
               )}
               <div className="s-out" ref={outRef} aria-busy={running} onClick={handleLessonLink} />
               {error && (
-                <div className="err" role="alert">
-                  Error: {error}
-                </div>
+                <ErrorNotice title="We couldn’t finish this chapter">
+                  {error}
+                </ErrorNotice>
               )}
               <div className="chapter-actions">
                 {!done && !running && (

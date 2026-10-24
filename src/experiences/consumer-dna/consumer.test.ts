@@ -4,6 +4,7 @@ import { fixture as partialFixture } from "../../../tests/helpers/fixture.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import { AppError } from "../../lib/app-error.ts";
 import { zipSync, gzipSync, strToU8 } from "fflate";
 import { openConsumerFile, describeHeader, consumerStats } from "./reader.ts";
 import { findMatches, resultsWithoutConflicts } from "./engine/matching.ts";
@@ -95,6 +96,47 @@ test("multiple payloads, broken archives, missing headers and invalid rows are r
   await assert.rejects(openConsumerFile(file(row(100, "CT"))), /header/);
   await assert.rejects(openConsumerFile(file(text(["rs1\t1\tnot-a-position\tCT"]))), /position/);
   await assert.rejects(openConsumerFile(file(text(["rs1\t1\t100\t<script>"]))), /encoding/);
+});
+
+test("consumer validation exposes stable codes without embedding private input", async () => {
+  const privateText = "PRIVATE_PROBE_cookie_or_genotype";
+  const samples = [
+    [file(`# Synthetic cookie export\n${privateText}`, `${privateText}.txt`), "DNA_HEADER_MISSING"],
+    [file(text([`rs1\t1\t${privateText}\tCT`])), "DNA_POSITION_INVALID"],
+    [file(text([`rs1\t1\t100\t${privateText}`])), "DNA_GENOTYPE_INVALID"],
+    [file(text(["rs1\t1\t100"])), "DNA_COLUMNS_INVALID"],
+    [file(""), "FILE_SIZE_INVALID"],
+  ] as const;
+  for (const [input, code] of samples)
+    await assert.rejects(openConsumerFile(input), (error: unknown) => {
+      assert.ok(error instanceof AppError);
+      assert.equal(error.code, code);
+      assert.ok(!error.message.includes(privateText));
+      assert.ok(!JSON.stringify(error).includes(privateText));
+      return true;
+    });
+});
+
+test("malformed compressed data has an archive code and aborts keep their original identity", async () => {
+  const content = strToU8(text([row(100, "CT")]));
+  const gzip = gzipSync(content);
+  gzip[10] = 7; // Reserved DEFLATE block type: fflate throws a data error.
+  await assert.rejects(openConsumerFile(file(gzip, "synthetic.gz")), {
+    name: "AppError",
+    code: "ARCHIVE_INVALID",
+  });
+  const corrupt = gzipSync(content);
+  corrupt[corrupt.length - 8]! ^= 1;
+  await assert.rejects(openConsumerFile(file(corrupt, "synthetic.gz")), {
+    name: "AppError",
+    code: "ARCHIVE_INVALID",
+  });
+  const cancelled = new DOMException("Cancelled by test", "AbortError");
+  for (const input of [file(text([row(100, "CT")])), file(gzip, "synthetic.gz")])
+    await assert.rejects(
+      openConsumerFile(input, AbortSignal.abort(cancelled)),
+      (error: unknown) => error === cancelled,
+    );
 });
 
 test("unknown, conflicting, historical builds and reversed strands never match", async () => {

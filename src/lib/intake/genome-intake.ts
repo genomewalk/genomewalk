@@ -1,3 +1,4 @@
+import { AppError } from "../app-error.ts";
 export function chooseGenomeFile<T extends { name: string }>(files: Iterable<T> | ArrayLike<T>) {
   const list = Array.from(files);
   if (list.length === 1) return list[0]!;
@@ -7,7 +8,10 @@ export function chooseGenomeFile<T extends { name: string }>(files: Iterable<T> 
     const companions = new Set([`${genome.name}.tbi`, `${genome.name}.csi`]);
     if (list.every((file) => file === genome || companions.has(file.name))) return genome;
   }
-  throw new Error("Choose one DNA file at a time. A VCF can be accompanied by its index file.");
+  throw new AppError(
+    "FILE_SELECTION_INVALID",
+    "Choose one DNA file at a time. A VCF can be accompanied by its index file.",
+  );
 }
 
 // A new choice or route change cancels the previous import. Even readers that

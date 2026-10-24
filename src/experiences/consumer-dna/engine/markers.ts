@@ -6,6 +6,8 @@ import { streamCalls, callSignature, calledLetters } from "./calls.ts";
 import { ctx } from "./context.ts";
 import { hasStudyEvidence } from "../../../lib/catalogues/study-evidence.ts";
 import { refUrl } from "./view/file.ts";
+import { AppError } from "../../../lib/app-error.ts";
+import { fetchPublic, readPublicBytes, decodePublicJson } from "../../../lib/io/fetch-public.ts";
 
 const FEATURED = ["rs671", "rs12913832", "rs17822931", "rs9923231", "rs4988235"];
 
@@ -15,11 +17,13 @@ export const featuredMarkers = (data: MarkerData) =>
 export async function loadMarkers(signal?: AbortSignal) {
   if (ctx.markers && ctx.markers.build === ctx.build) return ctx.markers;
   const build = ctx.build;
-  const res = await fetch(refUrl("markers.json"), { signal: signal ?? null });
-  if (!res.ok) throw new Error(`markers download failed (${res.status})`);
-  const bytes = new Uint8Array(await res.arrayBuffer());
-  const data: MarkerData = JSON.parse(new TextDecoder().decode(bytes));
-  if (data.build !== build) throw new Error("Marker reference build mismatch");
+  const res = await fetchPublic(refUrl("markers.json"), "markers", { signal: signal ?? null });
+  const bytes = await readPublicBytes(res, "markers");
+  const data = decodePublicJson<MarkerData>(bytes, "markers");
+  if (data.build !== build)
+    throw new AppError("REFERENCE_BUILD_MISMATCH", "Marker reference build mismatch", {
+      resource: "markers",
+    });
   const enriched = Object.assign(data, {
     lookup: await loadLookup(build, "markers", bytes, signal),
   });

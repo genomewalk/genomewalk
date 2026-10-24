@@ -71,6 +71,14 @@ browser DSN requires no GitHub secret or additional deployment service. Vite add
 a build timestamp as the release identifier; only the live domain sends reports.
 No source-map upload is configured. See the [reporting data inventory](DATA_AND_PRIVACY.md#error-reporting).
 
+Reports use the predefined codes in `src/lib/app-error.ts`. For example,
+`DNA_HEADER_MISSING` is an expected file-validation warning; `HTTP_ERROR` with
+`resource=catalogue-entries` and `http_status=503` identifies a failed public
+catalogue download. Inspect `area`, `stage`, `chapter`, and `release` to locate
+the operation. `UNEXPECTED_ERROR` and `JS_*` retain sanitized asset line/column
+locations, not source-mapped stacks. Sentry's issue list may need refreshing.
+Existing historical events keep their old descriptions.
+
 ## Connect genomewalk.com through Cloudflare DNS
 
 1. In GitHub **Settings → Pages → Custom domain**, save `genomewalk.com` before

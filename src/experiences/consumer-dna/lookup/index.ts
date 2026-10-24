@@ -1,6 +1,7 @@
 import type { ConsumerCall, LookupIssue, RsidLookup } from "../types.ts";
 import type { VariantIdentity } from "../../../lib/catalogues/types.ts";
-import { gunzipSync } from "fflate";
+import { AppError } from "../../../lib/app-error.ts";
+import { fetchPublic, readPublicBytes, decodePublicJson } from "../../../lib/io/fetch-public.ts";
 
 const canonicalRsid = (id: string | null | undefined) => {
   const match = /^rs([1-9]\d*)$/i.exec(id || "");
@@ -21,16 +22,15 @@ export async function loadLookup(
 ) {
   signal?.throwIfAborted();
   // Fixed public resources only: the request never contains a person's rsIDs.
-  const response = await fetch(`/ref/consumer-dna/${build}/rsids.json.gz`, {
-    signal: signal ?? null,
-  });
-  if (!response.ok)
-    throw new Error(
-      `Consumer rsID lookup unavailable (${response.status}). Rebuild the reference indexes.`,
-    );
-  const bytes = new Uint8Array(await response.arrayBuffer());
-  const json = bytes[0] === 31 && bytes[1] === 139 ? gunzipSync(bytes) : bytes;
-  const index = JSON.parse(new TextDecoder().decode(json));
+  const response = await fetchPublic(
+    `/ref/consumer-dna/${build}/rsids.json.gz`,
+    "consumer-lookup",
+    {
+      signal: signal ?? null,
+    },
+  );
+  const bytes = await readPublicBytes(response, "consumer-lookup");
+  const index = decodePublicJson<RsidLookup>(bytes, "consumer-lookup");
   signal?.throwIfAborted();
   await validateLookup(index, build, kind, sourceBytes);
   signal?.throwIfAborted();
@@ -55,8 +55,10 @@ export async function validateLookup(
     !/^[a-f0-9]{64}$/.test(sourceHash) ||
     index.sources?.[kind]?.sha256 !== sourceHash
   )
-    throw new Error(
+    throw new AppError(
+      "REFERENCE_INTEGRITY_FAILED",
       "Consumer rsID lookup does not match this reference release. Rebuild the indexes together.",
+      { resource: "consumer-lookup" },
     );
   const keys = /^(?:[1-9]|1\d|2[0-2]|X|Y|MT):[1-9]\d*:[ACGT]:[ACGT]$/;
   for (const [rs, entries] of Object.entries(index[kind])) {
@@ -66,7 +68,9 @@ export async function validateLookup(
       !entries.length ||
       entries.some((key) => !keys.test(key))
     )
-      throw new Error("Invalid consumer rsID lookup entry");
+      throw new AppError("REFERENCE_INDEX_INVALID", "Invalid consumer rsID lookup entry", {
+        resource: "consumer-lookup",
+      });
   }
   for (const [old, current] of Object.entries(index.aliases)) {
     if (
@@ -75,7 +79,9 @@ export async function validateLookup(
       old === current ||
       index.aliases[current]
     )
-      throw new Error("Invalid consumer rsID alias");
+      throw new AppError("REFERENCE_INDEX_INVALID", "Invalid consumer rsID alias", {
+        resource: "consumer-lookup",
+      });
   }
 }
 
@@ -86,7 +92,10 @@ export function createCandidates<T extends VariantIdentity>(
   build: string,
   onIssue: (issue: LookupIssue) => void = () => {},
 ) {
-  if (lookup && lookup.build !== build) throw new Error("Consumer rsID lookup build mismatch");
+  if (lookup && lookup.build !== build)
+    throw new AppError("REFERENCE_BUILD_MISMATCH", "Consumer rsID lookup build mismatch", {
+      resource: "consumer-lookup",
+    });
   const byPosition = new Map<string, T[]>();
   for (const record of records) {
     const position = `${record.chrom}:${record.pos}`;

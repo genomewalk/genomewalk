@@ -3,6 +3,8 @@ import type { Fetcher, Status } from "../io/types.ts";
 export type CatalogueMap = Map<string, string> | RangeCatalogue;
 import { gunzipSync } from "fflate";
 import { readByteRange } from "../io/http-range.ts";
+import { AppError } from "../app-error.ts";
+import { fetchPublic, readPublicBytes, decodePublicJson } from "../io/fetch-public.ts";
 
 const hex = /^[a-f0-9]{64}$/;
 const integer = (n: unknown) => typeof n === "number" && Number.isSafeInteger(n) && n >= 0;
@@ -31,7 +33,9 @@ export class RangeCatalogue extends Map<string, RowLocator> {
       !Array.isArray(index.records) ||
       index.records.length !== index.n
     )
-      throw new Error("Invalid catalogue byte-range index");
+      throw new AppError("REFERENCE_INDEX_INVALID", "Invalid catalogue byte-range index", {
+        resource: "catalogue-index",
+      });
     let next = 0;
     for (const [offset, length, decoded, hash] of index.blocks) {
       if (
@@ -43,10 +47,15 @@ export class RangeCatalogue extends Map<string, RowLocator> {
         decoded > 65536 ||
         !hex.test(hash)
       )
-        throw new Error("Invalid catalogue block locator");
+        throw new AppError("REFERENCE_INDEX_INVALID", "Invalid catalogue block locator", {
+          resource: "catalogue-index",
+        });
       next += length;
     }
-    if (next !== index.source.size) throw new Error("Catalogue size does not match its index");
+    if (next !== index.source.size)
+      throw new AppError("REFERENCE_INTEGRITY_FAILED", "Catalogue size does not match its index", {
+        resource: "catalogue-entries",
+      });
     for (const locator of index.records) {
       const [key, block, offset, length] = locator;
       if (
@@ -58,7 +67,9 @@ export class RangeCatalogue extends Map<string, RowLocator> {
         !index.blocks[block] ||
         offset >= index.blocks[block][2]
       )
-        throw new Error("Invalid catalogue row locator");
+        throw new AppError("REFERENCE_INDEX_INVALID", "Invalid catalogue row locator", {
+          resource: "catalogue-index",
+        });
       this.set(key, locator);
     }
     this.blocks = index.blocks;
@@ -76,11 +87,21 @@ export class RangeCatalogue extends Map<string, RowLocator> {
     const required = new Set<number>();
     for (const key of missing) {
       const locator = this.get(key)!;
-      if (!locator) throw new Error("A matched key is absent from the catalogue index");
+      if (!locator)
+        throw new AppError(
+          "REFERENCE_INDEX_INVALID",
+          "A matched key is absent from the catalogue index",
+          { resource: "catalogue-index" },
+        );
       let [, block, offset, remaining] = locator;
       while (remaining > 0) {
         const available = (this.blocks[block]?.[2] || 0) - offset;
-        if (available <= 0) throw new Error("Catalogue row extends beyond its indexed blocks");
+        if (available <= 0)
+          throw new AppError(
+            "REFERENCE_INDEX_INVALID",
+            "Catalogue row extends beyond its indexed blocks",
+            { resource: "catalogue-index" },
+          );
         required.add(block);
         remaining -= Math.min(remaining, available);
         offset = 0;
@@ -107,17 +128,32 @@ export class RangeCatalogue extends Map<string, RowLocator> {
             size: this.source.size,
             signal,
             fetcher: this.fetcher,
+            resource: "catalogue-entries",
           });
           this.bytesRead += bytes.length;
           for (const block of blocks) {
             const [offset, length, size, hash] = this.blocks[block]!;
             const compressed = bytes.subarray(offset - start, offset - start + length);
             if ((await sha256(compressed)) !== hash)
-              throw new Error(
+              throw new AppError(
+                "REFERENCE_INTEGRITY_FAILED",
                 "Catalogue block does not match its index. Deploy the reference files together.",
+                { resource: "catalogue-entries" },
               );
-            const data = gunzipSync(compressed);
-            if (data.length !== size) throw new Error("Invalid decoded catalogue block size");
+            let data: Uint8Array;
+            try {
+              data = gunzipSync(compressed);
+            } catch {
+              throw new AppError("REFERENCE_DECODE_FAILED", undefined, {
+                resource: "catalogue-entries",
+              });
+            }
+            if (data.length !== size)
+              throw new AppError(
+                "REFERENCE_INTEGRITY_FAILED",
+                "Invalid decoded catalogue block size",
+                { resource: "catalogue-entries" },
+              );
             decoded.set(block, data);
           }
         }
@@ -135,9 +171,18 @@ export class RangeCatalogue extends Map<string, RowLocator> {
         remaining -= data.length;
         offset = 0;
       }
-      const line = new TextDecoder("utf-8", { fatal: true }).decode(bytes).replace(/\r$/, "");
+      let line: string;
+      try {
+        line = new TextDecoder("utf-8", { fatal: true }).decode(bytes).replace(/\r$/, "");
+      } catch {
+        throw new AppError("REFERENCE_DECODE_FAILED", undefined, { resource: "catalogue-entries" });
+      }
       if (line.split("\t", 4).join(":") !== key)
-        throw new Error("Catalogue row does not match its indexed allele");
+        throw new AppError(
+          "REFERENCE_INTEGRITY_FAILED",
+          "Catalogue row does not match its indexed allele",
+          { resource: "catalogue-entries" },
+        );
       this.rows.set(key, line);
     }
     return new Map(requested.map((key) => [key, this.rows.get(key)!]));
@@ -153,15 +198,20 @@ export async function loadRangeCatalogue(
   signal?.throwIfAborted();
   onStatus?.(`Loading the ${build} catalogue index…`);
   const started = performance.now();
-  const response = await fetcher(`/ref/${build}/catalog.index.json.gz`, {
-    signal: signal ?? null,
-  });
-  if (!response.ok)
-    throw new Error(`Catalogue index unavailable (${response.status}). Run data:ranges.`);
-  const bytes = new Uint8Array(await response.arrayBuffer());
-  const json = bytes[0] === 31 && bytes[1] === 139 ? gunzipSync(bytes) : bytes;
-  const index: CatalogueIndex = JSON.parse(new TextDecoder().decode(json));
-  if (index.build !== build) throw new Error("Catalogue index reference-build mismatch");
+  const response = await fetchPublic(
+    `/ref/${build}/catalog.index.json.gz`,
+    "catalogue-index",
+    {
+      signal: signal ?? null,
+    },
+    fetcher,
+  );
+  const bytes = await readPublicBytes(response, "catalogue-index");
+  const index = decodePublicJson<CatalogueIndex>(bytes, "catalogue-index");
+  if (index.build !== build)
+    throw new AppError("REFERENCE_BUILD_MISMATCH", "Catalogue index reference-build mismatch", {
+      resource: "catalogue-index",
+    });
   signal?.throwIfAborted();
   const map = new RangeCatalogue(
     index,

@@ -1,3 +1,4 @@
+import { AppError } from "../lib/app-error.ts";
 import type { Experience, OpenedGenome, SelectionKind } from "./types.ts";
 import type { Progress } from "../lib/io/types.ts";
 import vcf from "./vcf/index.ts";
@@ -15,7 +16,8 @@ export const inputDescription = [vcf, ...optionalExperiences].map((x) => x.label
 export async function openGenomeFile(file: File, signal?: AbortSignal, onProgress?: Progress) {
   signal?.throwIfAborted();
   const experience = ([vcf, ...optionalExperiences] as Experience[]).find((x) => x.matches(file));
-  if (!experience) throw new Error(`Supported files: ${inputDescription}.`);
+  if (!experience)
+    throw new AppError("FILE_TYPE_UNSUPPORTED", `Supported files: ${inputDescription}.`);
   const opened = await experience.open(file, signal, onProgress);
   signal?.throwIfAborted();
   return { ...opened, experience };

@@ -1,6 +1,9 @@
 import { PublicationCatalogue } from "../catalogues/publications.ts";
+import { reportError } from "../error-reporting.ts";
 
-const publications = new PublicationCatalogue();
+const publications = new PublicationCatalogue(undefined, (error) =>
+  reportError(error, "publications"),
+);
 
 /** Enhance existing working links after render; metadata never delays genome results. */
 export async function hydratePublicationLinks(root: ParentNode, catalogue = publications) {

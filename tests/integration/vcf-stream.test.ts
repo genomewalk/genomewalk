@@ -81,10 +81,25 @@ test("a VCF scan can be cancelled between batches without reporting completion",
 
 test("truncated and corrupt VCF blocks fail instead of silently returning partial results", async () => {
   const bytes = bgzfBytes("##fileformat=VCFv4.2\n");
-  await assert.rejects(Array.fromAsync(streamBlocks(source(bytes.subarray(0, -1)))), /truncated/);
+  await assert.rejects(Array.fromAsync(streamBlocks(source(bytes.subarray(0, -1)))), {
+    name: "AppError",
+    code: "VCF_TRUNCATED",
+    message: /truncated/,
+  });
   const corrupt = Buffer.from(bytes);
   corrupt[corrupt.length - 8]! ^= 1;
-  await assert.rejects(Array.fromAsync(streamBlocks(source(corrupt))), /integrity/);
+  await assert.rejects(Array.fromAsync(streamBlocks(source(corrupt))), {
+    name: "AppError",
+    code: "VCF_BLOCK_INVALID",
+    message: /integrity/,
+  });
+  const invalidDeflate = Buffer.from(bytes);
+  invalidDeflate[18] = 7; // Reserved DEFLATE block type after the BGZF header.
+  await assert.rejects(Array.fromAsync(streamBlocks(source(invalidDeflate))), {
+    name: "AppError",
+    code: "VCF_BLOCK_INVALID",
+    message: /decompressed/,
+  });
 });
 
 test("catalogue streaming retains exact indel keys, zero frequencies, samples and tallies", async () => {

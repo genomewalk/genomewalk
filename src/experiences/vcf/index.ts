@@ -1,4 +1,5 @@
 import type { ByteSource } from "../../lib/io/types.ts";
+import { AppError } from "../../lib/app-error.ts";
 import type { SelectionData, SelectionKind } from "../types.ts";
 import { currentBuild, selectSource } from "./engine/context.ts";
 import { STEPS, ctx, FileSource, detectBuild } from "./engine/learn.ts";
@@ -22,10 +23,17 @@ export default {
     const header = await readHeader(source, signal);
     if (
       !header.meta.some((line) => line.startsWith("##fileformat=VCF")) ||
-      header.columns[0] !== "CHROM" ||
-      header.columns.length < 10
+      header.columns[0] !== "CHROM"
     )
-      throw new Error("Choose a compressed VCF containing a sample genotype.");
+      throw new AppError(
+        "VCF_HEADER_INVALID",
+        "Choose a compressed VCF containing a sample genotype.",
+      );
+    if (header.columns.length < 10)
+      throw new AppError(
+        "VCF_SAMPLE_MISSING",
+        "Choose a compressed VCF containing a sample genotype.",
+      );
     return { source, header, build: detectBuild(header.meta) };
   },
   select({ source, header, selectedBuild }: SelectionData, name: string, kind?: SelectionKind) {

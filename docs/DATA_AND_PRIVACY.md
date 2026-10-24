@@ -59,14 +59,20 @@ checks do not send reports. No server, proxy, source-map upload or Sentry auth
 token is required.
 
 Only global exception handlers are enabled. File opening, chapter execution,
-results preparation and page-boundary failures are also reported explicitly.
+results preparation, page-boundary failures, failed illustration loading and
+optional publication downloads are also reported explicitly.
 Before sending, the SDK event is rebuilt from an allowlist: random event ID,
-timestamp, build identifier, fixed operation/stage/category, a fixed error label,
-and application asset URLs with numeric code locations. Original messages,
+timestamp, build identifier, predefined error code/description/severity,
+fixed operation/stage/category, chapter number (1–9) when relevant, and
+application asset URLs with numeric code locations. Public downloads can also
+include a fixed resource category and numeric HTTP status. Grouping keys contain
+only these fixed diagnostic values. Original messages,
 exception names, function names, variables, source snippets, causes, request
 data, page URLs, query strings, range headers, contexts, extras and attachments
-are discarded. Aborts are ignored; reporting is capped at ten events per page
-load without a persistent user identifier.
+are discarded. Aborts are ignored. Expected input-validation failures are warnings;
+repeated warnings of the same kind are deduplicated, with at most three warning
+kinds per page load. Actual failures have a separate ten-event limit, without a
+persistent user identifier.
 
 Replay, tracing, logs, metrics, breadcrumbs and automatic sessions are disabled.
 SDK data collection is explicitly disabled, including user information/IP

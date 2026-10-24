@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { GenomeZoom } from "./genome-model.ts";
 import { GenomeFallback } from "./genome-fallback.tsx";
+import { AppError } from "../../lib/app-error.ts";
+import { reportError } from "../../lib/error-reporting.ts";
 
 /** One continuous scene: the camera approaches a pair as its DNA unpacks. */
 export function GenomeScene({
@@ -33,7 +35,9 @@ export function GenomeScene({
           setReady(true);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!cancelled) reportError(new AppError("GRAPHICS_UNAVAILABLE"), "illustration");
+      });
     return () => {
       cancelled = true;
       dispose();

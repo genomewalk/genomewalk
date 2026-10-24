@@ -100,10 +100,11 @@ export const privacyPolicy: PolicyDocument = {
         <>
           <p>
             On the live website, Genomewalk uses Sentry to receive limited technical error reports.
-            Reports contain a fixed error category, the operation and processing stage, the app
-            version, and locations in the app’s code. Raw error messages, your filename, genome
-            contents, variants, genotypes and results are excluded. Reports do not include the
-            catalogue byte ranges requested.
+            Reports contain a predefined error code and description, the operation and processing
+            stage, the chapter number when relevant, the app version, and locations in the app’s
+            code. Download failures may include a public resource category and HTTP status. Raw
+            error messages, your filename, genome contents, variants, genotypes and results are
+            excluded. Reports do not include the catalogue byte ranges requested.
           </p>
           <p>
             Session replay, interaction recording, logs and performance tracing are disabled.

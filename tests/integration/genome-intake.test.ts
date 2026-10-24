@@ -19,7 +19,11 @@ test("intake chooses one genome and permits only its accompanying VCF indexes", 
     [vcf, file("other.tbi")],
     [consumer, index],
   ]) {
-    assert.throws(() => chooseGenomeFile(files), /one DNA file/);
+    assert.throws(() => chooseGenomeFile(files), {
+      name: "AppError",
+      code: "FILE_SELECTION_INVALID",
+      message: /one DNA file/,
+    });
   }
 });
 

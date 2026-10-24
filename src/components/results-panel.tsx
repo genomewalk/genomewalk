@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowLeft, RotateCcw } from "lucide-react";
 import { RESULTS_STEP } from "../lib/navigation/journey.ts";
 import { GeneticsLoader } from "./genetics-loader.tsx";
+import { ErrorNotice } from "./error-notice.tsx";
 import { useExcerptOverflow } from "../lib/view/use-excerpt-overflow.ts";
 import { reportError, reportingStage, type ErrorStage } from "../lib/error-reporting.ts";
 
@@ -110,14 +111,16 @@ export function ResultsPanel({ onComplete, context, session, runResults }: Resul
       )}
       <div className="s-out results-output" ref={outRef} aria-busy={running} />
       {error && (
-        <div className="results-error">
-          <p className="err" role="alert">
-            We couldn’t prepare your results. {error}
-          </p>
-          <button className="btn rerun" onClick={() => setAttempt((value) => value + 1)}>
-            Retry <RotateCcw size={14} />
-          </button>
-        </div>
+        <ErrorNotice
+          title="We couldn’t prepare your results"
+          action={
+            <button className="btn rerun" onClick={() => setAttempt((value) => value + 1)}>
+              Retry <RotateCcw size={14} />
+            </button>
+          }
+        >
+          {error}
+        </ErrorNotice>
       )}
     </>
   );

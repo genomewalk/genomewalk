@@ -1,4 +1,5 @@
 /** Small, shared publication shards; no genome identities are included. */
+import { AppError } from "../app-error.ts";
 export const PUBLICATION_SHARDS = 64;
 export const publicationShard = (pmid: string) =>
   (Number(pmid) % PUBLICATION_SHARDS).toString(16).padStart(2, "0");
@@ -28,7 +29,9 @@ export function publicationManifest(value: unknown): PublicationManifest {
       (key) => /^[a-f0-9]{64}$/.test(data.shards[key] || ""),
     )
   )
-    throw new Error("Invalid publication manifest");
+    throw new AppError("REFERENCE_INDEX_INVALID", "Invalid publication manifest", {
+      resource: "publication-index",
+    });
   return data;
 }
 export function publicationLabels(value: unknown, shard: string): PublicationLabels {
@@ -43,6 +46,8 @@ export function publicationLabels(value: unknown, shard: string): PublicationLab
         (label === null || (typeof label === "string" && !!label.trim() && label.length <= 500)),
     )
   )
-    throw new Error("Invalid publication labels");
+    throw new AppError("REFERENCE_INDEX_INVALID", "Invalid publication labels", {
+      resource: "publication-labels",
+    });
   return value as PublicationLabels;
 }
