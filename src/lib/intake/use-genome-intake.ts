@@ -7,6 +7,7 @@ import { publicSampleSource, SAMPLE } from "../catalogues/public-sample.ts";
 import type { OpenedGenome } from "../../experiences/types.ts";
 import type { SupportedBuild } from "../genetics/reference-build.ts";
 import { reportError } from "../error-reporting.ts";
+import { trackEvent } from "../analytics.ts";
 import {
   getOpeningFileDiagnostics,
   getSourceFileDiagnostics,
@@ -46,6 +47,7 @@ export function useGenomeIntake(view?: "results") {
   ) {
     if (!requests.current.isCurrent(request)) return;
     experiences.selectGenome(opened, name, kind);
+    trackEvent("genome_ready", { source: kind });
     setPendingBuild(null);
     const build = experiences.getExperience().describe().build;
     await navigate({
@@ -62,6 +64,7 @@ export function useGenomeIntake(view?: "results") {
   async function confirmBuild(build: SupportedBuild | null) {
     if (!pendingBuild || !requests.current.isCurrent(pendingBuild.request)) return;
     const { opened, name, request } = pendingBuild;
+    trackEvent("build_choice_confirmed", { source: "upload" });
     try {
       await finishSelection(
         { ...opened, selectedBuild: build || undefined },
@@ -84,6 +87,8 @@ export function useGenomeIntake(view?: "results") {
   }
 
   function cancelBuild() {
+    if (pendingBuild && requests.current.isCurrent(pendingBuild.request))
+      trackEvent("build_choice_cancelled", { source: "upload" });
     requests.current.cancel();
     setPendingBuild(null);
     setPreparing(false);
@@ -96,6 +101,7 @@ export function useGenomeIntake(view?: "results") {
   async function openFile(files: FileList | null) {
     if (!files?.length) return;
     const request = requests.current.begin();
+    trackEvent("genome_open_started", { source: "upload" });
     setFetching(null);
     setPendingBuild(null);
     setPreparing(true);
@@ -109,11 +115,15 @@ export function useGenomeIntake(view?: "results") {
         if (requests.current.isCurrent(request)) setReadProgress(fraction);
       });
       if (!requests.current.isCurrent(request)) return;
-      if (opened.build === "unknown")
+      trackEvent("genome_opened", { source: "upload" });
+      if (opened.build === "unknown") {
+        trackEvent("build_choice_shown", { source: "upload" });
         setPendingBuild({ id: ++pendingBuildId.current, opened, name: file.name, request });
-      else await finishSelection(opened, file.name, "upload", request);
+      } else await finishSelection(opened, file.name, "upload", request);
     } catch (error) {
       if (requests.current.isCurrent(request)) {
+        if (!opened && !(error instanceof Error && error.name === "AbortError"))
+          trackEvent("genome_open_failed", { source: "upload" });
         reportError(
           error,
           "file-open",
@@ -145,6 +155,7 @@ export function useGenomeIntake(view?: "results") {
   async function loadSample() {
     if (fetching != null || preparing) return;
     const request = requests.current.begin();
+    trackEvent("genome_open_started", { source: "sample" });
     setPendingBuild(null);
     setFetching(0);
     setLoadError("");
@@ -152,9 +163,13 @@ export function useGenomeIntake(view?: "results") {
     let opened: OpenedGenome | undefined;
     try {
       opened = await experiences.openPublicSample(source, request.signal);
+      if (!requests.current.isCurrent(request)) return;
+      trackEvent("genome_opened", { source: "sample" });
       await finishSelection(opened, SAMPLE.name, "sample", request);
     } catch (error) {
       if (requests.current.isCurrent(request)) {
+        if (!opened && !(error instanceof Error && error.name === "AbortError"))
+          trackEvent("genome_open_failed", { source: "sample" });
         reportError(
           error,
           "sample-open",

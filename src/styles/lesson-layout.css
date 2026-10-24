@@ -48,10 +48,6 @@
   font-size: var(--wgs-text-body);
   line-height: var(--wgs-leading-body);
 }
-.kv {
-  font-size: 16px;
-  padding-block: 12px;
-}
 .tiles {
   gap: 12px;
 }

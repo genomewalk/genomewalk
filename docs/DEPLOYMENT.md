@@ -66,26 +66,33 @@ site is approximately 107 MiB, below GitHub Pages' 1 GB published-site limit.
 See [custom Pages workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)
 and [Pages limits](https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits).
 
-Sentry error reporting is configured in `src/lib/error-reporting.ts`. The public
-browser DSN requires no GitHub secret or additional deployment service. Vite adds
-a build timestamp as the release identifier; only the live domain sends reports.
-No source-map upload is configured. See the [reporting data inventory](DATA_AND_PRIVACY.md#error-reporting).
+PostHog usage and error reporting is configured in `src/lib/analytics.ts` and
+`src/lib/error-reporting.ts`. The public project token and ingestion host require
+no GitHub secret or additional deployment service. The supplied project token and
+host are public constants included in the static build. Vite adds a build timestamp
+as the release identifier; only the
+live domain sends events. No source-map upload is configured. See the
+[reporting data inventory](DATA_AND_PRIVACY.md#usage-and-error-reporting).
 
-Reports use the predefined codes in `src/lib/app-error.ts`. For example,
+PostHog receives explicit page views and journey milestones so funnels can compare
+personal-file attempts with public-sample use, chapter runs and results preparation.
+Identifiers last only for the current loaded page; counts do not identify distinct
+people across visits. Replay, automatic click capture and unused products stay
+disabled even when selected during PostHog onboarding.
+
+Error Tracking uses predefined codes in `src/lib/app-error.ts`. For example,
 `DNA_HEADER_MISSING` is an expected file-validation warning; `HTTP_ERROR` with
 `resource=catalogue-entries` and `http_status=503` identifies a failed public
-catalogue download. Inspect `area`, `stage`, `chapter`, and `release` to locate
-the operation. `UNEXPECTED_ERROR` and `JS_*` retain sanitized asset line/column
-locations, not source-mapped stacks. Sentry's issue list may need refreshing.
-Existing historical events keep their old descriptions.
+catalogue download. Inspect `area`, `stage`, `chapter`, and `release` to locate the
+operation. `UNEXPECTED_ERROR` and `JS_*` retain sanitized asset line/column
+locations, not source-mapped stacks.
 
-New reports also carry `browser_name`, `browser_major` when available, `os_name`
-and `device_type`. File-related failures carry `file_extension`, `file_format`
-and `file_size_band`. These are coarse diagnostic tags, not filenames, device
+Reports carry `browser_name`, `browser_major` when available, `os_name` and
+`device_type`. File-related failures carry `file_extension`, `file_format` and
+`file_size_band`. These are coarse diagnostic properties, not filenames, device
 identifiers or exact file sizes. Browser/device detection is best effort;
-`unknown` file format means identification had not completed, while
-`unrecognized` means the format/header was rejected. Historical events do not
-gain these fields retroactively.
+`unknown` file format means identification had not completed, while `unrecognized`
+means the format/header was rejected.
 
 ## Connect genomewalk.com through Cloudflare DNS
 
@@ -118,7 +125,7 @@ application URL. See [GitHub's domain setup](https://docs.github.com/en/pages/co
 
 Production traffic passes through Cloudflare's proxy before reaching GitHub Pages.
 Cloudflare Web Analytics automatically adds its browser script to eligible HTML
-responses. No analytics snippet or token is bundled in the application, and local
+responses. No Cloudflare analytics snippet or token is bundled in the application, and local
 development does not load this script. View visits and page performance under
 **Cloudflare → Web Analytics → genomewalk.com**. Keep the site's Privacy Policy
 and [network inventory](DATA_AND_PRIVACY.md) aligned with the enabled analytics.

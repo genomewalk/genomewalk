@@ -1,34 +1,15 @@
-import * as Sentry from "@sentry/react";
 import { AppError, errorDefinitions, errorResources, type ErrorCode } from "./app-error.ts";
 import {
-  getClientEnvironment,
-  browserNames,
-  osNames,
-  deviceTypes,
-  type ClientEnvironment,
-} from "./diagnostics/client-environment.ts";
-import {
-  fileExtensions,
-  fileFormats,
-  fileSizeBands,
-  type FileDiagnostics,
-} from "./diagnostics/file-context.ts";
+  captureAppException,
+  initAnalytics,
+  errorAreas,
+  errorStages,
+  safeAssetFrames,
+} from "./analytics.ts";
+import type { FileDiagnostics } from "./diagnostics/file-context.ts";
 
-const areas = [
-  "file-open",
-  "sample-open",
-  "build-choice",
-  "chapter",
-  "results",
-  "page",
-  "unhandled",
-  "publications",
-  "illustration",
-] as const;
-const stages = ["prepare", "read-file", "reference-index", "reference-entries"] as const;
-export type ErrorArea = (typeof areas)[number];
-export type ErrorStage = (typeof stages)[number];
-const hosts = new Set(["genomewalk.com", "www.genomewalk.com"]);
+export type ErrorArea = (typeof errorAreas)[number];
+export type ErrorStage = (typeof errorStages)[number];
 let reporting = false;
 
 function diagnostic(error: unknown, type?: string, message?: string) {
@@ -75,173 +56,61 @@ export function reportingStage(label: string): ErrorStage {
   return "prepare";
 }
 
-/** Rebuild from an allowlist: parser exceptions can contain personal file data. */
-export function sanitizeErrorEvent(
-  event: Sentry.ErrorEvent,
-  release: string,
-  originalException?: unknown,
-  environment?: ClientEnvironment,
-): Sentry.ErrorEvent | null {
-  if (event.type !== undefined) return null;
-  const exception = event.exception?.values?.[0];
-  if (
-    !exception ||
-    exception.type === "AbortError" ||
-    (originalException instanceof Error && originalException.name === "AbortError")
-  )
-    return null;
+/** Build a fresh exception before the SDK sees it; never attach the original cause or message. */
+export function prepareErrorReport(
+  error: unknown,
+  area: ErrorArea,
+  stage: ErrorStage = "prepare",
+  chapter?: number,
+  file?: FileDiagnostics,
+) {
+  if (error instanceof Error && error.name === "AbortError") return null;
   const { code, resource, httpStatus } = diagnostic(
-    originalException,
-    exception.type,
-    exception.value,
+    error,
+    error instanceof Error ? error.name : undefined,
+    error instanceof Error ? error.message : undefined,
   );
-  const [message, category, level] = errorDefinitions[code];
-  const frames = (exception?.stacktrace?.frames || [])
-    .flatMap((frame) => {
-      try {
-        const url = new URL(frame.filename || "");
-        if (
-          url.protocol !== "https:" ||
-          !hosts.has(url.hostname) ||
-          !/^\/assets\/[\w.-]+\.m?js$/.test(url.pathname)
-        )
-          return [];
-        return [
-          {
-            filename: `${url.origin}${url.pathname}`,
-            in_app: true,
-            ...(Number.isSafeInteger(frame.lineno) && frame.lineno! > 0
-              ? { lineno: frame.lineno }
-              : {}),
-            ...(Number.isSafeInteger(frame.colno) && frame.colno! > 0
-              ? { colno: frame.colno }
-              : {}),
-          },
-        ];
-      } catch {
-        return [];
-      }
-    })
-    .slice(-20);
-  const area = areas.find((value) => value === event.tags?.["area"]) || "unhandled";
-  const stage = stages.find((value) => value === event.tags?.["stage"]) || "prepare";
-  const chapter = event.tags?.["chapter"];
-  // Revalidate even our own helpers: only coarse, reviewed values may leave the app.
-  const browser = browserNames.find((value) => value === environment?.browser_name);
-  const major = environment?.browser_major;
-  const os = osNames.find((value) => value === environment?.os_name);
-  const device = deviceTypes.find((value) => value === environment?.device_type);
-  const extension = fileExtensions.find((value) => value === event.tags?.["file_extension"]);
-  const format = fileFormats.find((value) => value === event.tags?.["file_format"]);
-  const sizeBand = fileSizeBands.find((value) => value === event.tags?.["file_size_band"]);
+  const safe = new Error(errorDefinitions[code][0]);
+  safe.name = code;
+  const header = error instanceof Error ? `${error.name}: ${error.message}` : "";
+  const stack = error instanceof Error && typeof error.stack === "string" ? error.stack : "";
+  // A multiline parser message can resemble an asset URL; it is never a stack frame.
+  const trace = header && stack.startsWith(header) ? stack.slice(header.length) : stack;
+  const rawFrames = trace
+    ? trace.split("\n").flatMap((line) => {
+        const match = /(https:\/\/[^\s)]+):(\d+):(\d+)\)?$/.exec(line);
+        return match
+          ? [{ filename: match[1], lineno: Number(match[2]), colno: Number(match[3]) }]
+          : [];
+      })
+    : [];
+  const frames = safeAssetFrames(rawFrames);
+  safe.stack =
+    `${code}: ${safe.message}` +
+    frames
+      .map(
+        (frame) => `\n    at ${frame["filename"]}:${frame["lineno"] || 1}:${frame["colno"] || 1}`,
+      )
+      .join("");
   return {
-    type: undefined,
-    ...(/^[a-f0-9]{32}$/.test(event.event_id || "") ? { event_id: event.event_id } : {}),
-    ...(typeof event.timestamp === "number" &&
-    Number.isFinite(event.timestamp) &&
-    event.timestamp > 0
-      ? { timestamp: event.timestamp }
-      : {}),
-    level: category === "validation" && area === "sample-open" ? "error" : level,
-    platform: "javascript",
-    environment: "production",
-    release,
-    tags: {
+    error: safe,
+    properties: {
+      ...file,
+      error_code: code,
       area,
       stage,
-      category,
-      error_code: code,
-      ...(browser ? { browser_name: browser } : {}),
-      ...(browser &&
-      browser !== "Other" &&
-      browser !== "Unknown" &&
-      typeof major === "string" &&
-      /^[1-9]\d{0,2}$/.test(major)
-        ? { browser_major: major }
-        : {}),
-      ...(os ? { os_name: os } : {}),
-      ...(device ? { device_type: device } : {}),
-      ...(extension ? { file_extension: extension } : {}),
-      ...(format ? { file_format: format } : {}),
-      ...(sizeBand ? { file_size_band: sizeBand } : {}),
+      ...(chapter === undefined ? {} : { chapter }),
       ...(resource ? { resource } : {}),
       ...(httpStatus === undefined ? {} : { http_status: httpStatus }),
-      ...(typeof chapter === "number" && Number.isInteger(chapter) && chapter >= 1 && chapter <= 9
-        ? { chapter }
-        : {}),
-    },
-    fingerprint:
-      code === "UNEXPECTED_ERROR" || code.startsWith("JS_")
-        ? ["{{ default }}", area]
-        : ["genomewalk", code, area, resource || "none"],
-    exception: {
-      values: [
-        {
-          type: code,
-          value: message,
-          ...(frames.length ? { stacktrace: { frames } } : {}),
-        },
-      ],
     },
   };
 }
 
 export function initErrorReporting() {
-  if (
-    reporting ||
-    !import.meta.env?.PROD ||
-    typeof location === "undefined" ||
-    !hosts.has(location.hostname)
-  )
-    return;
-  let errorsSent = 0;
-  const warnings = new Set<string>();
-  Sentry.init({
-    // Public browser project identifier, not an authentication secret.
-    dsn: "https://2a88ff1fb2ddca549089bf2ee4fa5ccd@o517554.ingest.us.sentry.io/4512309671886848",
-    defaultIntegrations: false,
-    integrations: [Sentry.globalHandlersIntegration()],
-    maxBreadcrumbs: 0,
-    sendClientReports: false,
-    tracePropagationTargets: [],
-    dataCollection: {
-      userInfo: false,
-      cookies: false,
-      httpHeaders: false,
-      httpBodies: [],
-      urlQueryParams: false,
-      stackFrameVariables: false,
-      frameContextLines: 0,
-      graphQL: { document: false, variables: false },
-      genAI: { inputs: false, outputs: false },
-      mcp: { inputs: false, outputs: false },
-      databaseQueryData: false,
-      queues: false,
-    },
-    beforeSend(event, hint) {
-      hint.attachments = [];
-      const clean = sanitizeErrorEvent(
-        event,
-        import.meta.env["VITE_APP_RELEASE"],
-        hint.originalException,
-        getClientEnvironment(),
-      );
-      if (!clean) return null;
-      // Repeated invalid files must not use up the budget for actual failures.
-      if (clean.level === "warning") {
-        const key = clean.fingerprint!.join(":");
-        if (warnings.has(key) || warnings.size >= 3) return null;
-        warnings.add(key);
-        return clean;
-      }
-      return errorsSent++ < 10 ? clean : null;
-    },
-    beforeBreadcrumb: () => null,
-    beforeSendLog: () => null,
-    beforeSendMetric: () => null,
-    transportOptions: { fetchOptions: { credentials: "omit", referrerPolicy: "no-referrer" } },
-  });
+  if (reporting || !initAnalytics()) return;
   reporting = true;
+  window.addEventListener("error", (event) => reportError(event.error, "unhandled"));
+  window.addEventListener("unhandledrejection", (event) => reportError(event.reason, "unhandled"));
 }
 
 export function reportError(
@@ -251,8 +120,7 @@ export function reportError(
   chapter?: number,
   file?: FileDiagnostics,
 ) {
-  if (!reporting || (error instanceof Error && error.name === "AbortError")) return;
-  Sentry.captureException(error, {
-    tags: { ...file, area, stage, ...(chapter === undefined ? {} : { chapter }) },
-  });
+  if (!reporting) return;
+  const report = prepareErrorReport(error, area, stage, chapter, file);
+  if (report) captureAppException(report.error, report.properties);
 }

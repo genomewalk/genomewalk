@@ -1,22 +1,4 @@
 /* ── Step output primitives ────────────────────────────────────────── */
-.kv {
-  display: flex;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 9px 0;
-  border-bottom: 1px dashed var(--wgs-line-soft);
-  font-size: var(--wgs-text-lead);
-}
-.kv span {
-  color: var(--wgs-mut);
-}
-.kv b {
-  font-family: var(--wgs-mono);
-  font-weight: 500;
-  text-align: right;
-  color: var(--wgs-ink);
-}
-
 /* expandable key/value row */
 .kvx {
   border-bottom: 1px dashed var(--wgs-line-soft);

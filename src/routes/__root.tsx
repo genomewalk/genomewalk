@@ -3,11 +3,13 @@ import {
   Link,
   createRootRoute,
   useRouter,
+  useLocation,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 import { reportError } from "../lib/error-reporting.ts";
+import { trackPageview } from "../lib/analytics.ts";
 import { ErrorNotice } from "../components/error-notice.tsx";
 
 import appCss from "../styles.css?url";
@@ -103,10 +105,16 @@ export const Route = createRootRoute({
     ],
   }),
   shellComponent: RootShell,
-  component: Outlet,
+  component: RootComponent,
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
 });
+
+function RootComponent() {
+  const pathname = useLocation({ select: (location) => location.pathname });
+  useEffect(() => trackPageview(pathname), [pathname]);
+  return <Outlet />;
+}
 
 function RootShell({ children }: { children: ReactNode }) {
   return (

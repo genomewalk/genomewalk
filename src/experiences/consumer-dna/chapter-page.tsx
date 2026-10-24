@@ -23,6 +23,7 @@ import { ErrorNotice } from "../../components/error-notice.tsx";
 import { useLessonNavigation } from "../../lib/navigation/use-lesson-navigation.ts";
 import { useExcerptOverflow } from "../../lib/view/use-excerpt-overflow.ts";
 import { reportError, reportingStage, type ErrorStage } from "../../lib/error-reporting.ts";
+import { trackEvent } from "../../lib/analytics.ts";
 import { getSourceFileDiagnostics } from "../../lib/diagnostics/file-context.ts";
 
 type StepDef = {
@@ -81,7 +82,10 @@ function ChapterContent({ n }: { n: string }) {
     };
   }, [i, isResults, step]);
 
-  const handleLessonLink = useLessonNavigation(outRef, running);
+  const handleLessonLink = useLessonNavigation(outRef, running, {
+    chapter: i + 1,
+    source: session.kind,
+  });
   useExcerptOverflow(outRef);
 
   if (!step || String(i + 1) !== n) {
@@ -129,6 +133,8 @@ function ChapterContent({ n }: { n: string }) {
     setStatus("");
     setError("");
     const source = ctx.source;
+    const eventProperties = { chapter: i + 1, ...(session.kind ? { source: session.kind } : {}) };
+    trackEvent("chapter_run_started", eventProperties);
     const fileDiagnostics = getSourceFileDiagnostics(source);
     let errorStage: ErrorStage = "prepare";
     try {
@@ -152,11 +158,14 @@ function ChapterContent({ n }: { n: string }) {
       });
       if (ready === false) return;
       if (!active.current || ctx.source !== source) return;
+      trackEvent("chapter_run_completed", eventProperties);
       session.outputs[i] = out;
       session.done[i] = true;
       force();
     } catch (err) {
       if (active.current && ctx.source === source) {
+        if (!(err instanceof Error && err.name === "AbortError"))
+          trackEvent("chapter_run_failed", eventProperties);
         reportError(err, "chapter", errorStage, i + 1, fileDiagnostics);
         setError((err as Error)?.message ?? String(err));
       }

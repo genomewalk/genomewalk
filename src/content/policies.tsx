@@ -3,7 +3,7 @@ import type { PolicyDocument } from "../components/policy-page/policy-page.tsx";
 
 export const privacyPolicy: PolicyDocument = {
   title: "Privacy Policy",
-  effectiveDate: "2026-10-23",
+  effectiveDate: "2026-10-24",
   description: "What stays in your browser and what happens when you connect to other services.",
   sections: [
     {
@@ -95,29 +95,40 @@ export const privacyPolicy: PolicyDocument = {
     },
     {
       id: "error-reports",
-      title: "Technical error reports",
+      title: "Usage and technical error reports",
       content: (
         <>
           <p>
-            On the live website, Genomewalk uses Sentry to receive limited technical error reports.
-            Reports contain a predefined error code and description, the operation and processing
-            stage, the chapter number when relevant, the app version, and locations in the app’s
-            code. Reports also include the browser name and major version, operating-system family,
-            and broad device type when identifiable. File-related reports may include a recognized
-            extension, detected format, and approximate size band. Download failures may include a
-            public resource category and HTTP status. Raw error messages, your filename, genome
-            contents, variants, genotypes and results are excluded, along with exact file sizes, raw
-            user-agent strings and device identifiers. Reports do not include the catalogue byte
-            ranges requested.
+            On the live website, Genomewalk uses PostHog to understand which parts of the guide are
+            used and to diagnose failures. Usage events record page and chapter visits, choosing a
+            personal file or the public sample, whether opening it succeeds, build-choice steps,
+            chapter runs, results preparation, and opening educational explanations. These events do
+            not include your build selection, the contents of explanations generated from your file,
+            or your results.
           </p>
           <p>
-            Session replay, interaction recording, logs and performance tracing are disabled.
-            Genomewalk does not attach user identifiers, cookies, page addresses or referring
-            addresses to these reports. Sentry receives ordinary network information such as your IP
-            address when your browser connects and may derive an approximate location. The SDK is
-            configured not to add your IP address to the error event. See{" "}
-            <a href="https://sentry.io/privacy/" target="_blank" rel="noopener noreferrer">
-              Sentry’s Privacy Policy
+            Error reports contain a predefined error code and description, the operation and
+            processing stage, the chapter number when relevant, the app version, and locations in
+            the app’s code. Reports include the browser name and major version, operating-system
+            family, and broad device type when identifiable. File-related errors may include a
+            recognized extension, detected format, and approximate size band. Download failures may
+            include a public resource category and HTTP status.
+          </p>
+          <p>
+            Your filename, genome contents, variants, genotypes and results are excluded, along with
+            exact file sizes, raw error messages, full user-agent strings and device identifiers.
+            Only fixed website paths are recorded; query strings, referring addresses and catalogue
+            byte ranges are excluded. Session replay, automatic click recording, logs and
+            performance tracing are disabled.
+          </p>
+          <p>
+            A random identifier held in browser memory links events during the current page session.
+            It resets when the page reloads; it is not stored in cookies or browser storage to
+            recognise you on a later visit. PostHog receives ordinary network information such as
+            your IP address when your browser connects. Genomewalk disables IP-based location
+            enrichment and does not add your IP address to events. See{" "}
+            <a href="https://posthog.com/privacy" target="_blank" rel="noopener noreferrer">
+              PostHog’s Privacy Policy
             </a>
             .
           </p>

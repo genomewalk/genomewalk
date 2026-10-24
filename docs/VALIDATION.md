@@ -94,16 +94,18 @@ disabled and fallback fonts. This is a deployment gate, not a check of the live
 CDN or every browser and file format; the broader manual procedure below remains
 useful.
 
-The browser check also exercises the production Sentry configuration against
-local files. Every report is intercepted locally. Synthetic uncaught, invalid-file,
-sample-download, invalid-range and results-download failures verify useful codes,
-severity, resource categories, HTTP status, browser/OS/device categories and
-per-operation file metadata. Fake private text in file names, file contents,
-user-agent strings, errors, page URLs and cookies must not appear in the
-transmitted envelope. Only the browser major version and a file-size band are
-allowed. Switching from an invalid private file to the public sample must replace
-the file metadata. Repeated validation warnings must not crowd out actual failures.
-Healthy pages must not emit telemetry. No CI reports reach Sentry.
+The browser check also exercises the production PostHog configuration against
+local files. Every telemetry request is intercepted locally. Synthetic uncaught,
+invalid-file, sample-download, invalid-range and catalogue-download failures verify
+useful codes, severity, resource categories, HTTP status, browser/OS/device
+categories and per-operation file metadata. Fake private text in filenames,
+contents, user-agent strings, errors, page URLs and cookies must not appear in
+transmitted events. Only a browser major version and file-size band are allowed.
+Switching from an invalid private file to the public sample must replace the file
+metadata. Repeated validation warnings must not crowd out actual failures or
+suppress usage-attempt counts. Healthy pages emit only reviewed page views and
+journey milestones. Local development emits no telemetry. No CI events reach
+PostHog; the check also rejects unexpected SDK network requests.
 
 Use the bundled [public HG002 sample](../public/samples/README.md) and
 [invented consumer fixtures](CONSUMER_FILES.md#synthetic-fixtures). Keep personal

@@ -36,7 +36,7 @@ positions and results are not placed in request URLs or bodies. Requested Range
 headers depend on locally matched catalogue entries, so a static host can observe
 relevant catalogue regions. Do not describe this as hiding all genotype-related
 access patterns. There is no genome upload route or remote matching API.
-The application includes error reporting described below, but no analytics SDK.
+The application includes the limited PostHog usage and error reporting described below.
 Hosting and font requests also expose ordinary connection
 metadata to their providers.
 
@@ -50,49 +50,62 @@ measurements. See Cloudflare's documentation for the
 [RUM beacon](https://developers.cloudflare.com/speed/observatory/rum-beacon/) and
 [analytics dimensions](https://developers.cloudflare.com/web-analytics/data-metrics/dimensions/).
 
-## Error reporting
+## Usage and error reporting
 
-`src/lib/error-reporting.ts` initializes Sentry only for production builds on
-`genomewalk.com` and `www.genomewalk.com`. The public DSN identifies the project;
-it is not a secret. Local development, previews, prerendering and ordinary CI
-checks do not send reports. No server, proxy, source-map upload or Sentry auth
-token is required.
+`src/lib/analytics.ts` initializes PostHog only for production builds on
+`genomewalk.com` and `www.genomewalk.com`. The public project token identifies the
+project; it is not a secret. Local development, previews, prerendering and ordinary
+CI checks do not send events. No server, proxy, source-map upload or private API
+key is required. `src/lib/error-reporting.ts` reports sanitized exceptions through
+the same client.
 
-Only global exception handlers are enabled. File opening, chapter execution,
-results preparation, page-boundary failures, failed illustration loading and
-optional publication downloads are also reported explicitly.
-Before sending, the SDK event is rebuilt from an allowlist: random event ID,
-timestamp, build identifier, predefined error code/description/severity,
-fixed operation/stage/category, chapter number (1–9) when relevant, and
-application asset URLs with numeric code locations. Public downloads can also
-include a fixed resource category and numeric HTTP status. Grouping keys contain
-only these fixed diagnostic values. Browser diagnostics add allowlisted browser
-name, major version (1–999), operating-system family and broad device type
-(desktop/mobile/tablet/unknown). Detection is best effort; the original user-agent
-string, OS version, device model, screen details and identifiers are not attached.
-File-related operations add only a recognized extension (`.vcf.gz`, `.vcf.bgz`,
-`.txt`, `.tsv`, `.zip`, `.gz`, or `other`), format (VCF, 23andMe, AncestryDNA,
-unrecognized or unknown), and size band. Decimal size bands are empty, under
-1 MB, 1 MB to under 100 MB, 100 MB to under 1 GB, and 1 GB or more; invalid sizes
-are unknown. Formats come from validated readers, never filenames; failures
-before identification remain unknown. These values are captured per operation
-and revalidated by the sanitizer. Exact sizes and filenames are excluded.
-Original messages,
-exception names, function names, variables, source snippets, causes, request
-data, page URLs, query strings, range headers, contexts, extras and attachments
-are discarded. Aborts are ignored. Expected input-validation failures are warnings;
-repeated warnings of the same kind are deduplicated, with at most three warning
-kinds per page load. Actual failures have a separate ten-event limit, without a
-persistent user identifier.
+Usage events explicitly count file/sample opening attempts, successful reading,
+read failures, build-choice steps, a genome becoming ready, chapter runs and
+results preparation (started/completed/failed), and static educational
+explanations opened. Page views use only `/`, `/chapter/1` through `/chapter/9`,
+`/privacy` and `/terms`. Usage properties are limited to upload/sample source,
+chapter number. Explanation openings are counted per chapter; their text and identifiers are not sent. A successful chapter run
+means its processing finished, not that a reader understood the lesson. Build
+selection values, result interactions, variants, genes, source URLs and match
+counts are not collected. An opening attempt means an actual file selection/drop
+or sample request, not opening and cancelling the file picker.
 
-Replay, tracing, logs, metrics, breadcrumbs and automatic sessions are disabled.
-SDK data collection is explicitly disabled, including user information/IP
-inference, headers, bodies and cookies. Report requests omit credentials and
-referrers. Sentry still receives connection metadata, including the network IP;
-it may derive approximate location from this connection. This is distinct from
-including the IP address in the error event. The browser deployment
-check intercepts reports locally and verifies their payloads using synthetic
-failures. It never sends CI test reports to Sentry.
+A random identifier and session identifier live only in memory. They link
+milestones within one loaded page, including SPA navigation, and reset on reload.
+No analytics identifier is persisted in cookies, localStorage or sessionStorage.
+Treat counts as visits/attempts, not distinct people or returning users. Browsers
+that block reporting are not counted.
+
+Before sending, every SDK event is rebuilt from an allowlist. Error events include
+a predefined code/description/severity, fixed operation/stage/category, chapter
+number (1–9) when relevant, build identifier, and application asset URLs with
+numeric code locations. Public downloads can also include a fixed resource
+category and numeric HTTP status. Grouping keys contain only these reviewed
+values. Coarse diagnostics include allowlisted browser name, major version
+(1–999), operating-system family and broad device type. Detection is best effort;
+the original user-agent string, OS version, device model and screen details are
+not attached.
+
+File errors add only a recognized extension (`.vcf.gz`, `.vcf.bgz`, `.txt`, `.tsv`,
+`.zip`, `.gz`, or `other`), format (VCF, 23andMe, AncestryDNA, unrecognized or
+unknown), and size band. Decimal bands are empty, under 1 MB, 1 MB to under 100 MB,
+100 MB to under 1 GB, and 1 GB or more; invalid sizes are unknown. Formats come
+from validated readers, never filenames. Exact sizes and filenames are excluded.
+Original messages, arbitrary exception/function names, variables, source snippets,
+causes, request data, query strings, referrers, range headers and attachments are
+excluded. Aborts are ignored. Expected input-validation failures are warnings;
+repeated warnings are deduplicated, with at most three warning kinds per page
+load. Actual failures have a separate ten-event limit. Usage attempt/failure
+counts remain independent of error-report deduplication.
+
+Replay, automatic click capture, tracing, logs, surveys, feature flags and remote
+SDK configuration are disabled. Only explicit reviewed events are sent; selecting
+products in PostHog onboarding does not enable them in Genomewalk. The client does
+not create person profiles or enrich events with IP-based location. Reporting
+requests omit credentials and referrers. PostHog still receives connection
+metadata, including the network IP; this is distinct from including an IP address
+in an event. The browser deployment check intercepts requests locally and checks
+the final transmitted payloads. It never sends CI test events to PostHog.
 
 Outbound source links open the cited public resource when the reader clicks.
 For example, a ClinVar link identifies the public variant record being viewed.

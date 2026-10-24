@@ -7,6 +7,7 @@ import { ErrorNotice } from "./error-notice.tsx";
 import { useExcerptOverflow } from "../lib/view/use-excerpt-overflow.ts";
 import { reportError, reportingStage, type ErrorStage } from "../lib/error-reporting.ts";
 import { getSourceFileDiagnostics } from "../lib/diagnostics/file-context.ts";
+import { trackEvent } from "../lib/analytics.ts";
 
 export type ResultsRunner = (
   out: HTMLDivElement,
@@ -24,6 +25,7 @@ type ResultsPanelProps = {
     outputs: Record<number, HTMLDivElement>;
     done: Record<number, boolean>;
     guideChapter: number;
+    kind: "upload" | "sample" | null;
   };
   runResults: ResultsRunner;
 };
@@ -50,6 +52,10 @@ export function ResultsPanel({ onComplete, context, session, runResults }: Resul
     }
     const controller = new AbortController();
     const source = context.source;
+    const eventProperties = {
+      chapter: RESULTS_STEP + 1,
+      ...(session.kind ? { source: session.kind } : {}),
+    };
     const fileDiagnostics = getSourceFileDiagnostics(source);
     out.replaceChildren();
     setRunning(true);
@@ -60,6 +66,8 @@ export function ResultsPanel({ onComplete, context, session, runResults }: Resul
     // Opening results starts their own preparation; it never runs or completes
     // the teaching chapters. Reopening reuses this visit's computed matches.
     async function prepare(out: HTMLDivElement) {
+      if (controller.signal.aborted || context.source !== source) return;
+      trackEvent("results_started", eventProperties);
       let stage: ErrorStage = "prepare";
       try {
         const ready = await runResults(out, {
@@ -81,12 +89,15 @@ export function ResultsPanel({ onComplete, context, session, runResults }: Resul
         });
         if (controller.signal.aborted || context.source !== source) return;
         if (ready !== false) {
+          trackEvent("results_completed", eventProperties);
           session.outputs[RESULTS_STEP] = out;
           session.done[RESULTS_STEP] = true;
           onComplete();
         }
       } catch (err) {
         if (!controller.signal.aborted && context.source === source) {
+          if (!(err instanceof Error && err.name === "AbortError"))
+            trackEvent("results_failed", eventProperties);
           reportError(err, "results", stage, undefined, fileDiagnostics);
           setError((err as Error)?.message ?? String(err));
         }
@@ -94,7 +105,8 @@ export function ResultsPanel({ onComplete, context, session, runResults }: Resul
         if (!controller.signal.aborted) setRunning(false);
       }
     }
-    void prepare(out);
+    // Let a cancelled mount finish its cleanup before starting work (StrictMode).
+    queueMicrotask(() => void prepare(out));
     return () => controller.abort();
   }, [attempt, onComplete, context, session, runResults]);
 

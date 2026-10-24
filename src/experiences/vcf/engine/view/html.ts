@@ -1,7 +1,7 @@
 import { el } from "../../../../lib/view/html.ts";
 import { rawBlock } from "../../../../lib/view/file-excerpt.ts";
 export { rawBlock } from "../../../../lib/view/file-excerpt.ts";
-export { el, fmt, MB, escape, ext, SOURCES, kv, note, tile } from "../../../../lib/view/html.ts";
+export { el, fmt, MB, escape, ext, SOURCES, note, tile } from "../../../../lib/view/html.ts";
 
 export function kvx(k: string, v: string, detail: string, raw?: string[]) {
   const d = el("details", "kvx");

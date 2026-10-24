@@ -41,10 +41,6 @@ export const SOURCES = {
   arrays: "https://en.wikipedia.org/wiki/SNP_array",
 };
 
-export function kv(k: string, v: string | number) {
-  return el("div", "kv", `<span>${k}</span><b>${v}</b>`);
-}
-
 export function note(html: string, emphasis?: "important") {
   return emphasis === "important"
     ? el(
