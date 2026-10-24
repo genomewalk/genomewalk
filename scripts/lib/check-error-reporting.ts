@@ -15,7 +15,11 @@ const isEnvelope = (request: Request) => {
 
 /** Exercise the production SDK against local files; intercepted reports never reach Sentry. */
 export async function checkErrorReporting(browser: Browser, origin: string) {
-  const context = await browser.newContext({ serviceWorkers: "block", reducedMotion: "reduce" });
+  const context = await browser.newContext({
+    serviceWorkers: "block",
+    reducedMotion: "reduce",
+    userAgent: `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/143.0.7337.123 Safari/537.36 ${secret}`,
+  });
   const page = await context.newPage();
   page.setDefaultTimeout(30_000);
   const events: Event[] = [];
@@ -90,11 +94,51 @@ export async function checkErrorReporting(browser: Browser, origin: string) {
             "resource",
             "http_status",
             "chapter",
+            "browser_name",
+            "browser_major",
+            "os_name",
+            "device_type",
+            "file_extension",
+            "file_format",
+            "file_size_band",
           ]);
           assert.ok(
             Object.keys(event.tags || {}).every((key) => tagKeys.has(key)),
             "Unexpected error tag",
           );
+          assert.equal(event.tags?.["browser_name"], "Chrome");
+          assert.equal(event.tags?.["browser_major"], "143");
+          assert.equal(event.tags?.["os_name"], "Linux");
+          assert.equal(event.tags?.["device_type"], "desktop");
+          assert.ok(!body.includes("7337.123"), "Full browser version must not be included");
+          const fileExtension = event.tags?.["file_extension"];
+          const fileFormat = event.tags?.["file_format"];
+          const fileSize = event.tags?.["file_size_band"];
+          if (fileExtension !== undefined) {
+            assert.ok(
+              [".vcf.gz", ".vcf.bgz", ".txt", ".tsv", ".zip", ".gz", "other"].includes(
+                String(fileExtension),
+              ),
+            );
+            assert.ok(
+              ["VCF", "23andMe", "AncestryDNA", "unrecognized", "unknown"].includes(
+                String(fileFormat),
+              ),
+            );
+            assert.ok(
+              [
+                "empty",
+                "under-1-MB",
+                "1-100-MB",
+                "100-MB-1-GB",
+                "1-GB-or-more",
+                "unknown",
+              ].includes(String(fileSize)),
+            );
+          } else {
+            assert.equal(fileFormat, undefined);
+            assert.equal(fileSize, undefined);
+          }
           const area = event.tags?.["area"];
           const resource = event.tags?.["resource"];
           assert.ok(
@@ -225,6 +269,7 @@ export async function checkErrorReporting(browser: Browser, origin: string) {
     );
     assert.equal(unhandledError.tags?.["area"], "unhandled");
     assert.equal(unhandledError.tags?.["error_code"], "UNEXPECTED_ERROR");
+    assert.equal(unhandledError.tags?.["file_extension"], undefined);
 
     const uploadInvalidFile = () =>
       page.locator('input[type="file"]').setInputFiles({
@@ -249,6 +294,9 @@ export async function checkErrorReporting(browser: Browser, origin: string) {
       "Unsupported DNA file: expected header missing",
     );
     assert.equal(invalidFileError.level, "warning");
+    assert.equal(invalidFileError.tags?.["file_extension"], ".txt");
+    assert.equal(invalidFileError.tags?.["file_format"], "unrecognized");
+    assert.equal(invalidFileError.tags?.["file_size_band"], "under-1-MB");
     await waitForFileError();
 
     const beforeRepeatedFiles = events.length;
@@ -272,6 +320,9 @@ export async function checkErrorReporting(browser: Browser, origin: string) {
     assert.equal(sampleError.tags?.["stage"], "read-file");
     assert.equal(sampleError.tags?.["error_code"], "NETWORK_FAILED");
     assert.equal(sampleError.tags?.["resource"], "public-sample");
+    assert.equal(sampleError.tags?.["file_extension"], ".vcf.gz");
+    assert.equal(sampleError.tags?.["file_format"], "unknown");
+    assert.equal(sampleError.tags?.["file_size_band"], "1-100-MB");
     assert.equal(
       sampleError.level,
       "error",
@@ -307,6 +358,9 @@ export async function checkErrorReporting(browser: Browser, origin: string) {
     assert.equal(chapterError.tags?.["error_code"], "HTTP_ERROR");
     assert.equal(chapterError.tags?.["resource"], "catalogue-index");
     assert.equal(chapterError.tags?.["http_status"], 503);
+    assert.equal(chapterError.tags?.["file_extension"], ".vcf.gz");
+    assert.equal(chapterError.tags?.["file_format"], "VCF");
+    assert.equal(chapterError.tags?.["file_size_band"], "1-100-MB");
 
     fault = "catalogue";
     const resultError = await reportAfter(() =>
@@ -318,9 +372,12 @@ export async function checkErrorReporting(browser: Browser, origin: string) {
     assert.equal(resultError.tags?.["error_code"], "HTTP_ERROR");
     assert.equal(resultError.tags?.["resource"], "catalogue-entries");
     assert.equal(resultError.tags?.["http_status"], 503);
+    assert.equal(resultError.tags?.["file_extension"], ".vcf.gz");
+    assert.equal(resultError.tags?.["file_format"], "VCF");
+    assert.equal(resultError.tags?.["file_size_band"], "1-100-MB");
     assert.deepEqual(failures, []);
     console.log(
-      "[browser] Error reports verified offline: uncaught, invalid file deduplication, sample network/range, chapter and results failures; private fields excluded",
+      "[browser] Error reports verified offline: uncaught, invalid file deduplication, sample network/range, chapter and results failures; coarse browser/device/file metadata; private fields excluded",
     );
   } finally {
     await context.close();

@@ -1,5 +1,18 @@
 import * as Sentry from "@sentry/react";
 import { AppError, errorDefinitions, errorResources, type ErrorCode } from "./app-error.ts";
+import {
+  getClientEnvironment,
+  browserNames,
+  osNames,
+  deviceTypes,
+  type ClientEnvironment,
+} from "./diagnostics/client-environment.ts";
+import {
+  fileExtensions,
+  fileFormats,
+  fileSizeBands,
+  type FileDiagnostics,
+} from "./diagnostics/file-context.ts";
 
 const areas = [
   "file-open",
@@ -67,6 +80,7 @@ export function sanitizeErrorEvent(
   event: Sentry.ErrorEvent,
   release: string,
   originalException?: unknown,
+  environment?: ClientEnvironment,
 ): Sentry.ErrorEvent | null {
   if (event.type !== undefined) return null;
   const exception = event.exception?.values?.[0];
@@ -112,6 +126,14 @@ export function sanitizeErrorEvent(
   const area = areas.find((value) => value === event.tags?.["area"]) || "unhandled";
   const stage = stages.find((value) => value === event.tags?.["stage"]) || "prepare";
   const chapter = event.tags?.["chapter"];
+  // Revalidate even our own helpers: only coarse, reviewed values may leave the app.
+  const browser = browserNames.find((value) => value === environment?.browser_name);
+  const major = environment?.browser_major;
+  const os = osNames.find((value) => value === environment?.os_name);
+  const device = deviceTypes.find((value) => value === environment?.device_type);
+  const extension = fileExtensions.find((value) => value === event.tags?.["file_extension"]);
+  const format = fileFormats.find((value) => value === event.tags?.["file_format"]);
+  const sizeBand = fileSizeBands.find((value) => value === event.tags?.["file_size_band"]);
   return {
     type: undefined,
     ...(/^[a-f0-9]{32}$/.test(event.event_id || "") ? { event_id: event.event_id } : {}),
@@ -129,6 +151,19 @@ export function sanitizeErrorEvent(
       stage,
       category,
       error_code: code,
+      ...(browser ? { browser_name: browser } : {}),
+      ...(browser &&
+      browser !== "Other" &&
+      browser !== "Unknown" &&
+      typeof major === "string" &&
+      /^[1-9]\d{0,2}$/.test(major)
+        ? { browser_major: major }
+        : {}),
+      ...(os ? { os_name: os } : {}),
+      ...(device ? { device_type: device } : {}),
+      ...(extension ? { file_extension: extension } : {}),
+      ...(format ? { file_format: format } : {}),
+      ...(sizeBand ? { file_size_band: sizeBand } : {}),
       ...(resource ? { resource } : {}),
       ...(httpStatus === undefined ? {} : { http_status: httpStatus }),
       ...(typeof chapter === "number" && Number.isInteger(chapter) && chapter >= 1 && chapter <= 9
@@ -189,6 +224,7 @@ export function initErrorReporting() {
         event,
         import.meta.env["VITE_APP_RELEASE"],
         hint.originalException,
+        getClientEnvironment(),
       );
       if (!clean) return null;
       // Repeated invalid files must not use up the budget for actual failures.
@@ -213,9 +249,10 @@ export function reportError(
   area: ErrorArea,
   stage: ErrorStage = "prepare",
   chapter?: number,
+  file?: FileDiagnostics,
 ) {
   if (!reporting || (error instanceof Error && error.name === "AbortError")) return;
   Sentry.captureException(error, {
-    tags: { area, stage, ...(chapter === undefined ? {} : { chapter }) },
+    tags: { ...file, area, stage, ...(chapter === undefined ? {} : { chapter }) },
   });
 }

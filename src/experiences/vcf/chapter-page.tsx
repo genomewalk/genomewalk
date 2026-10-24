@@ -22,6 +22,7 @@ import { ErrorNotice } from "../../components/error-notice.tsx";
 import { useLessonNavigation } from "../../lib/navigation/use-lesson-navigation.ts";
 import { useExcerptOverflow } from "../../lib/view/use-excerpt-overflow.ts";
 import { reportError, reportingStage, type ErrorStage } from "../../lib/error-reporting.ts";
+import { getSourceFileDiagnostics } from "../../lib/diagnostics/file-context.ts";
 
 type StepDef = {
   title: string;
@@ -115,6 +116,7 @@ function ChapterContent({ n }: { n: string }) {
     setStatus("");
     setError("");
     const source = ctx.source;
+    const fileDiagnostics = getSourceFileDiagnostics(source);
     let errorStage: ErrorStage = "prepare";
     try {
       await step.run(out, {
@@ -139,7 +141,7 @@ function ChapterContent({ n }: { n: string }) {
       force();
     } catch (err) {
       if (active.current && ctx.source === source) {
-        reportError(err, "chapter", errorStage, i + 1);
+        reportError(err, "chapter", errorStage, i + 1, fileDiagnostics);
         setError((err as Error)?.message ?? String(err));
       }
     } finally {

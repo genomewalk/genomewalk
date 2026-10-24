@@ -3,12 +3,95 @@ import test from "node:test";
 import type { ErrorEvent, Event, StackFrame } from "@sentry/react";
 import { reportingStage, sanitizeErrorEvent } from "./error-reporting.ts";
 import { AppError, type ErrorCode, type ErrorDetails } from "./app-error.ts";
+import type { ClientEnvironment } from "./diagnostics/client-environment.ts";
+import { getFileDiagnostics } from "./diagnostics/file-context.ts";
 
 const filename = "SYNTHETIC_PRIVATE_GENOME.vcf.gz";
 const dna = "GATTACAGATTACAGATTACA";
 const privateText = `${filename}:${dna}`;
 const release = "genomewalk@test-release";
 const eventId = "0123456789abcdef0123456789abcdef";
+
+test("coarse device and file diagnostics survive without raw identifiers or exact values", () => {
+  const clean = sanitizeErrorEvent(
+    errorEvent(privateText, {
+      tags: {
+        ...getFileDiagnostics({ name: `${filename}.vcf.gz`, size: 9_123_456_789 }, "VCF"),
+        file_name: filename,
+        file_size: 9_123_456_789,
+        user_agent: privateText,
+        device_id: privateText,
+        browser_name: privateText,
+      },
+    }),
+    release,
+    undefined,
+    { browser_name: "Safari", browser_major: "18", os_name: "iOS", device_type: "tablet" },
+  );
+  assert.deepEqual(clean?.tags, {
+    area: "unhandled",
+    stage: "prepare",
+    category: "application",
+    error_code: "UNEXPECTED_ERROR",
+    browser_name: "Safari",
+    browser_major: "18",
+    os_name: "iOS",
+    device_type: "tablet",
+    file_extension: ".vcf.gz",
+    file_format: "VCF",
+    file_size_band: "1-GB-or-more",
+  });
+  for (const secret of [filename, dna, "9123456789", "user_agent", "device_id"])
+    assert.ok(!JSON.stringify(clean).includes(secret));
+});
+
+test("diagnostic metadata is revalidated at the final privacy boundary", () => {
+  const clean = sanitizeErrorEvent(
+    errorEvent(privateText, {
+      tags: {
+        file_extension: filename,
+        file_format: dna,
+        file_size_band: 123456,
+        browser_name: "Chrome",
+        browser_major: "143",
+        os_name: "Windows",
+        device_type: "desktop",
+      },
+    }),
+    release,
+    undefined,
+    {
+      browser_name: filename,
+      browser_major: privateText,
+      os_name: dna,
+      device_type: privateText,
+    } as unknown as ClientEnvironment,
+  );
+  assert.deepEqual(clean?.tags, {
+    area: "unhandled",
+    stage: "prepare",
+    category: "application",
+    error_code: "UNEXPECTED_ERROR",
+  });
+  for (const major of ["0", "01", "1000", "143.1.2", "143\n", privateText, 143]) {
+    const result = sanitizeErrorEvent(errorEvent(), release, undefined, {
+      browser_name: "Chrome",
+      browser_major: major,
+      os_name: "Linux",
+      device_type: "desktop",
+    } as ClientEnvironment);
+    assert.equal(result?.tags?.["browser_major"], undefined);
+  }
+  for (const browser of ["Other", "Unknown"] as const) {
+    const result = sanitizeErrorEvent(errorEvent(), release, undefined, {
+      browser_name: browser,
+      browser_major: "143",
+      os_name: "Other",
+      device_type: "unknown",
+    });
+    assert.equal(result?.tags?.["browser_major"], undefined);
+  }
+});
 
 function errorEvent(value = privateText, extra: Partial<ErrorEvent> = {}): ErrorEvent {
   return { type: undefined, exception: { values: [{ type: "Error", value }] }, ...extra };

@@ -7,6 +7,10 @@ import { publicSampleSource, SAMPLE } from "../catalogues/public-sample.ts";
 import type { OpenedGenome } from "../../experiences/types.ts";
 import type { SupportedBuild } from "../genetics/reference-build.ts";
 import { reportError } from "../error-reporting.ts";
+import {
+  getOpeningFileDiagnostics,
+  getSourceFileDiagnostics,
+} from "../diagnostics/file-context.ts";
 
 interface PendingBuild {
   id: number;
@@ -67,7 +71,13 @@ export function useGenomeIntake(view?: "results") {
       );
     } catch (error) {
       if (requests.current.isCurrent(request)) {
-        reportError(error, "build-choice");
+        reportError(
+          error,
+          "build-choice",
+          "prepare",
+          undefined,
+          getSourceFileDiagnostics(opened.source),
+        );
         setLoadError((error as Error).message);
       }
     }
@@ -91,9 +101,11 @@ export function useGenomeIntake(view?: "results") {
     setPreparing(true);
     setReadProgress(undefined);
     setLoadError("");
+    let file: File | undefined;
+    let opened: OpenedGenome | undefined;
     try {
-      const file = chooseGenomeFile(files);
-      const opened = await experiences.openGenomeFile(file, request.signal, (fraction) => {
+      file = chooseGenomeFile(files);
+      opened = await experiences.openGenomeFile(file, request.signal, (fraction) => {
         if (requests.current.isCurrent(request)) setReadProgress(fraction);
       });
       if (!requests.current.isCurrent(request)) return;
@@ -102,7 +114,13 @@ export function useGenomeIntake(view?: "results") {
       else await finishSelection(opened, file.name, "upload", request);
     } catch (error) {
       if (requests.current.isCurrent(request)) {
-        reportError(error, "file-open", "read-file");
+        reportError(
+          error,
+          "file-open",
+          "read-file",
+          undefined,
+          opened ? getSourceFileDiagnostics(opened.source) : getOpeningFileDiagnostics(file, error),
+        );
         setLoadError(
           (error as Error).message || "This file could not be read. Try the public sample.",
         );
@@ -130,12 +148,22 @@ export function useGenomeIntake(view?: "results") {
     setPendingBuild(null);
     setFetching(0);
     setLoadError("");
+    const source = publicSampleSource();
+    let opened: OpenedGenome | undefined;
     try {
-      const opened = await experiences.openPublicSample(publicSampleSource(), request.signal);
+      opened = await experiences.openPublicSample(source, request.signal);
       await finishSelection(opened, SAMPLE.name, "sample", request);
     } catch (error) {
       if (requests.current.isCurrent(request)) {
-        reportError(error, "sample-open", "read-file");
+        reportError(
+          error,
+          "sample-open",
+          "read-file",
+          undefined,
+          opened
+            ? getSourceFileDiagnostics(opened.source)
+            : getOpeningFileDiagnostics(source.file, error),
+        );
         setLoadError(
           (error as Error).message ||
             "The public sample could not be loaded. Choose your own file.",

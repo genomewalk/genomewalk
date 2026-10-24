@@ -6,6 +6,7 @@ import { GeneticsLoader } from "./genetics-loader.tsx";
 import { ErrorNotice } from "./error-notice.tsx";
 import { useExcerptOverflow } from "../lib/view/use-excerpt-overflow.ts";
 import { reportError, reportingStage, type ErrorStage } from "../lib/error-reporting.ts";
+import { getSourceFileDiagnostics } from "../lib/diagnostics/file-context.ts";
 
 export type ResultsRunner = (
   out: HTMLDivElement,
@@ -49,6 +50,7 @@ export function ResultsPanel({ onComplete, context, session, runResults }: Resul
     }
     const controller = new AbortController();
     const source = context.source;
+    const fileDiagnostics = getSourceFileDiagnostics(source);
     out.replaceChildren();
     setRunning(true);
     setProgress(undefined);
@@ -85,7 +87,7 @@ export function ResultsPanel({ onComplete, context, session, runResults }: Resul
         }
       } catch (err) {
         if (!controller.signal.aborted && context.source === source) {
-          reportError(err, "results", stage);
+          reportError(err, "results", stage, undefined, fileDiagnostics);
           setError((err as Error)?.message ?? String(err));
         }
       } finally {

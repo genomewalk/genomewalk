@@ -66,7 +66,18 @@ timestamp, build identifier, predefined error code/description/severity,
 fixed operation/stage/category, chapter number (1–9) when relevant, and
 application asset URLs with numeric code locations. Public downloads can also
 include a fixed resource category and numeric HTTP status. Grouping keys contain
-only these fixed diagnostic values. Original messages,
+only these fixed diagnostic values. Browser diagnostics add allowlisted browser
+name, major version (1–999), operating-system family and broad device type
+(desktop/mobile/tablet/unknown). Detection is best effort; the original user-agent
+string, OS version, device model, screen details and identifiers are not attached.
+File-related operations add only a recognized extension (`.vcf.gz`, `.vcf.bgz`,
+`.txt`, `.tsv`, `.zip`, `.gz`, or `other`), format (VCF, 23andMe, AncestryDNA,
+unrecognized or unknown), and size band. Decimal size bands are empty, under
+1 MB, 1 MB to under 100 MB, 100 MB to under 1 GB, and 1 GB or more; invalid sizes
+are unknown. Formats come from validated readers, never filenames; failures
+before identification remain unknown. These values are captured per operation
+and revalidated by the sanitizer. Exact sizes and filenames are excluded.
+Original messages,
 exception names, function names, variables, source snippets, causes, request
 data, page URLs, query strings, range headers, contexts, extras and attachments
 are discarded. Aborts are ignored. Expected input-validation failures are warnings;

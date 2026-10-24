@@ -79,6 +79,14 @@ the operation. `UNEXPECTED_ERROR` and `JS_*` retain sanitized asset line/column
 locations, not source-mapped stacks. Sentry's issue list may need refreshing.
 Existing historical events keep their old descriptions.
 
+New reports also carry `browser_name`, `browser_major` when available, `os_name`
+and `device_type`. File-related failures carry `file_extension`, `file_format`
+and `file_size_band`. These are coarse diagnostic tags, not filenames, device
+identifiers or exact file sizes. Browser/device detection is best effort;
+`unknown` file format means identification had not completed, while
+`unrecognized` means the format/header was rejected. Historical events do not
+gain these fields retroactively.
+
 ## Connect genomewalk.com through Cloudflare DNS
 
 1. In GitHub **Settings → Pages → Custom domain**, save `genomewalk.com` before

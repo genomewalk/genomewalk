@@ -97,9 +97,12 @@ useful.
 The browser check also exercises the production Sentry configuration against
 local files. Every report is intercepted locally. Synthetic uncaught, invalid-file,
 sample-download, invalid-range and results-download failures verify useful codes,
-severity, resource categories and HTTP status. Fake private text in file names,
-file contents, errors, page URLs and cookies must not appear in the transmitted
-envelope. Repeated validation warnings must not crowd out actual failures.
+severity, resource categories, HTTP status, browser/OS/device categories and
+per-operation file metadata. Fake private text in file names, file contents,
+user-agent strings, errors, page URLs and cookies must not appear in the
+transmitted envelope. Only the browser major version and a file-size band are
+allowed. Switching from an invalid private file to the public sample must replace
+the file metadata. Repeated validation warnings must not crowd out actual failures.
 Healthy pages must not emit telemetry. No CI reports reach Sentry.
 
 Use the bundled [public HG002 sample](../public/samples/README.md) and
