@@ -20,6 +20,7 @@ import { FILE_CHAPTERS } from "../../lib/navigation/journey.ts";
 import { GeneticsLoader } from "../../components/genetics-loader.tsx";
 import { useLessonNavigation } from "../../lib/navigation/use-lesson-navigation.ts";
 import { useExcerptOverflow } from "../../lib/view/use-excerpt-overflow.ts";
+import { reportError } from "../../lib/error-reporting.ts";
 
 type StepDef = {
   title: string;
@@ -133,7 +134,10 @@ function ChapterContent({ n }: { n: string }) {
       session.done[i] = true;
       force();
     } catch (err) {
-      if (active.current && ctx.source === source) setError((err as Error)?.message ?? String(err));
+      if (active.current && ctx.source === source) {
+        reportError(err, "chapter");
+        setError((err as Error)?.message ?? String(err));
+      }
     } finally {
       if (active.current) setRunning(false);
     }

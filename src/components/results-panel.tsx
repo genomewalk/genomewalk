@@ -4,6 +4,7 @@ import { ArrowLeft, RotateCcw } from "lucide-react";
 import { RESULTS_STEP } from "../lib/navigation/journey.ts";
 import { GeneticsLoader } from "./genetics-loader.tsx";
 import { useExcerptOverflow } from "../lib/view/use-excerpt-overflow.ts";
+import { reportError, reportingStage, type ErrorStage } from "../lib/error-reporting.ts";
 
 export type ResultsRunner = (
   out: HTMLDivElement,
@@ -56,16 +57,19 @@ export function ResultsPanel({ onComplete, context, session, runResults }: Resul
     // Opening results starts their own preparation; it never runs or completes
     // the teaching chapters. Reopening reuses this visit's computed matches.
     async function prepare(out: HTMLDivElement) {
+      let stage: ErrorStage = "prepare";
       try {
         const ready = await runResults(out, {
           signal: controller.signal,
           onStatus: (label: string) => {
+            stage = reportingStage(label);
             if (!controller.signal.aborted && context.source === source) {
               setProgress(undefined);
               setStatus(label);
             }
           },
           onProgress: (fraction: number) => {
+            stage = "read-file";
             if (!controller.signal.aborted && context.source === source) {
               setStatus("");
               setProgress(fraction);
@@ -79,8 +83,10 @@ export function ResultsPanel({ onComplete, context, session, runResults }: Resul
           onComplete();
         }
       } catch (err) {
-        if (!controller.signal.aborted && context.source === source)
+        if (!controller.signal.aborted && context.source === source) {
+          reportError(err, "results", stage);
           setError((err as Error)?.message ?? String(err));
+        }
       } finally {
         if (!controller.signal.aborted) setRunning(false);
       }

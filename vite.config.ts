@@ -5,6 +5,9 @@ import react from "@vitejs/plugin-react";
 import { CHAPTER_COUNT } from "./src/lib/navigation/journey.ts";
 
 export default defineConfig({
+  define: {
+    "import.meta.env.VITE_APP_RELEASE": JSON.stringify(`genomewalk@${new Date().toISOString()}`),
+  },
   plugins: [
     {
       name: "raw-compressed-data",

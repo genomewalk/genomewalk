@@ -6,6 +6,7 @@ import { RESULTS_STEP } from "../navigation/journey.ts";
 import { publicSampleSource, SAMPLE } from "../catalogues/public-sample.ts";
 import type { OpenedGenome } from "../../experiences/types.ts";
 import type { SupportedBuild } from "../genetics/reference-build.ts";
+import { reportError } from "../error-reporting.ts";
 
 interface PendingBuild {
   id: number;
@@ -65,7 +66,10 @@ export function useGenomeIntake(view?: "results") {
         request,
       );
     } catch (error) {
-      if (requests.current.isCurrent(request)) setLoadError((error as Error).message);
+      if (requests.current.isCurrent(request)) {
+        reportError(error, "build-choice");
+        setLoadError((error as Error).message);
+      }
     }
   }
 
@@ -97,10 +101,12 @@ export function useGenomeIntake(view?: "results") {
         setPendingBuild({ id: ++pendingBuildId.current, opened, name: file.name, request });
       else await finishSelection(opened, file.name, "upload", request);
     } catch (error) {
-      if (requests.current.isCurrent(request))
+      if (requests.current.isCurrent(request)) {
+        reportError(error, "file-open", "read-file");
         setLoadError(
           (error as Error).message || "This file could not be read. Try the public sample.",
         );
+      }
     } finally {
       if (requests.current.isCurrent(request)) setPreparing(false);
     }
@@ -128,11 +134,13 @@ export function useGenomeIntake(view?: "results") {
       const opened = await experiences.openPublicSample(publicSampleSource(), request.signal);
       await finishSelection(opened, SAMPLE.name, "sample", request);
     } catch (error) {
-      if (requests.current.isCurrent(request))
+      if (requests.current.isCurrent(request)) {
+        reportError(error, "sample-open", "read-file");
         setLoadError(
           (error as Error).message ||
             "The public sample could not be loaded. Choose your own file.",
         );
+      }
     } finally {
       if (requests.current.isCurrent(request)) {
         setFetching(null);

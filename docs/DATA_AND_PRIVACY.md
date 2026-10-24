@@ -35,9 +35,9 @@ A selected personal file is read through the File API. Its filename, contents,
 positions and results are not placed in request URLs or bodies. Requested Range
 headers depend on locally matched catalogue entries, so a static host can observe
 relevant catalogue regions. Do not describe this as hiding all genotype-related
-access patterns. There is no genome upload route, remote matching API or editor
-error-reporting integration in the application. The application bundle contains
-no analytics SDK. Hosting and font requests also expose ordinary connection
+access patterns. There is no genome upload route or remote matching API.
+The application includes error reporting described below, but no analytics SDK.
+Hosting and font requests also expose ordinary connection
 metadata to their providers.
 
 In production, Cloudflare's proxy automatically adds its Web Analytics/RUM script
@@ -49,6 +49,33 @@ genotypes or generated results, and Genomewalk does not add these to analytics
 measurements. See Cloudflare's documentation for the
 [RUM beacon](https://developers.cloudflare.com/speed/observatory/rum-beacon/) and
 [analytics dimensions](https://developers.cloudflare.com/web-analytics/data-metrics/dimensions/).
+
+## Error reporting
+
+`src/lib/error-reporting.ts` initializes Sentry only for production builds on
+`genomewalk.com` and `www.genomewalk.com`. The public DSN identifies the project;
+it is not a secret. Local development, previews, prerendering and ordinary CI
+checks do not send reports. No server, proxy, source-map upload or Sentry auth
+token is required.
+
+Only global exception handlers are enabled. File opening, chapter execution,
+results preparation and page-boundary failures are also reported explicitly.
+Before sending, the SDK event is rebuilt from an allowlist: random event ID,
+timestamp, build identifier, fixed operation/stage/category, a fixed error label,
+and application asset URLs with numeric code locations. Original messages,
+exception names, function names, variables, source snippets, causes, request
+data, page URLs, query strings, range headers, contexts, extras and attachments
+are discarded. Aborts are ignored; reporting is capped at ten events per page
+load without a persistent user identifier.
+
+Replay, tracing, logs, metrics, breadcrumbs and automatic sessions are disabled.
+SDK data collection is explicitly disabled, including user information/IP
+inference, headers, bodies and cookies. Report requests omit credentials and
+referrers. Sentry still receives connection metadata, including the network IP;
+it may derive approximate location from this connection. This is distinct from
+including the IP address in the error event. The browser deployment
+check intercepts reports locally and verifies their payloads using synthetic
+failures. It never sends CI test reports to Sentry.
 
 Outbound source links open the cited public resource when the reader clicks.
 For example, a ClinVar link identifies the public variant record being viewed.

@@ -3,7 +3,7 @@ import type { PolicyDocument } from "../components/policy-page/policy-page.tsx";
 
 export const privacyPolicy: PolicyDocument = {
   title: "Privacy Policy",
-  effectiveDate: "2026-10-10",
+  effectiveDate: "2026-10-23",
   description: "What stays in your browser and what happens when you connect to other services.",
   sections: [
     {
@@ -87,6 +87,32 @@ export const privacyPolicy: PolicyDocument = {
             network information such as your IP address. See{" "}
             <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">
               Google’s Privacy Policy
+            </a>
+            .
+          </p>
+        </>
+      ),
+    },
+    {
+      id: "error-reports",
+      title: "Technical error reports",
+      content: (
+        <>
+          <p>
+            On the live website, Genomewalk uses Sentry to receive limited technical error reports.
+            Reports contain a fixed error category, the operation and processing stage, the app
+            version, and locations in the app’s code. Raw error messages, your filename, genome
+            contents, variants, genotypes and results are excluded. Reports do not include the
+            catalogue byte ranges requested.
+          </p>
+          <p>
+            Session replay, interaction recording, logs and performance tracing are disabled.
+            Genomewalk does not attach user identifiers, cookies, page addresses or referring
+            addresses to these reports. Sentry receives ordinary network information such as your IP
+            address when your browser connects and may derive an approximate location. The SDK is
+            configured not to add your IP address to the error event. See{" "}
+            <a href="https://sentry.io/privacy/" target="_blank" rel="noopener noreferrer">
+              Sentry’s Privacy Policy
             </a>
             .
           </p>

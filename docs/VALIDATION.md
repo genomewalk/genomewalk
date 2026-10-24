@@ -2,8 +2,11 @@
 
 Use Node.js 24 and run `npm ci`, then `npm run check:release` before release.
 The release command runs all tests, TypeScript, ESLint, the production build and
-validation of the shipped public reference files. CI runs the same command.
-No personal genome or network rebuild is needed.
+validation of the shipped public reference files. CI runs the same command,
+then `npm run check:browser` against the resulting `dist/client/` before export.
+No personal genome or network rebuild is needed. Install Chromium locally once
+with `npx playwright install --only-shell chromium` to run the browser check;
+the Docker export target installs it automatically.
 
 ## Focused commands
 
@@ -15,6 +18,7 @@ No personal genome or network rebuild is needed.
 | `npm run test:data`     | Synthetic offline builds, errors and cache behavior       |
 | `npm run data:check`    | Real shipped catalogue, marker and sidecar integrity      |
 | `npm run check:deploy`  | Static pages and asset inventory for the production build |
+| `npm run check:browser` | Built-site HG002 journey and catalogue byte-range downloads |
 | `npm run data:inputs`   | Cached prerequisites for network-free reference rebuilds  |
 | `npm run data:plan`     | Named rebuild stages without writes or requests           |
 
@@ -80,6 +84,21 @@ The [consumer fixtures](CONSUMER_FILES.md#synthetic-fixtures) cover provider bro
 flows. Never add personal genomes or results to either fixture directory.
 
 ## Browser regression procedure
+
+The automated browser check serves the production files on loopback and uses
+Chromium to choose HG002, open chapter 1 and reach non-empty results. It fails on
+browser errors, unsuccessful local requests or invalid byte-range responses.
+It also validates both supported builds' catalogue indexes and representative
+compressed blocks through HTTP. Docker runs the check with external networking
+disabled and fallback fonts. This is a deployment gate, not a check of the live
+CDN or every browser and file format; the broader manual procedure below remains
+useful.
+
+The browser check also exercises the production Sentry configuration against
+local files. Every report is intercepted locally. Synthetic uncaught, sample
+download and results-download failures verify that reporting works, while fake
+private text in errors, page URLs and cookies must not appear in the transmitted
+envelope. Healthy pages must not emit telemetry. No CI reports reach Sentry.
 
 Use the bundled [public HG002 sample](../public/samples/README.md) and
 [invented consumer fixtures](CONSUMER_FILES.md#synthetic-fixtures). Keep personal

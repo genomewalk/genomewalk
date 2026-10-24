@@ -21,9 +21,18 @@ ENTRYPOINT ["npm", "run", "benchmark", "--"]
 FROM source AS build
 RUN npm run check:release
 
-# GitHub Pages needs files, so this target exports only the deployable directory.
+# Cache Chromium separately from application source and the production build.
+FROM dependencies AS browser-dependencies
+RUN npx playwright install --with-deps --only-shell chromium
+
+# Exercise the exact production files on loopback, without external networking.
+FROM browser-dependencies AS browser-check
+COPY --from=build /app/ /app/
+RUN --network=none npm run check:browser
+
+# Only files that passed the browser check can be exported for GitHub Pages.
 FROM scratch AS export
-COPY --from=build /app/dist/client/ /
+COPY --from=browser-check /app/dist/client/ /
 
 FROM node:24-trixie-slim AS site
 WORKDIR /app

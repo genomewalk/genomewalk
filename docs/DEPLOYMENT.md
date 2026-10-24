@@ -17,14 +17,15 @@ This runs all release checks, builds the app, then serves the static output.
 The site image contains the generated files and a small file server; it has no
 application dependencies or upload handler. Press Ctrl+C to stop it.
 
-To export the static folder without running a server:
+To export the static folder after release checks and a Chromium browser check:
 
 ```sh
 docker build --target export --output type=local,dest=dist/client .
 ```
 
-The same operations also work with Node.js 24: `npm ci`, then
-`npm run check:release` and `npm run preview`.
+With Node.js 24, run `npm ci`, then `npm run check:release`. Install the test
+browser once with `npx playwright install --only-shell chromium`, then run
+`npm run check:browser`. Use `npm run preview` for a manual preview.
 
 The preview serves `dist/client/` at `http://localhost:5283`, with directory indexes
 and byte ranges. Keep the directory structure intact. `/chapter/9` resolves to
@@ -35,11 +36,23 @@ and byte ranges. Keep the directory structure intact. `/chapter/9` resolves to
 
 In the repository's **Settings → Pages**, select **GitHub Actions** as the source.
 The [Deploy site workflow](../.github/workflows/deploy.yml) runs on each push to
-`main`, or through **Actions → Deploy site → Run workflow**. It uses the same Docker build as local previews:
+`main`, or through **Actions → Deploy site → Run workflow**. It exports the same
+static build used by local previews, with an additional browser check:
 
 ```sh
 docker build --target export --output type=local,dest=dist/client .
 ```
+
+Before upload, Chromium opens the built site on `127.0.0.1` inside the build
+container, chooses the public HG002 sample and opens its results. The check
+requires non-empty results and successful sample/catalogue byte-range requests.
+It also checks catalogue downloads for both GRCh37 and GRCh38. External
+networking is disabled during this check; all inputs come from the built site.
+
+A failure stops the build before artifact upload or deployment, leaving the
+currently published site in place. This checks the application and bundled files;
+it cannot validate production Cloudflare rules, GitHub Pages headers or a
+visitor's network. It does not add scheduled checks or automatic rollback.
 
 After validation, GitHub's Pages actions upload the entire `dist/client/` artifact
 and publish it. Deployment uses the workflow's temporary `GITHUB_TOKEN` and OIDC;
@@ -52,6 +65,11 @@ An ordinary deploy uses the public reference files already committed under
 site is approximately 107 MiB, below GitHub Pages' 1 GB published-site limit.
 See [custom Pages workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)
 and [Pages limits](https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits).
+
+Sentry error reporting is configured in `src/lib/error-reporting.ts`. The public
+browser DSN requires no GitHub secret or additional deployment service. Vite adds
+a build timestamp as the release identifier; only the live domain sends reports.
+No source-map upload is configured. See the [reporting data inventory](DATA_AND_PRIVACY.md#error-reporting).
 
 ## Connect genomewalk.com through Cloudflare DNS
 

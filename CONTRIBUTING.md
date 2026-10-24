@@ -66,7 +66,9 @@ VCF processing lives in focused modules, with one lesson per file. Keep changes
 within the relevant experience unless they belong to neutral infrastructure or
 shared diagrams. Run `npm run test:vcf` or `npm run test:consumer` while iterating,
 then the full `npm run check:release` before release. CI runs that release check inside Docker
-on pushes to `main` and pull requests.
+on pushes to `main` and pull requests, followed by `npm run check:browser` against
+the built site before exporting deployable files. See the validation guide for
+local Chromium setup.
 
 The [regression snapshot guide](docs/VALIDATION.md#regression-snapshots) explains
 the reviewed fixtures in `tests/fixtures/` and how to update intentional changes.
