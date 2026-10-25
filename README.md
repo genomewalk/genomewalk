@@ -40,11 +40,23 @@ domain setup and the deployment and reference-data workflows.
 
 ## Supported files
 
-| File                                               | What Genomewalk reads                                              |
-| -------------------------------------------------- | ------------------------------------------------------------------ |
-| BGZF-compressed VCF / gVCF (`.vcf.gz`, `.vcf.bgz`) | Header, first sample, literal alleles and available quality fields |
-| 23andMe raw TXT, ZIP or gzip                       | Four-column genotype export with its original header               |
-| AncestryDNA raw TXT, ZIP or gzip                   | Five-column allele export with its original header                 |
+| File                                                                        | What Genomewalk reads                                              |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| BGZF-compressed VCF / gVCF (`.vcf.gz`, `.vcf.bgz`, `.gvcf.gz`, `.gvcf.bgz`) | Header, first sample, literal alleles and available quality fields |
+| 23andMe raw TXT, ZIP or gzip                                                | Four-column genotype export with its original header               |
+| AncestryDNA raw TXT, ZIP or gzip                                            | Five-column allele export with its original header                 |
+
+Compressed files with generic `.gz` / `.bgz` names are checked incrementally
+until their format prefix is identified so a BGZF VCF can use the streaming reader.
+Ordinary gzip VCFs need to be recompressed with bgzip. A consumer ZIP may include
+documentation alongside one supported DNA export. ZIP-wrapped VCFs must be
+extracted first; split and ZIP64 consumer archives are not supported.
+
+There are no application-imposed file-size, decoded-size, row-count, header-length,
+line-length or archive-entry-count cutoffs for supported inputs. Browser memory
+and processing time still constrain large files. In particular, consumer archives
+currently retain their decoded text in memory; VCF/gVCF data streams in blocks.
+Format-defined block sizes, checksums and completeness checks remain enforced.
 
 Catalogue matching supports **GRCh37 (hg19)** and **GRCh38 (hg38)**. Genomewalk
 checks reference names, assembly labels and chromosome lengths in VCF headers,
@@ -61,8 +73,8 @@ Consumer matching is
 limited to complete, two-letter **autosomal single-base calls on GRCh37 or
 GRCh38, on the supported forward strand**. Other calls remain visible in the
 file summary. Unknown or contradictory metadata never selects a catalogue by
-guesswork. Consumer archives are limited to one text payload and 128 MiB; scans
-accept at most two million rows.
+guesswork. Each consumer ZIP must contain exactly one supported DNA export;
+accompanying documentation is ignored when selecting it.
 
 MyHeritage, FamilyTreeDNA and Living DNA exports are not supported yet. Adding
 another provider requires a verified format profile and fixtures; accepting a

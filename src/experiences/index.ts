@@ -5,6 +5,7 @@ import vcf from "./vcf/index.ts";
 import { optionalExperiences } from "./optional.ts";
 import { describeSelection, restoreSelection } from "./selection.ts";
 import type { HttpRangeSource } from "../lib/io/http-range.ts";
+import { hasCompressedVcfHeader } from "../lib/intake/vcf-format.ts";
 
 let current: Experience =
   restoreSelection([vcf, ...optionalExperiences], import.meta.hot?.data.selection) || vcf;
@@ -15,7 +16,16 @@ export const inputDescription = [vcf, ...optionalExperiences].map((x) => x.label
 
 export async function openGenomeFile(file: File, signal?: AbortSignal, onProgress?: Progress) {
   signal?.throwIfAborted();
-  const experience = ([vcf, ...optionalExperiences] as Experience[]).find((x) => x.matches(file));
+  if (!file.size)
+    throw new AppError("FILE_EMPTY", "This file is empty. Choose a complete DNA file.");
+  let experience = ([vcf, ...optionalExperiences] as Experience[]).find((x) => x.matches(file));
+  if (
+    experience !== vcf &&
+    /\.(?:gz|bgz)$/i.test(file.name) &&
+    (await hasCompressedVcfHeader(file, signal))
+  )
+    experience = vcf;
+  signal?.throwIfAborted();
   if (!experience)
     throw new AppError("FILE_TYPE_UNSUPPORTED", `Supported files: ${inputDescription}.`);
   const opened = await experience.open(file, signal, onProgress);

@@ -5,6 +5,8 @@ import { gunzipSync } from "fflate";
 import { readByteRange } from "../io/http-range.ts";
 import { AppError } from "../app-error.ts";
 import { fetchPublic, readPublicBytes, decodePublicJson } from "../io/fetch-public.ts";
+import { classifyRuntimeFailure } from "../diagnostics/runtime-failure.ts";
+import { safePublicFile } from "../public-file.ts";
 
 const hex = /^[a-f0-9]{64}$/;
 const integer = (n: unknown) => typeof n === "number" && Number.isSafeInteger(n) && n >= 0;
@@ -14,6 +16,15 @@ const sha256 = async (bytes: BufferSource) =>
   [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))]
     .map((byte) => byte.toString(16).padStart(2, "0"))
     .join("");
+
+function catalogueDecodeError(error: unknown, url: string) {
+  const resource = "catalogue-entries";
+  const publicFile = safePublicFile(url, resource);
+  return new AppError(classifyRuntimeFailure(error) ?? "REFERENCE_DECODE_FAILED", undefined, {
+    resource,
+    ...(publicFile ? { publicFile } : {}),
+  });
+}
 
 /** A local identity map whose annotation rows are fetched only after matching. */
 export class RangeCatalogue extends Map<string, RowLocator> {
@@ -143,10 +154,8 @@ export class RangeCatalogue extends Map<string, RowLocator> {
             let data: Uint8Array;
             try {
               data = gunzipSync(compressed);
-            } catch {
-              throw new AppError("REFERENCE_DECODE_FAILED", undefined, {
-                resource: "catalogue-entries",
-              });
+            } catch (error) {
+              throw catalogueDecodeError(error, this.url);
             }
             if (data.length !== size)
               throw new AppError(
@@ -174,8 +183,8 @@ export class RangeCatalogue extends Map<string, RowLocator> {
       let line: string;
       try {
         line = new TextDecoder("utf-8", { fatal: true }).decode(bytes).replace(/\r$/, "");
-      } catch {
-        throw new AppError("REFERENCE_DECODE_FAILED", undefined, { resource: "catalogue-entries" });
+      } catch (error) {
+        throw catalogueDecodeError(error, this.url);
       }
       if (line.split("\t", 4).join(":") !== key)
         throw new AppError(

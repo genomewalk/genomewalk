@@ -1,15 +1,26 @@
 import { gunzipSync } from "fflate";
 import { AppError, type ErrorDetails, type ErrorResource } from "../app-error.ts";
+import { classifyRuntimeFailure } from "../diagnostics/runtime-failure.ts";
 import { safePublicFile } from "../public-file.ts";
 import type { Fetcher } from "./types.ts";
 
 const responseFiles = new WeakMap<Response, string>();
 
+function capacityCode(error: unknown) {
+  return error instanceof AppError &&
+    (error.code === "BROWSER_ALLOCATION_FAILED" || error.code === "BROWSER_DATA_LIMIT")
+    ? error.code
+    : classifyRuntimeFailure(error);
+}
+
 function downloadFailure(error: unknown, details: ErrorDetails): never {
   // Cancellation is control flow, not a failed download. Timeouts remain actionable.
   if (error instanceof Error && error.name === "AbortError") throw error;
   throw new AppError(
-    error instanceof Error && error.name === "TimeoutError" ? "NETWORK_TIMEOUT" : "NETWORK_FAILED",
+    capacityCode(error) ??
+      (error instanceof Error && error.name === "TimeoutError"
+        ? "NETWORK_TIMEOUT"
+        : "NETWORK_FAILED"),
     undefined,
     details,
   );
@@ -63,7 +74,9 @@ export function decodePublicJson<T>(bytes: Uint8Array, resource: ErrorResource):
   try {
     const json = bytes[0] === 31 && bytes[1] === 139 ? gunzipSync(bytes) : bytes;
     return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(json));
-  } catch {
-    throw new AppError("REFERENCE_DECODE_FAILED", undefined, { resource });
+  } catch (error) {
+    throw new AppError(capacityCode(error) ?? "REFERENCE_DECODE_FAILED", undefined, {
+      resource,
+    });
   }
 }

@@ -1,8 +1,9 @@
 import { AppError } from "../app-error.ts";
+import { isCompressedVcfName } from "./vcf-format.ts";
 export function chooseGenomeFile<T extends { name: string }>(files: Iterable<T> | ArrayLike<T>) {
   const list = Array.from(files);
   if (list.length === 1) return list[0]!;
-  const genomes = list.filter((file) => /\.vcf\.(gz|bgz)$/i.test(file.name));
+  const genomes = list.filter((file) => isCompressedVcfName(file.name));
   if (genomes.length === 1) {
     const genome = genomes[0]!;
     const companions = new Set([`${genome.name}.tbi`, `${genome.name}.csi`]);
@@ -10,7 +11,7 @@ export function chooseGenomeFile<T extends { name: string }>(files: Iterable<T> 
   }
   throw new AppError(
     "FILE_SELECTION_INVALID",
-    "Choose one DNA file at a time. A VCF can be accompanied by its index file.",
+    "Choose one DNA file at a time. A VCF or gVCF can be accompanied by its index file.",
   );
 }
 

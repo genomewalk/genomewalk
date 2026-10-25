@@ -119,6 +119,38 @@ test("known native download errors are classified without forwarding their text"
   );
 });
 
+test("native capacity reports use reviewed diagnoses and preserve only safe original asset frames", () => {
+  for (const [message, code] of [
+    ["Array buffer allocation failed", "BROWSER_ALLOCATION_FAILED"],
+    ["Out of memory", "BROWSER_ALLOCATION_FAILED"],
+    ["Invalid string length", "BROWSER_DATA_LIMIT"],
+    ["Invalid array length", "JS_RANGE_ERROR"],
+  ] as const) {
+    const original = new RangeError(message, { cause: new Error(privateText) });
+    original.stack = `RangeError: ${message}\n    at ${privateText} (https://genomewalk.com/assets/reader-abc.js:12:34)\n    at file:///private/${privateText}:1:2`;
+    const report = prepareErrorReport(original, "file-open", "read-file");
+    assert.ok(report);
+    assert.equal(report.error.name, code);
+    assert.equal(report.error.message, errorDefinitions[code][0]);
+    assert.equal(report.error.cause, undefined);
+    assert.match(report.error.stack!, /assets\/reader-abc\.js:12:34/);
+    assert.equal(report.error.stack!.includes(privateText), false);
+    assert.equal(JSON.stringify(report).includes(privateText), false);
+    assert.equal(report.properties.stage, "read-file");
+  }
+  assert.equal(
+    prepareErrorReport("out of memory", "file-open")?.error.name,
+    "BROWSER_ALLOCATION_FAILED",
+  );
+  assert.equal(
+    prepareErrorReport(
+      new AppError("DNA_HEADER_MISSING", "Array buffer allocation failed"),
+      "file-open",
+    )?.error.name,
+    "DNA_HEADER_MISSING",
+  );
+});
+
 test("multiline exception messages cannot be mistaken for asset stack frames", () => {
   const message = "secret line\n    at https://genomewalk.com/assets/private-value.js:1:2";
   const original = new Error(message);

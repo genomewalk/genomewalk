@@ -208,9 +208,18 @@ export async function checkTelemetry(browser: Browser, origin: string) {
     );
     if (p["file_extension"] !== undefined) {
       assert.ok(
-        [".vcf.gz", ".vcf.bgz", ".txt", ".tsv", ".zip", ".gz", "other"].includes(
-          String(p["file_extension"]),
-        ),
+        [
+          ".vcf.gz",
+          ".vcf.bgz",
+          ".gvcf.gz",
+          ".gvcf.bgz",
+          ".txt",
+          ".tsv",
+          ".zip",
+          ".gz",
+          ".bgz",
+          "other",
+        ].includes(String(p["file_extension"])),
       );
       assert.ok(
         ["VCF", "23andMe", "AncestryDNA", "unrecognized", "unknown"].includes(
@@ -504,10 +513,65 @@ export async function checkTelemetry(browser: Browser, origin: string) {
     assert.equal(count("build_choice_confirmed"), 1);
     assert.equal(count("genome_ready", "upload"), 1);
     assert.equal(count("chapter_run_completed", "upload"), 1);
+
+    // Exercise catchable capacity failures without exhausting memory. The hook
+    // rejects only the next Blob read, so the same page can recover normally.
+    const uploadValid = () =>
+      page.locator('input[type="file"]').setInputFiles({
+        name: `${secret}.txt`,
+        mimeType: "text/plain",
+        buffer: Buffer.from(
+          `# Synthetic 23andMe raw data\n# reference assembly build 37; plus strand\n# ${secret}\n# rsid\tchromosome\tposition\tgenotype\nrs100\t1\t100\tCT\n`,
+        ),
+      });
+    for (const [message, code] of [
+      ["Array buffer allocation failed", "BROWSER_ALLOCATION_FAILED"],
+      ["Invalid array length", "JS_RANGE_ERROR"],
+    ] as const) {
+      await page.goto(production, { waitUntil: "networkidle" });
+      await page.evaluate((message) => {
+        const original = Blob.prototype.arrayBuffer;
+        let failNextRead = true;
+        Blob.prototype.arrayBuffer = function () {
+          if (failNextRead) {
+            failNextRead = false;
+            return Promise.reject(new RangeError(message));
+          }
+          return original.call(this);
+        };
+      }, message);
+      const readyBefore = count("genome_ready", "upload");
+      const failedBefore = count("genome_open_failed", "upload");
+      const failure = await reportAfter(uploadValid);
+      assert.equal(failure["error_code"], code);
+      assert.equal(failure["area"], "file-open");
+      assert.equal(failure["stage"], "read-file");
+      assert.equal(failure["$exception_level"], "error");
+      assert.equal(failure["file_extension"], ".txt");
+      assert.equal(failure["file_format"], "unknown");
+      assert.equal(failure["file_size_band"], "under-1-MB");
+      assert.equal(count("genome_open_failed", "upload"), failedBefore + 1);
+      assert.equal(count("genome_ready", "upload"), readyBefore);
+      await waitForFileError();
+      const alert = await page.getByRole("alert").innerText();
+      if (code === "BROWSER_ALLOCATION_FAILED") {
+        assert.match(alert, /Your browser could not allocate enough memory to continue/);
+        assert.match(alert, /Close other tabs and try again/);
+      } else {
+        assert.doesNotMatch(alert, /memory|too large|size limit/i);
+      }
+      await uploadValid();
+      await page.waitForURL(`${production}/chapter/1`);
+      await page.getByRole("button", { name: "Run this chapter", exact: true }).click();
+      await page.getByRole("link", { name: "Next chapter", exact: true }).waitFor();
+      await settled();
+      assert.equal(count("genome_ready", "upload"), readyBefore + 1);
+      assert.equal(await page.getByRole("alert").count(), 0);
+    }
     await checkMemoryOnly();
     assert.deepEqual(failures, []);
     console.log(
-      "[browser] PostHog verified offline: curated journey counts, sanitized errors, no personal data, no persisted identity or unused SDK requests",
+      "[browser] PostHog verified offline: curated journey counts, sanitized errors and allocation-failure recovery, no personal data, no persisted identity or unused SDK requests",
     );
   } finally {
     await context.close();

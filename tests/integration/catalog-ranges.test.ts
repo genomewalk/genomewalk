@@ -8,6 +8,71 @@ import { CATALOG_HEADER } from "../../scripts/lib/clinvar.ts";
 import { catalogueRangeIndex } from "../../scripts/lib/catalog-ranges.ts";
 import { RangeCatalogue } from "../../src/lib/catalogues/catalogue-ranges.ts";
 import { createStaticServer } from "../../scripts/lib/static-server.ts";
+import { bgzfBytes } from "../helpers/vcf.ts";
+import { AppError } from "../../src/lib/app-error.ts";
+
+test("catalogue decoding preserves capacity diagnoses and reviewed public-file context", async (t) => {
+  const bytes = bgzfBytes(CATALOG_HEADER + "\n1\t100\tC\tT\tP\t2\tSynthetic\n");
+  const index = await catalogueRangeIndex(bytes, "GRCh38");
+  const privateText = "PRIVATE_PROBE_do_not_report";
+  for (const stage of ["gzip", "text"]) {
+    for (const [failure, code] of [
+      [new RangeError("Array buffer allocation failed"), "BROWSER_ALLOCATION_FAILED"],
+      [new RangeError("Invalid string length"), "BROWSER_DATA_LIMIT"],
+      ["out of memory", "BROWSER_ALLOCATION_FAILED"],
+      [new Error(privateText), "REFERENCE_DECODE_FAILED"],
+    ] as const) {
+      await t.test(`${stage}: ${code}: ${typeof failure}`, async (t) => {
+        const map = new RangeCatalogue(
+          index,
+          `/ref/GRCh38/catalog.tsv.gz?${privateText}`,
+          async (_, { headers } = {}) => {
+            const [, start, end] = /bytes=(\d+)-(\d+)/
+              .exec(new Headers(headers).get("Range")!)!
+              .map(Number);
+            return new Response(bytes.subarray(start, end! + 1), {
+              status: 206,
+              headers: { "Content-Range": `bytes ${start}-${end}/${bytes.length}` },
+            });
+          },
+        );
+        let injected = false;
+        if (stage === "text") {
+          t.mock.method(TextDecoder.prototype, "decode", () => {
+            injected = true;
+            throw failure;
+          });
+        } else {
+          const subarray = Uint8Array.prototype.subarray;
+          t.mock.method(
+            Uint8Array.prototype,
+            "subarray",
+            function (this: Uint8Array, start?: number, end?: number) {
+              // gunzipSync removes the eight-byte trailer before inflating it.
+              if (end === -8) {
+                injected = true;
+                throw failure;
+              }
+              return subarray.call(this, start, end);
+            },
+          );
+        }
+        await assert.rejects(map.readEntries(["1:100:C:T"]), (error: unknown) => {
+          assert.ok(error instanceof AppError);
+          assert.equal(error.code, code);
+          assert.deepEqual(error.details, {
+            resource: "catalogue-entries",
+            publicFile: "/ref/GRCh38/catalog.tsv.gz",
+          });
+          assert.ok(!error.message.includes(privateText));
+          assert.ok(!JSON.stringify(error).includes(privateText));
+          return true;
+        });
+        assert.ok(injected);
+      });
+    }
+  }
+});
 
 test("range catalogue preserves split UTF-8 rows and indels while leaving unrelated blocks unread", async (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "genomewalk-ranges-"));

@@ -27,6 +27,17 @@ test("intake chooses one genome and permits only its accompanying VCF indexes", 
   }
 });
 
+test("VCF and gVCF naming variants consistently allow only their own index companions", () => {
+  for (const name of ["sample.vcf.bgz", "sample.g.vcf.gz", "sample.gvcf.gz", "sample.GVCF.BGZ"]) {
+    const genome = file(name);
+    assert.equal(chooseGenomeFile([file(`${name}.tbi`), genome]), genome);
+    assert.equal(chooseGenomeFile([genome, file(`${name}.csi`)]), genome);
+    assert.throws(() => chooseGenomeFile([genome, file("unrelated.vcf.gz.tbi")]), {
+      code: "FILE_SELECTION_INVALID",
+    });
+  }
+});
+
 test("a later file choice supersedes a slow import or sample download", async () => {
   const requests = createIntakeRequests();
   const first = requests.begin();

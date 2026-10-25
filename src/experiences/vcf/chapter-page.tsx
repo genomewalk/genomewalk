@@ -24,6 +24,7 @@ import { useExcerptOverflow } from "../../lib/view/use-excerpt-overflow.ts";
 import { reportError, reportingStage, type ErrorStage } from "../../lib/error-reporting.ts";
 import { trackEvent } from "../../lib/analytics.ts";
 import { getSourceFileDiagnostics } from "../../lib/diagnostics/file-context.ts";
+import { runtimeFailureMessage } from "../../lib/diagnostics/runtime-failure.ts";
 
 type StepDef = {
   title: string;
@@ -151,7 +152,7 @@ function ChapterContent({ n }: { n: string }) {
         if (!(err instanceof Error && err.name === "AbortError"))
           trackEvent("chapter_run_failed", eventProperties);
         reportError(err, "chapter", errorStage, i + 1, fileDiagnostics);
-        setError((err as Error)?.message ?? String(err));
+        setError(runtimeFailureMessage(err) ?? (err as Error)?.message ?? String(err));
       }
     } finally {
       if (active.current) setRunning(false);

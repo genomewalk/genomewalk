@@ -12,18 +12,35 @@ interface DecodedEntry {
 import { Gunzip, Unzip, UnzipInflate, strFromU8 } from "fflate";
 import { crc32 } from "../../lib/io/checksum.ts";
 import { yieldToLoop } from "../../lib/async/schedule.ts";
+import { describeHeader } from "./reader/header.ts";
 
-// Limits apply only to compact consumer exports; the streaming VCF path has
-// no such file-size limit. Check decoded bytes as well as archive declarations.
-export const MAX_BYTES = 128 * 1024 * 1024;
-const error = () =>
-  new AppError(
-    "FILE_SIZE_INVALID",
-    "This consumer DNA archive is too large. Choose a raw TXT export under 128 MB.",
-  );
+/** Inspect the header; never infer a provider from an archive entry's name. */
+async function payloadFormat(file: Blob, signal?: AbortSignal) {
+  const meta: string[] = [];
+  try {
+    for await (const line of textLines(file, null, signal)) {
+      const content = line.replace(/^#+\s*/, "").trim();
+      if (/^##fileformat=VCF/.test(line)) return "vcf";
+      if (/^rsid\s*\t/i.test(content)) {
+        describeHeader(
+          meta,
+          content.split("\t").map((value) => value.trim()),
+        );
+        return "consumer";
+      }
+      if (line.startsWith("#")) meta.push(line);
+      else if (line.trim()) return "other";
+    }
+  } catch (error) {
+    if (!(error instanceof AppError) || error.code !== "DNA_FORMAT_UNSUPPORTED") throw error;
+  }
+  return "other";
+}
 
-function archiveDecodeError(error: Error) {
+function archiveDecodeError(error: unknown) {
   // fflate's data-error codes are distinct from programming/stream-usage errors.
+  // Its ZIP callback can also relay non-Error values, including Firefox's OOM string.
+  if (!(error instanceof Error)) return error;
   const code = "code" in error ? error.code : undefined;
   if (code === 14)
     return new AppError(
@@ -40,20 +57,20 @@ function archiveDecodeError(error: Error) {
 
 export async function unpack(file: Blob, signal?: AbortSignal, onProgress?: Progress) {
   signal?.throwIfAborted();
-  if (file.size > MAX_BYTES) throw error();
+  if (!file.size)
+    throw new AppError("FILE_EMPTY", "This file is empty. Download the raw DNA export again.");
   const magic = new Uint8Array(await file.slice(0, 4).arrayBuffer());
+  signal?.throwIfAborted();
   const zip = magic[0] === 80 && magic[1] === 75;
   const gzip = magic[0] === 31 && magic[1] === 139;
   if (!zip && !gzip) return file;
-  let total = 0,
-    failure: Error | null = null;
+  let failure: { error: unknown } | null = null;
   const entries: DecodedEntry[] = [];
+  const localNames = new Set<string>();
+  let localEntryCount = 0;
+  let hasVcfPayload = false;
   const append = (entry: DecodedEntry, data: Uint8Array<ArrayBuffer>, final: boolean) => {
-    total += data.length;
-    if (total > MAX_BYTES) {
-      failure = error();
-      return;
-    }
+    if (failure) return;
     entry.chunks.push(data);
     entry.finished = final;
   };
@@ -95,10 +112,10 @@ export async function unpack(file: Blob, signal?: AbortSignal, onProgress?: Prog
     const count = directory.getUint16(10, true);
     const centralSize = directory.getUint32(12, true);
     const centralOffset = directory.getUint32(16, true);
-    if (count > 1000 || centralOffset + centralSize > file.size - (tail.length - end))
+    if (centralOffset + centralSize > file.size - (tail.length - end))
       throw new AppError(
         "ARCHIVE_INVALID",
-        "The ZIP directory is invalid or too large. Choose the extracted TXT file.",
+        "The ZIP directory is invalid. Choose the extracted TXT file.",
       );
     const central = new Uint8Array(
       await file.slice(centralOffset, centralOffset + centralSize).arrayBuffer(),
@@ -124,35 +141,34 @@ export async function unpack(file: Blob, signal?: AbortSignal, onProgress?: Prog
       } catch (error) {
         throw error instanceof Error ? archiveDecodeError(error) : error;
       }
+      if (checksums.has(name))
+        throw new AppError("ARCHIVE_INVALID", "The ZIP directory contains duplicate file entries.");
       checksums.set(name, { crc: record.getUint32(16, true), size: record.getUint32(24, true) });
       offset = next;
     }
     decoder = new Unzip((entry) => {
-      if (
-        entry.name.startsWith("__MACOSX/") ||
-        /(?:^|\/)\.[^/]+$/.test(entry.name) ||
-        !/\.(txt|csv|tsv)$/i.test(entry.name)
-      )
-        return;
-      if (entries.length) {
-        failure = new AppError(
-          "ARCHIVE_PAYLOAD_INVALID",
-          "This ZIP contains more than one DNA text file. Extract it and choose one file.",
-        );
+      if (failure) return;
+      localEntryCount++;
+      if (localEntryCount > count || !checksums.has(entry.name) || localNames.has(entry.name)) {
+        failure = {
+          error: new AppError("ARCHIVE_INVALID", "The ZIP contents do not match its directory."),
+        };
         return;
       }
-      if (entry.originalSize! > MAX_BYTES) {
-        failure = error();
-        return;
-      }
+      localNames.add(entry.name);
+      if (entry.name.startsWith("__MACOSX/") || /(?:^|\/)\.[^/]+$/.test(entry.name)) return;
+      if (/\.(?:g?vcf)(?:\.(?:gz|bgz))?$/i.test(entry.name)) hasVcfPayload = true;
+      if (!/\.(txt|csv|tsv)$/i.test(entry.name)) return;
+      const expected = checksums.get(entry.name);
       const output: DecodedEntry = {
         chunks: [],
         finished: false,
-        expected: checksums.get(entry.name),
+        expected,
       };
       entries.push(output);
       entry.ondata = (err, data, final) => {
-        if (err) failure = archiveDecodeError(err);
+        if (failure) return;
+        if (err !== null) failure = { error: archiveDecodeError(err) };
         else append(output, data, final);
       };
       entry.start();
@@ -177,27 +193,54 @@ export async function unpack(file: Blob, signal?: AbortSignal, onProgress?: Prog
     } catch (error) {
       throw error instanceof Error ? archiveDecodeError(error) : error;
     }
-    if (failure) throw failure;
+    if (failure) throw failure.error;
     onProgress?.(end / file.size);
     await yieldToLoop();
   }
-  if (entries.length !== 1 || !entries[0]!.finished)
+  if (zip && localEntryCount !== checksums.size)
+    throw new AppError("ARCHIVE_INVALID", "The ZIP contents do not match its directory.");
+  let selected: Blob | undefined;
+  for (const output of entries) {
+    signal?.throwIfAborted();
+    if (!output.finished)
+      throw new AppError(
+        "ARCHIVE_INVALID",
+        "The archive's text file is incomplete. Download it again or choose the extracted TXT file.",
+      );
+    const expected = output.expected || expectedGzip;
+    const text = new Blob(output.chunks, { type: "text/plain" });
+    // The gzip ISIZE footer stores decoded size modulo 2^32; ZIP sizes are exact.
+    const expectedSize = zip ? text.size : text.size % 0x100000000;
+    if (
+      !expected ||
+      expected.size !== expectedSize ||
+      output.chunks.reduce((crc, bytes) => crc32(bytes, crc), 0) !== expected.crc
+    )
+      throw new AppError(
+        "ARCHIVE_INVALID",
+        "The DNA archive failed its integrity check. Download it again or choose the extracted TXT file.",
+      );
+    if (!zip) return text;
+    const format = await payloadFormat(text, signal);
+    if (format === "vcf") hasVcfPayload = true;
+    if (format !== "consumer") continue;
+    if (selected)
+      throw new AppError(
+        "ARCHIVE_MULTIPLE_DNA",
+        "This ZIP contains more than one supported DNA text file. Extract it and choose one file.",
+      );
+    selected = text;
+  }
+  if (selected) return selected;
+  if (hasVcfPayload)
     throw new AppError(
-      "ARCHIVE_PAYLOAD_INVALID",
-      "No complete DNA text file was found in this archive.",
+      "ARCHIVE_VCF_UNSUPPORTED",
+      "This ZIP contains VCF data. Extract it and choose the .vcf.gz or .vcf.bgz file. An extracted .vcf must first be compressed with bgzip.",
     );
-  const output = entries[0]!;
-  const expected = output.expected || expectedGzip;
-  if (
-    !expected ||
-    expected.size !== total ||
-    output.chunks.reduce((crc, bytes) => crc32(bytes, crc), 0) !== expected.crc
-  )
-    throw new AppError(
-      "ARCHIVE_INVALID",
-      "The DNA archive failed its integrity check. Download it again or choose the extracted TXT file.",
-    );
-  return new Blob(output.chunks, { type: "text/plain" });
+  throw new AppError(
+    "ARCHIVE_NO_DNA",
+    "No supported DNA text file was found in this ZIP. Choose the original raw 23andMe or AncestryDNA TXT export, or try the public sample.",
+  );
 }
 
 export async function* textLines(file: Blob, onProgress?: Progress | null, signal?: AbortSignal) {
@@ -217,12 +260,7 @@ export async function* textLines(file: Blob, onProgress?: Progress | null, signa
     carry += text;
     const parts = carry.split("\n");
     carry = parts.pop()!;
-    for (const line of parts) {
-      if (line.length > 65536)
-        throw new AppError("DNA_ROW_TOO_LONG", "A DNA data row is too long.");
-      yield line.replace(/\r$/, "");
-    }
-    if (carry.length > 65536) throw new AppError("DNA_ROW_TOO_LONG", "A DNA data row is too long.");
+    for (const line of parts) yield line.replace(/\r$/, "");
     onProgress?.(end / file.size);
     await yieldToLoop();
   }

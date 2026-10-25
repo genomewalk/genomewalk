@@ -10,6 +10,7 @@ import { readByteRange } from "../src/lib/io/http-range.ts";
 import type { Fetcher } from "../src/lib/io/types.ts";
 import { RESULTS_STEP } from "../src/lib/navigation/journey.ts";
 import { checkTelemetry } from "./lib/check-telemetry.ts";
+import { checkIntake } from "./lib/check-intake.ts";
 
 const ACTION_TIMEOUT = 180_000;
 const TOTAL_TIMEOUT = 300_000;
@@ -217,6 +218,7 @@ async function main() {
       }
       browser = launched;
       await checkJourney(browser, origin, sizes);
+      await checkIntake(browser, origin);
       await checkTelemetry(browser, origin);
     };
     await Promise.race([checks(), timeout]);

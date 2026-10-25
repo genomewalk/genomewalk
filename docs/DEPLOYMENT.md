@@ -102,6 +102,23 @@ identifiers or exact file sizes. Browser/device detection is best effort;
 `unknown` file format means identification had not completed, while `unrecognized`
 means the format/header was rejected.
 
+File rejection codes distinguish an empty file (`FILE_EMPTY`) and unsupported
+formats from corrupt data. ZIP errors distinguish no supported export
+(`ARCHIVE_NO_DNA`), multiple exports (`ARCHIVE_MULTIPLE_DNA`), ZIP-wrapped VCFs
+(`ARCHIVE_VCF_UNSUPPORTED`), and corruption (`ARCHIVE_INVALID`). These fixed
+codes add diagnostic detail without recording archive entry names or contents.
+Application-imposed size, row, header, line and archive-entry-count cutoffs have
+been removed; browser resources and supported archive formats still constrain
+processing. Older events retain their original codes, including retired limit codes.
+
+Recognized native allocation failures report `BROWSER_ALLOCATION_FAILED`; explicit
+browser value-size failures report `BROWSER_DATA_LIMIT`. Neither is inferred from
+the file's size band. Other range errors remain `JS_RANGE_ERROR`, and unreadable
+local files report `FILE_READ_FAILED`. Only reviewed codes and existing coarse
+metadata are sent, never the original native message. These reports cover
+catchable errors: a browser-terminated tab cannot reliably send an event, and a
+missing completion event alone does not identify its cause.
+
 ## Connect genomewalk.com through Cloudflare DNS
 
 1. In GitHub **Settings → Pages → Custom domain**, save `genomewalk.com` before

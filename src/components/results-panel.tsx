@@ -7,6 +7,7 @@ import { ErrorNotice } from "./error-notice.tsx";
 import { useExcerptOverflow } from "../lib/view/use-excerpt-overflow.ts";
 import { reportError, reportingStage, type ErrorStage } from "../lib/error-reporting.ts";
 import { getSourceFileDiagnostics } from "../lib/diagnostics/file-context.ts";
+import { runtimeFailureMessage } from "../lib/diagnostics/runtime-failure.ts";
 import { trackEvent } from "../lib/analytics.ts";
 
 export type ResultsRunner = (
@@ -99,7 +100,7 @@ export function ResultsPanel({ onComplete, context, session, runResults }: Resul
           if (!(err instanceof Error && err.name === "AbortError"))
             trackEvent("results_failed", eventProperties);
           reportError(err, "results", stage, undefined, fileDiagnostics);
-          setError((err as Error)?.message ?? String(err));
+          setError(runtimeFailureMessage(err) ?? (err as Error)?.message ?? String(err));
         }
       } finally {
         if (!controller.signal.aborted) setRunning(false);

@@ -66,6 +66,74 @@ test("network errors and interrupted response bodies never retain raw exception 
   );
 });
 
+test("public fetch and body capacity failures retain safe public download context", async () => {
+  const publicFile = "/ref/GRCh38/catalog.index.json.gz";
+  for (const [failure, code] of [
+    [
+      new RangeError("Array buffer allocation failed", { cause: new Error(secret) }),
+      "BROWSER_ALLOCATION_FAILED",
+    ],
+    [new RangeError("Invalid string length", { cause: new Error(secret) }), "BROWSER_DATA_LIMIT"],
+    ["out of memory", "BROWSER_ALLOCATION_FAILED"],
+    [
+      new AppError("BROWSER_ALLOCATION_FAILED", secret, { publicFile: privateUrl }),
+      "BROWSER_ALLOCATION_FAILED",
+    ],
+    [new RangeError("Invalid array length"), "NETWORK_FAILED"],
+  ] as const) {
+    await assert.rejects(
+      fetchPublic(`${publicFile}?token=${secret}`, "catalogue-index", undefined, async () => {
+        throw failure;
+      }),
+      diagnostic(code, { resource: "catalogue-index", publicFile }),
+    );
+    const response = await fetchPublic(
+      `${publicFile}?token=${secret}`,
+      "catalogue-index",
+      undefined,
+      async () =>
+        new Response(
+          new ReadableStream({
+            start(controller) {
+              controller.error(failure);
+            },
+          }),
+          { status: 200 },
+        ),
+    );
+    await assert.rejects(
+      readPublicBytes(response, "catalogue-index"),
+      diagnostic(code, { resource: "catalogue-index", publicFile, httpStatus: 200 }),
+    );
+  }
+});
+
+test("public JSON decoding distinguishes native capacity failures from ordinary decode errors", (t) => {
+  const bytes = new TextEncoder().encode("{}");
+  for (const [failure, code] of [
+    [
+      new RangeError("Array buffer allocation failed", { cause: new Error(secret) }),
+      "BROWSER_ALLOCATION_FAILED",
+    ],
+    [new RangeError("Invalid string length", { cause: new Error(secret) }), "BROWSER_DATA_LIMIT"],
+    ["out of memory", "BROWSER_ALLOCATION_FAILED"],
+    [new AppError("BROWSER_DATA_LIMIT", secret, { publicFile: privateUrl }), "BROWSER_DATA_LIMIT"],
+    [new RangeError("Invalid array length"), "REFERENCE_DECODE_FAILED"],
+  ] as const) {
+    const decoder = t.mock.method(TextDecoder.prototype, "decode", () => {
+      throw failure;
+    });
+    try {
+      assert.throws(
+        () => decodePublicJson(bytes, "catalogue-index"),
+        diagnostic(code, { resource: "catalogue-index" }),
+      );
+    } finally {
+      decoder.mock.restore();
+    }
+  }
+});
+
 test("cancellation stays unreported while timeouts have a separate diagnostic", async () => {
   const cancel = new DOMException(secret, "AbortError");
   await assert.rejects(

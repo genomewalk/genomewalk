@@ -24,7 +24,7 @@ export class FileSource implements ByteSource {
 export function blockLength(bytes: Uint8Array, at = 0) {
   if (at + 12 > bytes.length) return -1;
   if (bytes[at]! !== 31 || bytes[at + 1]! !== 139 || bytes[at + 2]! !== 8 || !(bytes[at + 3]! & 4))
-    throw new AppError("VCF_BGZF_REQUIRED", "Choose a bgzip-compressed VCF (.vcf.gz or .vcf.bgz).");
+    throw new AppError("VCF_BGZF_REQUIRED", "Choose a bgzip-compressed VCF or gVCF (.gz or .bgz).");
   const extraEnd = at + 12 + (bytes[at + 10]! | (bytes[at + 11]! << 8));
   if (extraEnd > bytes.length) return -1;
   for (let offset = at + 12; offset + 4 <= extraEnd;) {
@@ -41,7 +41,7 @@ export function blockLength(bytes: Uint8Array, at = 0) {
   }
   throw new AppError(
     "VCF_BGZF_REQUIRED",
-    "This gzip file is not BGZF. Compress the VCF with bgzip first.",
+    "This gzip file is not BGZF. Compress the VCF or gVCF with bgzip first.",
   );
 }
 

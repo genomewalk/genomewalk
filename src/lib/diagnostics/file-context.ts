@@ -3,10 +3,13 @@ import { AppError } from "../app-error.ts";
 export const fileExtensions = [
   ".vcf.gz",
   ".vcf.bgz",
+  ".gvcf.gz",
+  ".gvcf.bgz",
   ".txt",
   ".tsv",
   ".zip",
   ".gz",
+  ".bgz",
   "other",
 ] as const;
 export const fileFormats = ["VCF", "23andMe", "AncestryDNA", "unrecognized", "unknown"] as const;
@@ -87,6 +90,7 @@ export function getOpeningFileDiagnostics(file: FileMetadata | undefined, error:
       "DNA_HEADER_MISSING",
       "DNA_FORMAT_UNSUPPORTED",
       "VCF_HEADER_INVALID",
+      "ARCHIVE_NO_DNA",
     ].includes(error.code);
   return getFileDiagnostics(file, unrecognized ? "unrecognized" : "unknown");
 }

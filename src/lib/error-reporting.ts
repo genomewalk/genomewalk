@@ -7,6 +7,7 @@ import {
   safeAssetFrames,
 } from "./analytics.ts";
 import type { FileDiagnostics } from "./diagnostics/file-context.ts";
+import { classifyRuntimeFailure } from "./diagnostics/runtime-failure.ts";
 import { safePublicFile } from "./public-file.ts";
 
 export type ErrorArea = (typeof errorAreas)[number];
@@ -15,7 +16,9 @@ let reporting = false;
 
 function diagnostic(error: unknown, type?: string, message?: string) {
   let code: ErrorCode = "UNEXPECTED_ERROR";
+  const runtimeCode = classifyRuntimeFailure(error);
   if (error instanceof AppError && Object.hasOwn(errorDefinitions, error.code)) code = error.code;
+  else if (runtimeCode) code = runtimeCode;
   else if (
     ["Failed to fetch", "Load failed", "NetworkError when attempting to fetch resource."].includes(
       message || "",

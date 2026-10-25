@@ -5,16 +5,17 @@ import { currentBuild, selectSource } from "./engine/context.ts";
 import { STEPS, ctx, FileSource, detectBuild } from "./engine/learn.ts";
 import { readHeader } from "./engine/vcf.ts";
 import { session, resetSession } from "./engine/session.ts";
+import { compressedVcfExtensions, isCompressedVcfName } from "../../lib/intake/vcf-format.ts";
 
 // File selection activates the VCF experience and resets its private session.
 export default {
   id: "vcf",
-  accept: ".vcf.gz,.vcf.bgz",
-  label: "A compressed VCF (.vcf.gz or .vcf.bgz)",
+  accept: `${compressedVcfExtensions},.gz,.bgz`,
+  label: "A bgzip-compressed VCF/gVCF (.vcf.gz, .vcf.bgz, .gvcf.gz or .gvcf.bgz)",
   chapters: STEPS,
   context: ctx,
   session,
-  matches: (file: { name: string }) => /\.vcf\.(gz|bgz)$/i.test(file.name),
+  matches: (file: { name: string }) => isCompressedVcfName(file.name),
   async open(file: File, signal?: AbortSignal) {
     const opened = await this.openSource(new FileSource(file), signal);
     return { ...opened, source: new FileSource(file) };

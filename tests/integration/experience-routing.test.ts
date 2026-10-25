@@ -6,10 +6,11 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import vm from "node:vm";
+import { gzipSync } from "node:zlib";
 import { CHAPTER_COUNT, FILE_CHAPTERS, RESULTS_STEP } from "../../src/lib/navigation/journey.ts";
 import { bgzfWrite } from "../../scripts/lib/util.ts";
 const { default: vcf } = await import("../../src/experiences/vcf/index.ts");
-const { getExperience, getGenomeSelection, openGenomeFile, selectGenome } =
+const { acceptedFiles, getExperience, getGenomeSelection, openGenomeFile, selectGenome } =
   await import("../../src/experiences/index.ts");
 const { describeSelection, restoreSelection } = await import("../../src/experiences/selection.ts");
 const { optionalExperiences } = await import("../../src/experiences/optional.ts");
@@ -56,6 +57,77 @@ test("file intake distinguishes unsupported formats, invalid VCF headers and mis
       code: "VCF_SAMPLE_MISSING",
     },
   );
+});
+
+test("standard gVCF suffixes use the streaming VCF reader and appear in the file picker", async () => {
+  const contents = await fixture().arrayBuffer();
+  for (const name of ["sample.gvcf.gz", "sample.gvcf.bgz", "sample.g.vcf.gz", "sample.GVCF.BGZ"]) {
+    const opened = await openGenomeFile(new File([contents], name));
+    assert.equal(opened.experience, vcf, name);
+    assert.equal(opened.build, "GRCh38", name);
+  }
+  for (const extension of [".vcf.gz", ".vcf.bgz", ".gvcf.gz", ".gvcf.bgz", ".gz", ".bgz"])
+    assert.ok(acceptedFiles.split(",").includes(extension), extension);
+});
+
+test("large ambiguous gzip and bgz files use the VCF reader with incremental header reads", async () => {
+  const contents = await fixture().arrayBuffer();
+  for (const name of ["whole-genome.gz", "whole-genome.bgz"]) {
+    const reads: Array<[number, number]> = [];
+    // A large logical file backed by a synthetic header proves opening stays
+    // bounded without allocating or reading a real whole-genome file.
+    class LargeFile extends File {
+      override get size() {
+        return 9 * 1024 ** 3;
+      }
+      override slice(start = 0, end = this.size, type?: string) {
+        reads.push([start, end]);
+        assert.equal(start, 0);
+        assert.ok(end <= 65536);
+        return super.slice(start, end, type);
+      }
+    }
+    const opened = await openGenomeFile(new LargeFile([contents], name));
+    assert.equal(opened.experience, vcf);
+    assert.equal(opened.build, "GRCh38");
+    assert.equal(reads.length, 2, "one bounded probe and one streaming header read");
+  }
+});
+
+test("ordinary gzip VCF gets the BGZF remedy rather than a consumer header or size error", async () => {
+  const contents = gzipSync(text);
+  for (const name of ["whole-genome.gz", "whole-genome.bgz", "sample.gvcf.gz", "sample.vcf.gz"]) {
+    await assert.rejects(openGenomeFile(new File([contents], name)), {
+      code: "VCF_BGZF_REQUIRED",
+      message: /bgzip/i,
+    });
+  }
+});
+
+test("compressed consumer DNA still selects its own reader after the bounded probe", async () => {
+  if (!optionalExperiences.length) return;
+  const contents = gzipSync(
+    "# 23andMe\n# build 37; plus strand\n# rsid\tchromosome\tposition\tgenotype\nrs1\t1\t100\tCT\n",
+  );
+  const opened = await openGenomeFile(new File([contents], "synthetic.txt.gz"));
+  assert.equal(opened.experience.id, "consumer");
+  assert.equal(opened.build, "GRCh37");
+});
+
+test("empty files have a specific diagnostic before format routing", async () => {
+  for (const name of ["empty.gvcf.gz", "empty.vcf.bgz", "empty.txt", "empty.zip"])
+    await assert.rejects(openGenomeFile(new File([], name)), { code: "FILE_EMPTY" });
+});
+
+test("cancelling an ambiguous compressed file during the prefix read stops intake", async (t) => {
+  const file = new File([await fixture().arrayBuffer()], "synthetic.gz");
+  const controller = new AbortController();
+  const slice = file.slice.bind(file);
+  t.mock.method(file, "slice", (start?: number, end?: number, type?: string) => {
+    controller.abort();
+    return slice(start, end, type);
+  });
+  await assert.rejects(openGenomeFile(file, controller.signal), { name: "AbortError" });
 });
 
 test("switching experiences isolates every chapter, session and personal result", async () => {

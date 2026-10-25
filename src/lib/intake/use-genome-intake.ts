@@ -7,6 +7,7 @@ import { publicSampleSource, SAMPLE } from "../catalogues/public-sample.ts";
 import type { OpenedGenome } from "../../experiences/types.ts";
 import type { SupportedBuild } from "../genetics/reference-build.ts";
 import { reportError } from "../error-reporting.ts";
+import { runtimeFailureMessage } from "../diagnostics/runtime-failure.ts";
 import { trackEvent } from "../analytics.ts";
 import {
   getOpeningFileDiagnostics,
@@ -81,7 +82,7 @@ export function useGenomeIntake(view?: "results") {
           undefined,
           getSourceFileDiagnostics(opened.source),
         );
-        setLoadError((error as Error).message);
+        setLoadError(runtimeFailureMessage(error) ?? (error as Error).message);
       }
     }
   }
@@ -132,7 +133,9 @@ export function useGenomeIntake(view?: "results") {
           opened ? getSourceFileDiagnostics(opened.source) : getOpeningFileDiagnostics(file, error),
         );
         setLoadError(
-          (error as Error).message || "This file could not be read. Try the public sample.",
+          runtimeFailureMessage(error) ||
+            (error as Error).message ||
+            "This file could not be read. Try the public sample.",
         );
       }
     } finally {
@@ -180,7 +183,8 @@ export function useGenomeIntake(view?: "results") {
             : getOpeningFileDiagnostics(source.file, error),
         );
         setLoadError(
-          (error as Error).message ||
+          runtimeFailureMessage(error) ||
+            (error as Error).message ||
             "The public sample could not be loaded. Choose your own file.",
         );
       }

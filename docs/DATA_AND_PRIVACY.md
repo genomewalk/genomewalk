@@ -90,10 +90,11 @@ values. Coarse diagnostics include allowlisted browser name, major version
 the original user-agent string, OS version, device model and screen details are
 not attached.
 
-File errors add only a recognized extension (`.vcf.gz`, `.vcf.bgz`, `.txt`, `.tsv`,
-`.zip`, `.gz`, or `other`), format (VCF, 23andMe, AncestryDNA, unrecognized or
-unknown), and size band. Decimal bands are empty, under 1 MB, 1 MB to under 100 MB,
-100 MB to under 1 GB, and 1 GB or more; invalid sizes are unknown. Formats come
+File errors add only a recognized extension (`.vcf.gz`, `.vcf.bgz`, `.gvcf.gz`,
+`.gvcf.bgz`, `.txt`, `.tsv`, `.zip`, `.gz`, `.bgz`, or `other`), format (VCF,
+23andMe, AncestryDNA, unrecognized or unknown), and size band. Decimal bands are
+empty, under 1 MB, 1 MB to under 100 MB, 100 MB to under 1 GB, and 1 GB or more;
+invalid sizes are unknown. Formats come
 from validated readers, never filenames. Exact sizes and personal filenames are
 excluded.
 Original messages, arbitrary exception/function names, variables, source snippets,

@@ -10,7 +10,17 @@ import {
 const privateName = "PRIVATE_person_Sample123_diagnosis";
 
 test("file diagnostics retain only recognized suffixes, validated formats and size bands", () => {
-  for (const extension of [".vcf.gz", ".vcf.bgz", ".txt", ".tsv", ".zip", ".gz"]) {
+  for (const extension of [
+    ".vcf.gz",
+    ".vcf.bgz",
+    ".gvcf.gz",
+    ".gvcf.bgz",
+    ".txt",
+    ".tsv",
+    ".zip",
+    ".gz",
+    ".bgz",
+  ]) {
     const clean = getFileDiagnostics({ name: privateName + extension.toUpperCase(), size: 99 });
     assert.deepEqual(clean, {
       file_extension: extension,
@@ -80,6 +90,13 @@ test("failed opening distinguishes rejected formats from reads that did not iden
   const file = { name: `${privateName}.txt`, size: 300 };
   assert.equal(
     getOpeningFileDiagnostics(file, new AppError("DNA_HEADER_MISSING"))?.file_format,
+    "unrecognized",
+  );
+  assert.equal(
+    getOpeningFileDiagnostics(
+      { ...file, name: `${privateName}.zip` },
+      new AppError("ARCHIVE_NO_DNA"),
+    )?.file_format,
     "unrecognized",
   );
   assert.equal(

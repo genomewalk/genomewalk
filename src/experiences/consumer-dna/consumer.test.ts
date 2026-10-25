@@ -42,6 +42,25 @@ test("23andMe text handles BOM, CRLF and no final newline", async () => {
   assert.equal(calls[0]!.ref, null);
 });
 
+test("consumer headers can contain more than one thousand comment lines", async () => {
+  const comments = "# Additional provider comment\n".repeat(1200);
+  const source = await openConsumerFile(file(text([row(100, "CT")], comments)));
+  assert.equal(source.header.meta.length, 1202);
+  assert.equal(source.header.lines.at(-1)!.number, 1203);
+  assert.equal(source.example!.pos, 100);
+  assert.equal(source.build, "GRCh37");
+});
+
+test("consumer scanning continues beyond two million valid calls", async () => {
+  const expected = 2_000_001;
+  const source = await openConsumerFile(file(text([]) + `${row(100, "CT")}\n`.repeat(expected)));
+  let count = 0;
+  await source.readCalls(() => {
+    count++;
+  });
+  assert.equal(count, expected);
+});
+
 test("Ancestry columns, 00, ID and numeric sex chromosomes remain distinct", async () => {
   const source = await openConsumerFile(
     file(
@@ -88,10 +107,9 @@ test("multiple payloads, broken archives, missing headers and invalid rows are r
     openConsumerFile(file(zipSync({ "one.txt": content, "two.txt": content }), "two.zip")),
     /more than one/,
   );
-  await assert.rejects(
-    openConsumerFile(file(zipSync({ "picture.png": content }), "none.zip")),
-    /No complete/,
-  );
+  await assert.rejects(openConsumerFile(file(zipSync({ "picture.png": content }), "none.zip")), {
+    code: "ARCHIVE_NO_DNA",
+  });
   await assert.rejects(openConsumerFile(file(gzipSync(content).slice(0, 20), "broken.gz")));
   await assert.rejects(openConsumerFile(file(row(100, "CT"))), /header/);
   await assert.rejects(openConsumerFile(file(text(["rs1\t1\tnot-a-position\tCT"]))), /position/);
@@ -105,7 +123,7 @@ test("consumer validation exposes stable codes without embedding private input",
     [file(text([`rs1\t1\t${privateText}\tCT`])), "DNA_POSITION_INVALID"],
     [file(text([`rs1\t1\t100\t${privateText}`])), "DNA_GENOTYPE_INVALID"],
     [file(text(["rs1\t1\t100"])), "DNA_COLUMNS_INVALID"],
-    [file(""), "FILE_SIZE_INVALID"],
+    [file(""), "FILE_EMPTY"],
   ] as const;
   for (const [input, code] of samples)
     await assert.rejects(openConsumerFile(input), (error: unknown) => {
