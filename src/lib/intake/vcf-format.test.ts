@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { gzipSync } from "node:zlib";
 import { hasCompressedVcfHeader } from "./vcf-format.ts";
 import { bgzfBytes } from "../../../tests/helpers/vcf.ts";
+import { getReadingContext } from "../diagnostics/reading.ts";
 
 test("compressed VCF recognition works across gzip members without requiring a whole header", async () => {
   const text = "##fileformat=VCFv4.2\n##source=synthetic\n";
@@ -71,4 +72,41 @@ test("a cancelled probe does not read a file", async (t) => {
   const controller = new AbortController();
   controller.abort();
   await assert.rejects(hasCompressedVcfHeader(file, controller.signal), { name: "AbortError" });
+});
+
+test("prefix-read failures retain identity and only report compression actually observed", async (t) => {
+  const secret = "PRIVATE_PROBE_FILENAME_AND_NATIVE_MESSAGE";
+  const bytes = Buffer.alloc(140000, 65);
+  bytes.set([31, 139, 8, 8, 0, 0, 0, 0, 0, 255]);
+  for (const failOnRead of [1, 2]) {
+    const file = new File([bytes], `${secret}.gz`);
+    const slice = file.slice.bind(file);
+    const failure = new DOMException(secret, "NotReadableError");
+    let reads = 0;
+    t.mock.method(file, "slice", (start?: number, end?: number) => {
+      if (++reads === failOnRead) throw failure;
+      return slice(start, end);
+    });
+    await assert.rejects(hasCompressedVcfHeader(file), (error: unknown) => {
+      assert.equal(error, failure);
+      assert.deepEqual(getReadingContext(error), {
+        readingStep: "format-detection",
+        ...(failOnRead === 2 ? { inputContainer: "gzip" } : {}),
+      });
+      assert.ok(!JSON.stringify(getReadingContext(error)).includes(secret));
+      return true;
+    });
+  }
+  const abort = new DOMException(secret, "AbortError");
+  await assert.rejects(
+    hasCompressedVcfHeader(new Blob([bytes]), AbortSignal.abort(abort)),
+    (error: unknown) => {
+      assert.equal(error, abort);
+      assert.deepEqual(getReadingContext(error), {});
+      return true;
+    },
+  );
+  const malformed = gzipSync("##fileformat=VCFv4.2\n");
+  malformed[10] = 7; // A malformed DEFLATE prefix is still only a failed routing hint.
+  assert.equal(await hasCompressedVcfHeader(new Blob([malformed])), false);
 });

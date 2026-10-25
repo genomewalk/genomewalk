@@ -8,6 +8,11 @@ import {
 } from "./analytics.ts";
 import type { FileDiagnostics } from "./diagnostics/file-context.ts";
 import { classifyRuntimeFailure } from "./diagnostics/runtime-failure.ts";
+import {
+  getReadingContext,
+  readingProperties,
+  sanitizeReadingDetails,
+} from "./diagnostics/reading.ts";
 import { safePublicFile } from "./public-file.ts";
 
 export type ErrorArea = (typeof errorAreas)[number];
@@ -44,6 +49,7 @@ function diagnostic(error: unknown, type?: string, message?: string) {
     code,
     resource,
     publicFile: safePublicFile(details?.publicFile, resource),
+    reading: { ...getReadingContext(error), ...sanitizeReadingDetails(details) },
     httpStatus:
       resource &&
       typeof status === "number" &&
@@ -70,7 +76,7 @@ export function prepareErrorReport(
   file?: FileDiagnostics,
 ) {
   if (error instanceof Error && error.name === "AbortError") return null;
-  const { code, resource, publicFile, httpStatus } = diagnostic(
+  const { code, resource, publicFile, httpStatus, reading } = diagnostic(
     error,
     error instanceof Error ? error.name : undefined,
     error instanceof Error ? error.message : undefined,
@@ -97,19 +103,18 @@ export function prepareErrorReport(
         (frame) => `\n    at ${frame["filename"]}:${frame["lineno"] || 1}:${frame["colno"] || 1}`,
       )
       .join("");
-  return {
-    error: safe,
-    properties: {
-      ...file,
-      error_code: code,
-      area,
-      stage,
-      ...(chapter === undefined ? {} : { chapter }),
-      ...(resource ? { resource } : {}),
-      ...(publicFile ? { public_file: publicFile } : {}),
-      ...(httpStatus === undefined ? {} : { http_status: httpStatus }),
-    },
+  const properties: Record<string, unknown> = {
+    ...file,
+    error_code: code,
+    area,
+    stage,
+    ...(chapter === undefined ? {} : { chapter }),
+    ...(resource ? { resource } : {}),
+    ...(publicFile ? { public_file: publicFile } : {}),
+    ...(httpStatus === undefined ? {} : { http_status: httpStatus }),
+    ...readingProperties(reading),
   };
+  return { error: safe, properties };
 }
 
 export function initErrorReporting() {

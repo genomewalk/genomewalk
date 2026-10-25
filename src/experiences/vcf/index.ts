@@ -1,5 +1,6 @@
 import type { ByteSource } from "../../lib/io/types.ts";
 import { AppError } from "../../lib/app-error.ts";
+import { withReadingContext } from "../../lib/diagnostics/reading.ts";
 import type { SelectionData, SelectionKind } from "../types.ts";
 import { currentBuild, selectSource } from "./engine/context.ts";
 import { STEPS, ctx, FileSource, detectBuild } from "./engine/learn.ts";
@@ -21,21 +22,28 @@ export default {
     return { ...opened, source: new FileSource(file) };
   },
   async openSource(source: ByteSource, signal?: AbortSignal) {
-    const header = await readHeader(source, signal);
-    if (
-      !header.meta.some((line) => line.startsWith("##fileformat=VCF")) ||
-      header.columns[0] !== "CHROM"
-    )
-      throw new AppError(
-        "VCF_HEADER_INVALID",
-        "Choose a compressed VCF containing a sample genotype.",
-      );
-    if (header.columns.length < 10)
-      throw new AppError(
-        "VCF_SAMPLE_MISSING",
-        "Choose a compressed VCF containing a sample genotype.",
-      );
-    return { source, header, build: detectBuild(header.meta) };
+    try {
+      const header = await readHeader(source, signal);
+      const hasFormat = header.meta.some((line) => line.startsWith("##fileformat=VCF"));
+      if (!hasFormat || header.columns[0] !== "CHROM")
+        throw new AppError(
+          "VCF_HEADER_INVALID",
+          "Choose a compressed VCF containing a sample genotype.",
+          {
+            ...(source.size > 0 ? { inputContainer: "bgzf" } : {}),
+            failureReason: hasFormat ? "vcf-column-header-missing" : "vcf-format-marker-missing",
+          },
+        );
+      if (header.columns.length < 10)
+        throw new AppError(
+          "VCF_SAMPLE_MISSING",
+          "Choose a compressed VCF containing a sample genotype.",
+          { inputContainer: "bgzf" },
+        );
+      return { source, header, build: detectBuild(header.meta) };
+    } catch (error) {
+      throw withReadingContext(error, { readerKind: "vcf", readingStep: "header" });
+    }
   },
   select({ source, header, selectedBuild }: SelectionData, name: string, kind?: SelectionKind) {
     if (!("slice" in source)) throw new Error("A VCF selection requires a byte reader.");

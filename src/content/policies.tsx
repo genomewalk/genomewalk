@@ -111,8 +111,11 @@ export const privacyPolicy: PolicyDocument = {
             processing stage, the chapter number when relevant, the app version, and locations in
             the app’s code. Reports include the browser name and major version, operating-system
             family, and broad device type when identifiable. File-related errors may include a
-            recognized extension, detected format, and approximate size band. Download failures may
-            include a public resource category and HTTP status.
+            recognized extension, detected format, and approximate size band. They may also include
+            fixed categories for the provider recognized in the header, column layout, compression
+            type, text encoding marker, and the reading check that failed. Header text, column names
+            and data rows are not included. Download failures may include a public resource category
+            and HTTP status.
           </p>
           <p>
             Your filename, genome contents, variants, genotypes and results are excluded, along with

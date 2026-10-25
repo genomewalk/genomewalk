@@ -90,17 +90,40 @@ values. Coarse diagnostics include allowlisted browser name, major version
 the original user-agent string, OS version, device model and screen details are
 not attached.
 
-File errors add only a recognized extension (`.vcf.gz`, `.vcf.bgz`, `.gvcf.gz`,
-`.gvcf.bgz`, `.txt`, `.tsv`, `.zip`, `.gz`, `.bgz`, or `other`), format (VCF,
+File errors add a recognized extension from the fixed list in
+`src/lib/diagnostics/file-context.ts`, format (VCF,
 23andMe, AncestryDNA, unrecognized or unknown), and size band. Decimal bands are
 empty, under 1 MB, 1 MB to under 100 MB, 100 MB to under 1 GB, and 1 GB or more;
 invalid sizes are unknown. Formats come
 from validated readers, never filenames. Exact sizes and personal filenames are
-excluded.
+excluded. Recognized extensions include unsupported inputs such as BAM, CRAM,
+FASTQ, FASTA, CSV and uncompressed VCF; recognizing a suffix does not add support.
+
+Reading failures may also include these structural categories, reconstructed from
+the fixed vocabulary in `src/lib/diagnostics/reading.ts`:
+
+| Property          | Meaning                                                                                                                              |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `reader_kind`     | Chosen reader: `consumer-dna` or `vcf`; not a validated format.                                                                      |
+| `reading_step`    | Format detection, byte reading, archive directory/decompression/integrity/payload selection, header, first record, or later records. |
+| `input_container` | `plain`, `zip`, `gzip`, or `bgzf`, based on bytes observed locally.                                                                  |
+| `text_encoding`   | A UTF-8/UTF-16 byte-order-mark category, or `unmarked`; no text or encoding guess.                                                   |
+| `header_provider` | `23andMe`, `AncestryDNA`, or `unrecognized`, from a recognized header marker.                                                        |
+| `header_layout`   | `genotype`, `allele-pair`, or `other`.                                                                                               |
+| `format_reason`   | `provider-unrecognized` or `columns-mismatch`.                                                                                       |
+| `failure_reason`  | A fixed failed-check label, such as `checksum-mismatch`, `directory-invalid`, or `row-columns-too-few`.                              |
+
+Provider/layout markers describe detection, not validated contents. Context can
+survive a later first-record or scan failure. ZIP candidate hints are retained
+only when unambiguous. No provider is inferred from a filename or VCF source label.
+Original header text, arbitrary column names, DNA rows, row locations, entry names,
+checksums, offsets, exact counts and byte lengths are never sent. Primitive native
+failures may have a reviewed error code without extra reading context.
 Original messages, arbitrary exception/function names, variables, source snippets,
 causes, request/response bodies, query strings, referrers, range headers and
 attachments are excluded. Aborts are ignored. Expected input-validation failures are warnings;
-repeated warnings are deduplicated, with at most three warning kinds per page
+equivalent warnings are deduplicated by code/group, provider and failure reason,
+with at most three distinct warning diagnoses per page
 load. Actual failures have a separate ten-event limit. Usage attempt/failure
 counts remain independent of error-report deduplication.
 

@@ -1,12 +1,13 @@
 import type { ByteSource, Progress } from "../../../lib/io/types.ts";
 import { bgzfLines, bgzfLineBatches } from "../../../lib/io/bgzf-lines.ts";
 import { yieldToLoop } from "../../../lib/async/schedule.ts";
+import { withReadingContext } from "../../../lib/diagnostics/reading.ts";
 
 /** Read metadata and column names; no full-file scan is needed. */
 export async function readHeader(source: ByteSource, signal?: AbortSignal) {
   const meta = [];
   let columns: string[] = [];
-  for await (const { line } of bgzfLines(source, signal, 64 << 10)) {
+  for await (const { line } of bgzfLines(source, signal, 64 << 10, "header")) {
     if (line.startsWith("##")) meta.push(line);
     else if (line.startsWith("#CHROM")) {
       columns = line.slice(1).split("\t");
@@ -23,22 +24,26 @@ export async function streamVariants(
   onProgress?: Progress | null,
   signal?: AbortSignal,
 ) {
-  signal?.throwIfAborted();
-  let lastTick = performance.now();
-  for await (const { lines, progress } of bgzfLineBatches(source, signal)) {
-    for (const line of lines) {
-      if (!line || line.charCodeAt(0) === 35) continue;
-      onLine(line.split("\t"));
+  try {
+    signal?.throwIfAborted();
+    let lastTick = performance.now();
+    for await (const { lines, progress } of bgzfLineBatches(source, signal)) {
+      for (const line of lines) {
+        if (!line || line.charCodeAt(0) === 35) continue;
+        onLine(line.split("\t"));
+      }
+      // Check the paint budget once per decoded block, instead of reading the
+      // browser's high-resolution clock millions of times.
+      if (performance.now() - lastTick > 60) {
+        signal?.throwIfAborted();
+        onProgress?.(progress);
+        await yieldToLoop();
+        lastTick = performance.now();
+      }
     }
-    // Check the paint budget once per decoded block, instead of reading the
-    // browser's high-resolution clock millions of times.
-    if (performance.now() - lastTick > 60) {
-      signal?.throwIfAborted();
-      onProgress?.(progress);
-      await yieldToLoop();
-      lastTick = performance.now();
-    }
+    signal?.throwIfAborted();
+    onProgress?.(1);
+  } catch (error) {
+    throw withReadingContext(error, { readerKind: "vcf", readingStep: "records" });
   }
-  signal?.throwIfAborted();
-  onProgress?.(1);
 }

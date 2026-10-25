@@ -5,6 +5,20 @@ export const fileExtensions = [
   ".vcf.bgz",
   ".gvcf.gz",
   ".gvcf.bgz",
+  ".fastq.gz",
+  ".fasta.gz",
+  ".csv.gz",
+  ".fq.gz",
+  ".fa.gz",
+  ".gvcf",
+  ".vcf",
+  ".fastq",
+  ".fasta",
+  ".bam",
+  ".cram",
+  ".csv",
+  ".fq",
+  ".fa",
   ".txt",
   ".tsv",
   ".zip",
@@ -30,7 +44,7 @@ export interface FileDiagnostics {
 
 type FileMetadata = { readonly name: string; readonly size: number };
 
-/** The filename is examined locally; only a recognized suffix and size band survive. */
+/** Recognized suffixes include unsupported inputs for diagnosis, not reader routing. */
 export function getFileDiagnostics(
   file: FileMetadata | undefined,
   format: unknown = "unknown",

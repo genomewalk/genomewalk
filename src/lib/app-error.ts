@@ -1,3 +1,5 @@
+import type { ReadingDetails } from "./diagnostics/reading.ts";
+
 /** Reviewed diagnostic vocabulary. Never use file values in these definitions. */
 export const errorDefinitions = {
   UNEXPECTED_ERROR: ["Unexpected application failure", "application", "error"],
@@ -71,7 +73,7 @@ export const errorResources = [
   "publication-labels",
 ] as const;
 export type ErrorResource = (typeof errorResources)[number];
-export interface ErrorDetails {
+export interface ErrorDetails extends ReadingDetails {
   resource?: ErrorResource;
   httpStatus?: number;
   publicFile?: string;

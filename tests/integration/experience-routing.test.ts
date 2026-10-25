@@ -9,6 +9,8 @@ import vm from "node:vm";
 import { gzipSync } from "node:zlib";
 import { CHAPTER_COUNT, FILE_CHAPTERS, RESULTS_STEP } from "../../src/lib/navigation/journey.ts";
 import { bgzfWrite } from "../../scripts/lib/util.ts";
+import { AppError } from "../../src/lib/app-error.ts";
+import { getReadingContext } from "../../src/lib/diagnostics/reading.ts";
 const { default: vcf } = await import("../../src/experiences/vcf/index.ts");
 const { acceptedFiles, getExperience, getGenomeSelection, openGenomeFile, selectGenome } =
   await import("../../src/experiences/index.ts");
@@ -55,6 +57,50 @@ test("file intake distinguishes unsupported formats, invalid VCF headers and mis
     {
       name: "AppError",
       code: "VCF_SAMPLE_MISSING",
+    },
+  );
+});
+
+test("VCF header failures distinguish fixed causes and never expose provider or sample text", async () => {
+  const secret = "PRIVATE_PROBE_VCF_SOURCE_AND_SAMPLE";
+  for (const [content, reason] of [
+    [
+      `##source=${secret}\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t${secret}\n`,
+      "vcf-format-marker-missing",
+    ],
+    [`##fileformat=VCFv4.2\n##source=${secret}\n${secret}\n`, "vcf-column-header-missing"],
+  ] as const) {
+    await assert.rejects(openGenomeFile(fixture(content)), (error: unknown) => {
+      assert.ok(error instanceof AppError);
+      assert.equal(error.code, "VCF_HEADER_INVALID");
+      assert.deepEqual(
+        { ...getReadingContext(error), ...error.details },
+        {
+          readerKind: "vcf",
+          readingStep: "header",
+          inputContainer: "bgzf",
+          failureReason: reason,
+        },
+      );
+      assert.ok(!JSON.stringify(error).includes(secret));
+      return true;
+    });
+  }
+  await assert.rejects(
+    vcf.openSource({
+      size: 0,
+      async slice() {
+        return new Uint8Array();
+      },
+    }),
+    (error: unknown) => {
+      assert.ok(error instanceof AppError);
+      assert.equal(
+        error.details.inputContainer,
+        undefined,
+        "empty input has no observed compression signature",
+      );
+      return true;
     },
   );
 });

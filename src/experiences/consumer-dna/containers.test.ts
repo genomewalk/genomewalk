@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { Gzip, Inflate, gzipSync, strToU8, zipSync } from "fflate";
 import { AppError } from "../../lib/app-error.ts";
+import { getReadingContext } from "../../lib/diagnostics/reading.ts";
 import { textLines, unpack } from "./containers.ts";
 import { openConsumerFile } from "./reader.ts";
 
@@ -33,7 +34,14 @@ test("ZIP decompression preserves native capacity failures including Firefox's O
       t.mock.method(Inflate.prototype, "push", () => {
         throw failure;
       });
-      await assert.rejects(unpack(input), (error: unknown) => error === failure);
+      await assert.rejects(unpack(input), (error: unknown) => {
+        assert.equal(error, failure);
+        if (error instanceof Error) {
+          assert.equal(getReadingContext(error).inputContainer, "zip");
+          assert.equal(getReadingContext(error).readingStep, "decompress");
+        }
+        return true;
+      });
     });
   }
 });
@@ -117,6 +125,73 @@ test("ZIP-wrapped VCF receives extraction and BGZF guidance", async () => {
         return true;
       },
     );
+  }
+});
+
+test("ZIP keeps unsupported DNA hints only when candidate diagnostics agree", async () => {
+  const privateText = "SYNTHETIC_PRIVATE_HEADER_FILENAME_AND_DATA";
+  const rejected23 = dna.replace("genotype", privateText);
+  const rejectedAncestry = ancestry.replace("allele1", privateText);
+  for (const files of [
+    { [`${privateText}.txt`]: rejected23, "README.txt": "Ordinary instructions" },
+    { "one.txt": rejected23, "two.txt": rejected23 },
+  ]) {
+    await assert.rejects(openConsumerFile(archive(files)), (error: unknown) => {
+      assert.ok(error instanceof AppError);
+      assert.equal(error.code, "ARCHIVE_NO_DNA");
+      const details = { ...getReadingContext(error), ...error.details };
+      assert.equal(details.headerProvider, "23andMe");
+      assert.equal(details.headerLayout, "other");
+      assert.equal(details.formatReason, "columns-mismatch");
+      assert.equal(details.readingStep, "select-payload");
+      assert.equal(details.inputContainer, "zip");
+      assert.equal(JSON.stringify(details).includes(privateText), false);
+      return true;
+    });
+  }
+  for (const files of [
+    { "one.txt": rejected23, "two.txt": rejectedAncestry },
+    { "one.txt": rejectedAncestry, "two.txt": rejected23 },
+  ]) {
+    await assert.rejects(openConsumerFile(archive(files)), (error: unknown) => {
+      assert.ok(error instanceof AppError);
+      assert.equal(error.code, "ARCHIVE_NO_DNA");
+      const details = { ...getReadingContext(error), ...error.details };
+      assert.equal(details.headerProvider, undefined);
+      assert.equal(details.headerLayout, undefined);
+      assert.equal(details.formatReason, undefined);
+      assert.equal(details.inputContainer, "zip");
+      return true;
+    });
+  }
+});
+
+test("archive failures identify the failing structural check without byte counts or checksums", async () => {
+  const original = gzipSync(strToU8(dna));
+  const badSize = original.slice();
+  badSize[badSize.length - 4]! ^= 1;
+  const badChecksum = original.slice();
+  badChecksum[badChecksum.length - 8]! ^= 1;
+  for (const [input, container, step, reason] of [
+    [new Blob([new Uint8Array([31, 139])]), "gzip", "archive-integrity", "archive-end-missing"],
+    [new Blob([badSize]), "gzip", "archive-integrity", "decoded-size-mismatch"],
+    [new Blob([badChecksum]), "gzip", "archive-integrity", "checksum-mismatch"],
+    [new Blob([new Uint8Array([80, 75])]), "zip", "archive-directory", "archive-end-missing"],
+  ] as const) {
+    await assert.rejects(unpack(input), (error: unknown) => {
+      assert.ok(error instanceof AppError);
+      assert.equal(error.code, "ARCHIVE_INVALID");
+      assert.deepEqual(
+        { ...getReadingContext(error), ...error.details },
+        {
+          readerKind: "consumer-dna",
+          readingStep: step,
+          inputContainer: container,
+          failureReason: reason,
+        },
+      );
+      return true;
+    });
   }
 });
 

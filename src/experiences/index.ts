@@ -6,6 +6,7 @@ import { optionalExperiences } from "./optional.ts";
 import { describeSelection, restoreSelection } from "./selection.ts";
 import type { HttpRangeSource } from "../lib/io/http-range.ts";
 import { hasCompressedVcfHeader } from "../lib/intake/vcf-format.ts";
+import { withReadingContext } from "../lib/diagnostics/reading.ts";
 
 let current: Experience =
   restoreSelection([vcf, ...optionalExperiences], import.meta.hot?.data.selection) || vcf;
@@ -15,22 +16,26 @@ export const acceptedFiles = [vcf, ...optionalExperiences].map((x) => x.accept).
 export const inputDescription = [vcf, ...optionalExperiences].map((x) => x.label).join(" · ");
 
 export async function openGenomeFile(file: File, signal?: AbortSignal, onProgress?: Progress) {
-  signal?.throwIfAborted();
-  if (!file.size)
-    throw new AppError("FILE_EMPTY", "This file is empty. Choose a complete DNA file.");
-  let experience = ([vcf, ...optionalExperiences] as Experience[]).find((x) => x.matches(file));
-  if (
-    experience !== vcf &&
-    /\.(?:gz|bgz)$/i.test(file.name) &&
-    (await hasCompressedVcfHeader(file, signal))
-  )
-    experience = vcf;
-  signal?.throwIfAborted();
-  if (!experience)
-    throw new AppError("FILE_TYPE_UNSUPPORTED", `Supported files: ${inputDescription}.`);
-  const opened = await experience.open(file, signal, onProgress);
-  signal?.throwIfAborted();
-  return { ...opened, experience };
+  try {
+    signal?.throwIfAborted();
+    if (!file.size)
+      throw new AppError("FILE_EMPTY", "This file is empty. Choose a complete DNA file.");
+    let experience = ([vcf, ...optionalExperiences] as Experience[]).find((x) => x.matches(file));
+    if (
+      experience !== vcf &&
+      /\.(?:gz|bgz)$/i.test(file.name) &&
+      (await hasCompressedVcfHeader(file, signal))
+    )
+      experience = vcf;
+    signal?.throwIfAborted();
+    if (!experience)
+      throw new AppError("FILE_TYPE_UNSUPPORTED", `Supported files: ${inputDescription}.`);
+    const opened = await experience.open(file, signal, onProgress);
+    signal?.throwIfAborted();
+    return { ...opened, experience };
+  } catch (error) {
+    throw withReadingContext(error, { readingStep: "format-detection" });
+  }
 }
 
 export async function openPublicSample(source: HttpRangeSource, signal?: AbortSignal) {

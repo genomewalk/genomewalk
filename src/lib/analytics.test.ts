@@ -8,7 +8,9 @@ import {
   usageEvents,
   initAnalytics,
 } from "./analytics.ts";
-import { errorDefinitions } from "./app-error.ts";
+import { AppError, errorDefinitions } from "./app-error.ts";
+import { prepareErrorReport } from "./error-reporting.ts";
+import { withReadingContext } from "./diagnostics/reading.ts";
 import type { ClientEnvironment } from "./diagnostics/client-environment.ts";
 
 const privateText = "SYNTHETIC_PRIVATE_GENOME.vcf.gz GATTACAGATTACA";
@@ -31,6 +33,157 @@ function event(name: string, properties: Record<string, unknown> = {}): CaptureR
 function sanitize(input: CaptureResult, env = environment) {
   return sanitizeAnalyticsEvent(input, visit, release, env);
 }
+
+test("reviewed header diagnostics survive error preparation and the outbound boundary", () => {
+  for (const details of [
+    {
+      headerProvider: "unrecognized",
+      headerLayout: "genotype",
+      formatReason: "provider-unrecognized",
+    },
+    { headerProvider: "23andMe", headerLayout: "allele-pair", formatReason: "columns-mismatch" },
+    { headerProvider: "AncestryDNA", headerLayout: "other", formatReason: "columns-mismatch" },
+  ] as const) {
+    const report = prepareErrorReport(
+      new AppError("DNA_FORMAT_UNSUPPORTED", privateText, details),
+      "file-open",
+      "read-file",
+    )!;
+    const clean = sanitize(
+      event("$exception", {
+        ...report.properties,
+        filename: privateText,
+        header: privateText,
+        $exception_list: [{ type: privateText, value: privateText }],
+      }),
+    )!;
+    assert.equal(clean.properties["header_provider"], details.headerProvider);
+    assert.equal(clean.properties["header_layout"], details.headerLayout);
+    assert.equal(clean.properties["format_reason"], details.formatReason);
+    assert.equal(
+      clean.properties["$exception_fingerprint"],
+      "genomewalk:DNA_FORMAT_UNSUPPORTED:file-open:none",
+    );
+    assert.equal(JSON.stringify(clean).includes(privateText), false);
+  }
+});
+
+test("outbound reading metadata cannot leak arbitrary values or attach to other event types", () => {
+  const keys = [
+    "reader_kind",
+    "reading_step",
+    "input_container",
+    "text_encoding",
+    "header_provider",
+    "header_layout",
+    "format_reason",
+    "failure_reason",
+  ];
+  for (const value of [privateText, { value: privateText }, 4, null]) {
+    const clean = sanitize(
+      event("$exception", {
+        error_code: "DNA_FORMAT_UNSUPPORTED",
+        ...Object.fromEntries(keys.map((key) => [key, value])),
+      }),
+    )!;
+    for (const key of keys) assert.equal(clean.properties[key], undefined);
+    assert.equal(JSON.stringify(clean).includes(privateText), false);
+  }
+  for (const input of [
+    ...usageEvents.map((name) => event(name)),
+    event("$pageview", { $pathname: "/" }),
+  ]) {
+    Object.assign(input.properties, {
+      header_provider: "23andMe",
+      header_layout: "genotype",
+      format_reason: "columns-mismatch",
+      reader_kind: "consumer-dna",
+      reading_step: "header",
+      input_container: "plain",
+      text_encoding: "utf8-bom",
+      failure_reason: "data-before-columns",
+    });
+    const clean = sanitize(input)!;
+    for (const key of keys) assert.equal(clean.properties[key], undefined);
+  }
+});
+
+test("reading context survives the outbound boundary for archive, record and native failures", () => {
+  for (const [original, code, details] of [
+    [
+      new AppError("ARCHIVE_NO_DNA", privateText),
+      "ARCHIVE_NO_DNA",
+      {
+        readerKind: "consumer-dna",
+        readingStep: "select-payload",
+        inputContainer: "zip",
+        headerProvider: "unrecognized",
+        headerLayout: "genotype",
+        formatReason: "provider-unrecognized",
+      },
+    ],
+    [
+      new AppError("DNA_COLUMNS_INVALID", privateText),
+      "DNA_COLUMNS_INVALID",
+      {
+        readerKind: "consumer-dna",
+        readingStep: "records",
+        inputContainer: "plain",
+        headerProvider: "AncestryDNA",
+        headerLayout: "allele-pair",
+        textEncoding: "utf8-bom",
+        failureReason: "row-columns-too-few",
+      },
+    ],
+    [
+      new RangeError("Array buffer allocation failed"),
+      "BROWSER_ALLOCATION_FAILED",
+      {
+        readerKind: "vcf",
+        readingStep: "decompress",
+        inputContainer: "bgzf",
+      },
+    ],
+    [
+      new DOMException(privateText, "NotReadableError"),
+      "FILE_READ_FAILED",
+      {
+        readerKind: "vcf",
+        readingStep: "read-bytes",
+        inputContainer: "bgzf",
+      },
+    ],
+  ] as const) {
+    const report = prepareErrorReport(
+      withReadingContext(original, details),
+      "file-open",
+      "read-file",
+    )!;
+    const clean = sanitize(
+      event("$exception", {
+        ...report.properties,
+        filename: privateText,
+        row_number: 123456,
+        genotype: privateText,
+        $exception_list: [{ type: privateText, value: privateText }],
+      }),
+    )!;
+    assert.equal(clean.properties["error_code"], code);
+    assert.equal(clean.properties["reader_kind"], details.readerKind);
+    assert.equal(clean.properties["reading_step"], details.readingStep);
+    assert.equal(clean.properties["input_container"], details.inputContainer);
+    for (const key of [
+      "header_provider",
+      "header_layout",
+      "format_reason",
+      "text_encoding",
+      "failure_reason",
+    ])
+      assert.equal(clean.properties[key], report.properties[key]);
+    assert.equal(clean.properties["row_number"], undefined);
+    assert.equal(JSON.stringify(clean).includes(privateText), false);
+  }
+});
 
 test("usage boundary reconstructs properties and strips SDK identities and private extras", () => {
   const original = {

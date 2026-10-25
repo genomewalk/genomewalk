@@ -9,6 +9,7 @@ import {
 } from "./diagnostics/client-environment.ts";
 import { fileExtensions, fileFormats, fileSizeBands } from "./diagnostics/file-context.ts";
 import { safePublicFile } from "./public-file.ts";
+import { sanitizeReadingProperties } from "./diagnostics/reading.ts";
 
 // Public ingestion identifiers, not authentication secrets. Kept in the static build.
 const projectToken = "phc_utRMfZS8cjErMnW89GxrJMEx7rHfCZA9XciPXV4aGh7M";
@@ -205,6 +206,7 @@ export function sanitizeAnalyticsEvent(
       ...(extension ? { file_extension: extension } : {}),
       ...(format ? { file_format: format } : {}),
       ...(size ? { file_size_band: size } : {}),
+      ...sanitizeReadingProperties(input),
     });
   } else if (event.event === "$pageview") {
     const path = canonicalPage(input["$pathname"]);
@@ -293,7 +295,12 @@ export function initAnalytics(): boolean {
         if (!clean) return null;
         if (clean.event === "$exception") {
           if (clean.properties["$exception_level"] === "warning") {
-            const key = clean.properties["$exception_fingerprint"] as string;
+            const key = JSON.stringify([
+              clean.properties["$exception_fingerprint"],
+              clean.properties["header_provider"],
+              clean.properties["failure_reason"],
+              clean.properties["format_reason"],
+            ]);
             if (warnings.has(key) || warnings.size >= 3) return null;
             warnings.add(key);
           } else if (errorsSent++ >= 10) return null;

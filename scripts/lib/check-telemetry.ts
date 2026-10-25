@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { gzipSync, zipSync, strToU8 } from "fflate";
 import type { Browser, Request } from "playwright";
 import { SAMPLE } from "../../src/lib/catalogues/public-sample.ts";
 import { errorDefinitions, errorResources, type ErrorCode } from "../../src/lib/app-error.ts";
@@ -90,6 +91,14 @@ export async function checkTelemetry(browser: Browser, origin: string) {
       "file_extension",
       "file_format",
       "file_size_band",
+      "header_provider",
+      "header_layout",
+      "format_reason",
+      "reader_kind",
+      "reading_step",
+      "input_container",
+      "text_encoding",
+      "failure_reason",
       "$exception_list",
       "$exception_level",
       "$exception_fingerprint",
@@ -213,6 +222,20 @@ export async function checkTelemetry(browser: Browser, origin: string) {
           ".vcf.bgz",
           ".gvcf.gz",
           ".gvcf.bgz",
+          ".fastq.gz",
+          ".fasta.gz",
+          ".csv.gz",
+          ".fq.gz",
+          ".fa.gz",
+          ".gvcf",
+          ".vcf",
+          ".fastq",
+          ".fasta",
+          ".bam",
+          ".cram",
+          ".csv",
+          ".fq",
+          ".fa",
           ".txt",
           ".tsv",
           ".zip",
@@ -231,6 +254,57 @@ export async function checkTelemetry(browser: Browser, origin: string) {
           String(p["file_size_band"]),
         ),
       );
+    }
+    for (const [key, values] of [
+      ["header_provider", ["23andMe", "AncestryDNA", "unrecognized"]],
+      ["header_layout", ["genotype", "allele-pair", "other"]],
+      ["format_reason", ["provider-unrecognized", "columns-mismatch"]],
+      ["reader_kind", ["consumer-dna", "vcf"]],
+      [
+        "reading_step",
+        [
+          "format-detection",
+          "read-bytes",
+          "archive-directory",
+          "decompress",
+          "archive-integrity",
+          "select-payload",
+          "header",
+          "first-record",
+          "records",
+        ],
+      ],
+      ["input_container", ["plain", "zip", "gzip", "bgzf"]],
+      ["text_encoding", ["utf8-bom", "utf16le-bom", "utf16be-bom", "unmarked"]],
+      [
+        "failure_reason",
+        [
+          "header-ended-before-columns",
+          "data-before-columns",
+          "row-columns-too-few",
+          "row-columns-too-many",
+          "archive-end-missing",
+          "directory-invalid",
+          "directory-mismatch",
+          "duplicate-entry",
+          "split-or-zip64",
+          "compression-unsupported",
+          "decompression-failed",
+          "payload-incomplete",
+          "checksum-mismatch",
+          "decoded-size-mismatch",
+          "bgzf-signature-missing",
+          "bgzf-extra-field-missing",
+          "bgzf-header-incomplete",
+          "bgzf-block-size-invalid",
+          "decoded-size-invalid",
+          "vcf-format-marker-missing",
+          "vcf-column-header-missing",
+        ],
+      ],
+    ] as const) {
+      if (p[key] === undefined) continue;
+      assert.ok(values.some((value) => value === p[key]));
     }
   }
 
@@ -567,6 +641,125 @@ export async function checkTelemetry(browser: Browser, origin: string) {
       await settled();
       assert.equal(count("genome_ready", "upload"), readyBefore + 1);
       assert.equal(await page.getByRole("alert").count(), 0);
+    }
+    // Fixed header categories identify the rejection without transmitting the
+    // provider comment, arbitrary column labels, file name or a DNA row.
+    await page.goto(production, { waitUntil: "networkidle" });
+    for (const [meta, columns, provider, layout, reason] of [
+      [
+        `# ${secret}`,
+        "rsid\tchromosome\tposition\tgenotype",
+        "unrecognized",
+        "genotype",
+        "provider-unrecognized",
+      ],
+      [
+        "# 23andMe",
+        "rsid\tchromosome\tposition\tallele1\tallele2",
+        "23andMe",
+        "allele-pair",
+        "columns-mismatch",
+      ],
+      [
+        "# AncestryDNA",
+        `rsid\tchromosome\tposition\t${secret}`,
+        "AncestryDNA",
+        "other",
+        "columns-mismatch",
+      ],
+    ]) {
+      const failure = await reportAfter(() =>
+        page.locator('input[type="file"]').setInputFiles({
+          name: `${secret}.txt`,
+          mimeType: "text/plain",
+          buffer: Buffer.from(`${meta}\n# ${columns}\n${secret}\n`),
+        }),
+      );
+      assert.equal(failure["error_code"], "DNA_FORMAT_UNSUPPORTED");
+      assert.equal(failure["header_provider"], provider);
+      assert.equal(failure["header_layout"], layout);
+      assert.equal(failure["format_reason"], reason);
+      await waitForFileError();
+      const alert = await page.getByRole("alert").innerText();
+      assert.match(
+        alert,
+        reason === "provider-unrecognized"
+          ? /identify a supported provider/
+          : /columns don’t match/,
+      );
+      assert.ok(!alert.includes(secret));
+    }
+    const corruptGzip = gzipSync(strToU8(`# ${secret}\n`));
+    corruptGzip[corruptGzip.length - 8]! ^= 1;
+    const readFailures = [
+      {
+        extension: ".txt",
+        bytes: strToU8(
+          `#AncestryDNA raw data\n# ${secret}\nrsid\tchromosome\tposition\tallele1\tallele2\n${secret}\t1\t100\tA\n`,
+        ),
+        expected: {
+          error_code: "DNA_COLUMNS_INVALID",
+          header_provider: "AncestryDNA",
+          reading_step: "first-record",
+          input_container: "plain",
+          failure_reason: "row-columns-too-few",
+        },
+      },
+      {
+        extension: ".txt",
+        bytes: strToU8(`\uFEFF#23andMe\n# ${secret}\n`),
+        expected: {
+          error_code: "DNA_HEADER_MISSING",
+          header_provider: "23andMe",
+          failure_reason: "header-ended-before-columns",
+          text_encoding: "utf8-bom",
+        },
+      },
+      {
+        extension: ".zip",
+        bytes: zipSync({
+          [`${secret}.txt`]: strToU8(
+            `#23andMe\n# ${secret}\nrsid\tchromosome\tposition\tallele1\tallele2\n`,
+          ),
+        }),
+        expected: {
+          error_code: "ARCHIVE_NO_DNA",
+          header_provider: "23andMe",
+          input_container: "zip",
+          format_reason: "columns-mismatch",
+        },
+      },
+      {
+        extension: ".gz",
+        bytes: corruptGzip,
+        expected: {
+          error_code: "ARCHIVE_INVALID",
+          input_container: "gzip",
+          failure_reason: "checksum-mismatch",
+          reading_step: "archive-integrity",
+        },
+      },
+      {
+        extension: ".bam",
+        bytes: strToU8(secret),
+        expected: {
+          error_code: "FILE_TYPE_UNSUPPORTED",
+          file_extension: ".bam",
+          reading_step: "format-detection",
+        },
+      },
+    ];
+    for (const { extension, bytes, expected } of readFailures) {
+      await page.goto(production, { waitUntil: "networkidle" });
+      const failure = await reportAfter(() =>
+        page.locator('input[type="file"]').setInputFiles({
+          name: `${secret}${extension}`,
+          mimeType: "application/octet-stream",
+          buffer: Buffer.from(bytes),
+        }),
+      );
+      for (const [key, value] of Object.entries(expected)) assert.equal(failure[key], value, key);
+      await waitForFileError();
     }
     await checkMemoryOnly();
     assert.deepEqual(failures, []);

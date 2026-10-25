@@ -1,7 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readHeader, streamVariants } from "../../src/experiences/vcf/engine/vcf.ts";
-import { streamBlocks } from "../../src/lib/io/bgzf.ts";
+import { FileSource, streamBlocks } from "../../src/lib/io/bgzf.ts";
+import { AppError } from "../../src/lib/app-error.ts";
+import { getReadingContext } from "../../src/lib/diagnostics/reading.ts";
 import { indexCatalogue } from "../../src/lib/catalogues/reference-catalogue.ts";
 import { bgzfBytes } from "../helpers/vcf.ts";
 const source = (bytes: Buffer<ArrayBuffer>) => ({
@@ -100,6 +102,127 @@ test("truncated and corrupt VCF blocks fail instead of silently returning partia
     code: "VCF_BLOCK_INVALID",
     message: /decompressed/,
   });
+});
+
+test("BGZF failures identify structural reasons without retaining input bytes or positions", async () => {
+  const secret = "PRIVATE_PROBE_VCF_HEADER_SAMPLE_AND_FILENAME";
+  const text = `##fileformat=VCFv4.2\n##source=${secret}\n`;
+  const bytes = bgzfBytes(text);
+  const altered = (change: (value: Buffer<ArrayBuffer>) => void) => {
+    const result = Buffer.from(bytes);
+    change(result);
+    return result;
+  };
+  const cases = [
+    [Buffer.from(secret), "bgzf-signature-missing", undefined],
+    [altered((value) => value.writeUInt16LE(3, 14)), "bgzf-header-incomplete", "gzip"],
+    [
+      altered((value) => {
+        value[12] = 88;
+      }),
+      "bgzf-extra-field-missing",
+      "gzip",
+    ],
+    [altered((value) => value.writeUInt16LE(10, 16)), "bgzf-block-size-invalid", "bgzf"],
+    [bytes.subarray(0, -1), "payload-incomplete", "bgzf"],
+    [
+      altered((value) => value.writeUInt32LE(65537, value.length - 4)),
+      "decoded-size-invalid",
+      "bgzf",
+    ],
+    [
+      altered((value) => {
+        value[18] = 7;
+      }),
+      "decompression-failed",
+      "bgzf",
+    ],
+    [
+      altered((value) => value.writeUInt32LE(Buffer.byteLength(text) + 1, value.length - 4)),
+      "decoded-size-mismatch",
+      "bgzf",
+    ],
+    [
+      altered((value) => {
+        value[value.length - 8]! ^= 1;
+      }),
+      "checksum-mismatch",
+      "bgzf",
+    ],
+  ] as const;
+  for (const [input, reason, container] of cases) {
+    await assert.rejects(Array.fromAsync(streamBlocks(source(input))), (error: unknown) => {
+      assert.ok(error instanceof AppError);
+      const details = { ...getReadingContext(error), ...error.details };
+      assert.equal(details.failureReason, reason);
+      assert.equal(details.inputContainer, container);
+      assert.equal(details.readerKind, undefined, "the shared BGZF reader must not assume VCF");
+      assert.ok(!JSON.stringify(details).includes(secret));
+      assert.ok(!JSON.stringify(error).includes(secret));
+      return true;
+    });
+  }
+});
+
+test("VCF reads and text decoding preserve native failure identity with safe operation context", async (t) => {
+  const secret = "PRIVATE_PROBE_FILENAME_OR_NATIVE_MESSAGE";
+  const failure = new DOMException(secret, "NotReadableError");
+  const file = new File([bgzfBytes("##fileformat=VCFv4.2\n")], `${secret}.vcf.gz`);
+  t.mock.method(file, "slice", () => {
+    throw failure;
+  });
+  await assert.rejects(Array.fromAsync(streamBlocks(new FileSource(file))), (error: unknown) => {
+    assert.equal(error, failure);
+    assert.deepEqual(getReadingContext(error), { readerKind: "vcf", readingStep: "read-bytes" });
+    return true;
+  });
+
+  for (const step of ["header", "records"] as const) {
+    const failure = new RangeError("Invalid string length");
+    const mock = t.mock.method(TextDecoder.prototype, "decode", () => {
+      throw failure;
+    });
+    const src = source(bgzfBytes("##fileformat=VCFv4.2\n"));
+    await assert.rejects(
+      step === "header" ? readHeader(src) : streamVariants(src, () => {}),
+      (error: unknown) => {
+        assert.equal(error, failure);
+        assert.deepEqual(getReadingContext(error), {
+          readingStep: step,
+          inputContainer: "bgzf",
+          ...(step === "records" ? { readerKind: "vcf" } : {}),
+        });
+        return true;
+      },
+    );
+    mock.mock.restore();
+  }
+
+  const abort = new DOMException(secret, "AbortError");
+  const cancelled = AbortSignal.abort(abort);
+  await assert.rejects(
+    Array.fromAsync(streamBlocks(source(bgzfBytes("x")), undefined, cancelled)),
+    (error: unknown) => {
+      assert.equal(error, abort);
+      assert.deepEqual(getReadingContext(error), {});
+      return true;
+    },
+  );
+});
+
+test("VCF row processing failures retain native identity and the records operation", async () => {
+  const failure = new RangeError("PRIVATE_PROBE_NATIVE_ROW_MESSAGE");
+  await assert.rejects(
+    streamVariants(source(bgzfBytes("1\t100\t.\tC\tT\t.\tPASS\t.\tGT\t0/1\n")), () => {
+      throw failure;
+    }),
+    (error: unknown) => {
+      assert.equal(error, failure);
+      assert.deepEqual(getReadingContext(error), { readerKind: "vcf", readingStep: "records" });
+      assert.ok(!JSON.stringify(getReadingContext(error)).includes("PRIVATE_PROBE"));
+      return true;
+    },
+  );
 });
 
 test("catalogue streaming retains exact indel keys, zero frequencies, samples and tallies", async () => {

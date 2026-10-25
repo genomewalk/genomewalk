@@ -1,24 +1,37 @@
 import { AppError } from "../../../lib/app-error.ts";
 import { detectReferenceBuild } from "../../../lib/genetics/reference-build.ts";
 
-export function describeHeader(meta: string[], columns: string[]) {
-  const text = meta.join("\n");
-  const provider = /23andme/i.test(text)
+export function detectHeaderProvider(meta: string[]): "23andMe" | "AncestryDNA" | null {
+  // Reuse existing lines when reporting a failure, including allocation failures.
+  return meta.some((line) => /23andme/i.test(line))
     ? "23andMe"
-    : /ancestrydna/i.test(text)
+    : meta.some((line) => /ancestrydna/i.test(line))
       ? "AncestryDNA"
       : null;
-  const expected =
-    provider === "23andMe"
-      ? ["rsid", "chromosome", "position", "genotype"]
-      : ["rsid", "chromosome", "position", "allele1", "allele2"];
-  if (
-    !provider ||
-    columns.map((x) => x.toLowerCase().replace(/\s+/g, "")).join("|") !== expected.join("|")
-  )
+}
+
+export function describeHeader(meta: string[], columns: string[]) {
+  const text = meta.join("\n");
+  const provider = detectHeaderProvider(meta);
+  const normalizedColumns = columns.map((x) => x.toLowerCase().replace(/\s+/g, "")).join("|");
+  const layout =
+    normalizedColumns === "rsid|chromosome|position|genotype"
+      ? "genotype"
+      : normalizedColumns === "rsid|chromosome|position|allele1|allele2"
+        ? "allele-pair"
+        : "other";
+  const expectedLayout = provider === "23andMe" ? "genotype" : "allele-pair";
+  if (!provider || layout !== expectedLayout)
     throw new AppError(
       "DNA_FORMAT_UNSUPPORTED",
-      "This is not a supported 23andMe or AncestryDNA raw export. Keep the original header and column names.",
+      !provider
+        ? "We found DNA-style columns, but couldn’t identify a supported provider in the file header. Choose an original raw 23andMe or AncestryDNA export, or try the public sample."
+        : `The file header mentions ${provider}, but its columns don’t match that provider’s raw export. Download a fresh raw export from ${provider}, or try the public sample.`,
+      {
+        formatReason: provider ? "columns-mismatch" : "provider-unrecognized",
+        headerProvider: provider || "unrecognized",
+        headerLayout: layout,
+      },
     );
   const headerBuild = detectReferenceBuild(meta);
   const hasBuildMetadata =

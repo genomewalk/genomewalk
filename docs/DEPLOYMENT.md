@@ -102,6 +102,30 @@ identifiers or exact file sizes. Browser/device detection is best effort;
 `unknown` file format means identification had not completed, while `unrecognized`
 means the format/header was rejected.
 
+Reading failures can also carry `reader_kind`, `reading_step`, `input_container`,
+`text_encoding`, `header_provider`, `header_layout`, `format_reason`, and
+`failure_reason`. All use the fixed vocabulary in `src/lib/diagnostics/reading.ts`;
+no arbitrary header/source strings or numeric file locations are accepted.
+`header_provider` describes a recognized 23andMe/AncestryDNA header marker, even
+when reading fails before a source is returned. It does not claim a validated
+export. A VCF reader does not infer a provider from its sample/source fields.
+
+For example, `DNA_COLUMNS_INVALID` with `header_provider=AncestryDNA`,
+`reading_step=first-record`, and `failure_reason=row-columns-too-few` identifies
+the provider marker and exact structural check without including a DNA row.
+`ARCHIVE_INVALID` with `input_container=gzip` and
+`failure_reason=checksum-mismatch` distinguishes damaged compressed data from an
+unsupported header. `text_encoding=utf16le-bom` identifies an observed encoding
+marker; the extra reporting does not change which encodings are supported.
+
+Unknown provider and mismatched columns still use `DNA_FORMAT_UNSUPPORTED`,
+distinguished by `format_reason`. Unambiguous unsupported ZIP candidates retain
+the same fixed hints under `ARCHIVE_NO_DNA`. Issue fingerprints stay stable;
+different provider/failure reasons can emit separate occurrences within the
+existing three-warning cap, while equivalent retries are deduplicated. Older
+reports cannot recover the new fields. Some native primitive failures cannot
+carry context, but retain their reviewed failure code.
+
 File rejection codes distinguish an empty file (`FILE_EMPTY`) and unsupported
 formats from corrupt data. ZIP errors distinguish no supported export
 (`ARCHIVE_NO_DNA`), multiple exports (`ARCHIVE_MULTIPLE_DNA`), ZIP-wrapped VCFs
