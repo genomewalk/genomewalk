@@ -6,6 +6,6 @@
   "src/experiences/vcf/engine/chapters/summary.ts": "67b99a2695c6a2c37ed18357ab5711378ceeb8041edd037eaf71a2917097e5a0",
   "src/experiences/vcf/engine/chapters/meaning.ts": "9b0cf83468ea83cd5e5fa160050a9456c233afed3017f9decb3f57a970693836",
   "src/experiences/vcf/engine/chapters/frequencies.ts": "99120d6fb34a1e24bbb7468f86a24353bdf36f8b8d9728e0b64d99c22514ab90",
-  "src/experiences/vcf/engine/chapters/clinvar.ts": "b6ee42f51b46b17210f57d99befb0ca430a39ed7d17dcec3c59b7ec6ecdad82c",
-  "src/experiences/vcf/engine/chapters/results.ts": "60299356d3d1c4664c1b4885292cabf9419d2d939b0a0d75976a848f2fe0f8a3"
+  "src/experiences/vcf/engine/chapters/clinvar.ts": "80846c4ebd9bce28726821e5c2ed4d056749d232c0938fc009779fe8929eb670",
+  "src/experiences/vcf/engine/chapters/results.ts": "1091ade3f2d2d2f512bd1f8b2bfef48fd20cd7c5fecc065b620ec35f29f8b293"
 }

@@ -1,4 +1,4 @@
-# Offline reference indexes
+# Offline reference data
 
 With Docker, run any target below through the tools service; Node and the indexed-file reader
 are included:
@@ -18,7 +18,7 @@ personal genome as input. Run them from the project root with Node.js 24 LTS.
 All entry points are TypeScript executed directly by Node; no separate tool build
 or TS runner is required. Shared implementation lives under `scripts/lib/`, and
 synthetic pipeline tests live under `tests/integration/`.
-Ordinary application development uses the checked-in indexes and needs no rebuild.
+Ordinary application development uses the checked-in public assets and needs no rebuild.
 
 ## Start here
 
@@ -31,10 +31,11 @@ npm run data:inputs                  # inspect cached prerequisites for offline 
 ```
 
 Use `npm run data:rebuild` for a **network-free** rebuild from an existing cache.
-It requires cached ClinVar VCF files, frequencies, citation lists, PubMed labels and compatible
-marker frequency records. A missing input is an error; it never falls back to HTTP. Before running any
-stage, the offline command checks required input files, marker-cache identities
-and publication metadata coverage. Run `npm run data:inputs`
+It requires cached ClinVar VCF files, frequency regions for the current selected
+alleles, citation lists, PubMed labels and compatible marker frequency records.
+A missing input is an error; it never falls back to HTTP. Before running any
+stage, the offline command checks required input files, frequency-region identities,
+marker-cache identities and publication metadata coverage. Run `npm run data:inputs`
 to do this check on its own; it writes nothing. The builders still validate
 file contents as they stream them, and validate all generated outputs.
 Use `npm run data:refresh` when you intend to fetch a new reference release.
@@ -42,23 +43,23 @@ Use `npm run data:refresh` when you intend to fetch a new reference release.
 
 ## Commands
 
-| npm target                               | Purpose                                                                                       | Network               |
-| ---------------------------------------- | --------------------------------------------------------------------------------------------- | --------------------- |
-| `npm run data:inputs`                    | Check cache prerequisites and marker identities before an offline rebuild                     | No                    |
-| `npm run data:plan`                      | Print named stages and exact commands                                                         | No                    |
-| `npm run data:rebuild`                   | Rebuild from cached inputs only, then validate                                                | No                    |
-| `npm run data:refresh`                   | Fetch fresh inputs and rebuild all indexes                                                    | Yes                   |
-| `npm run data:ranges`                    | Build byte-range indexes from existing BGZF catalogues                                        | No                    |
-| `npm run data:consumer`                  | Rebuild consumer rsID lookups from existing public assets                                     | No                    |
-| `npm run data:build`                     | Download prerequisites, build both references and consumer rsID lookups, validate all outputs | For missing inputs    |
-| `npm run data:download`                  | Cache ClinVar VCF/XML; extract germline citation lists                                        | For missing inputs    |
-| `npm run data:citations`                 | Download ClinVar VCV XML and extract its germline publication lists                           | For missing input     |
-| `npm run data:publications`              | Build compact citation labels for existing catalogues; cache PubMed metadata                  | For missing metadata  |
-| `npm run data:frequencies`               | Extract published gnomAD v4.1 combined frequencies for selected ClinVar records               | Yes                   |
-| `npm run data:catalog -- --build GRCh38` | Build one catalogue from cached inputs                                                        | No                    |
-| `npm run data:markers -- --build GRCh38` | Build cited examples from exact variant IDs                                                   | For missing responses |
-| `npm run data:check`                     | Validate catalogues, markers and consumer rsID lookups                                        | No                    |
-| `npm run test:data`                      | Run synthetic pipeline regression tests                                                       | No                    |
+| npm target                               | Purpose                                                                                       | Network                                    |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `npm run data:inputs`                    | Check cache prerequisites and marker identities before an offline rebuild                     | No                                         |
+| `npm run data:plan`                      | Print named stages and exact commands                                                         | No                                         |
+| `npm run data:rebuild`                   | Rebuild from cached inputs only, then validate                                                | No                                         |
+| `npm run data:refresh`                   | Fetch fresh inputs and rebuild all public assets                                              | Yes                                        |
+| `npm run data:metadata`                  | Build compact metadata from existing BGZF catalogues                                          | No                                         |
+| `npm run data:consumer`                  | Rebuild consumer rsID lookups from existing public assets                                     | No                                         |
+| `npm run data:build`                     | Download prerequisites, build both references and consumer rsID lookups, validate all outputs | For missing inputs                         |
+| `npm run data:download`                  | Cache ClinVar VCF/XML; extract germline citation lists                                        | For missing inputs                         |
+| `npm run data:citations`                 | Download ClinVar VCV XML and extract its germline publication lists                           | For missing input                          |
+| `npm run data:publications`              | Build compact citation labels for existing catalogues; cache PubMed metadata                  | For missing metadata                       |
+| `npm run data:frequencies`               | Extract published gnomAD v4.1 combined frequencies for selected ClinVar records               | For missing regions; none with `--offline` |
+| `npm run data:catalog -- --build GRCh38` | Build one catalogue from cached inputs                                                        | No                                         |
+| `npm run data:markers -- --build GRCh38` | Build cited examples from exact variant IDs                                                   | For missing responses                      |
+| `npm run data:check`                     | Validate catalogues, metadata, markers and consumer rsID lookups                              | No                                         |
+| `npm run test:data`                      | Run synthetic pipeline regression tests                                                       | No                                         |
 
 Options follow npm's `--` separator. Each command also accepts `--help`,
 `--data-dir <path>` and `--out-dir <path>`. Defaults are the project's `data/`
@@ -81,6 +82,12 @@ standard Tabix indexes and HTTP byte ranges to read the official joint VCFs.
 The first extraction can take many hours: the source rows contain considerably
 more information than the small published Genomewalk catalogue. Completed regions
 are cached under `data/gnomad-v4.1-joint/`; rerunning resumes those results.
+Every `data:build` run revisits the selected targets and assembles the frequency
+TSV from these region caches, even when a previous TSV exists. Cache identities
+include the exact selected allele keys, so a selection change retrieves only
+new or changed regions rather than silently reusing incomplete frequency coverage.
+`data:frequencies -- --offline` and `data:rebuild` require those exact caches;
+missing regions fail before the existing frequency TSV is replaced.
 `--fresh` deliberately bypasses this cache. Neither the full VCFs nor these
 intermediate caches are shipped to the browser.
 
@@ -104,18 +111,42 @@ ClinVar VCV XML ── aggregate germline citations ── PubMed references in 
 markers.base.json + GRCh38 joint VCF ── cited markers for each build
 ```
 
-Each output directory contains `catalog.tsv.gz` (about 26 MB),
-`catalog.index.json.gz` (about 5 MB) and `markers.json` (about 6 KB).
-The catalogue uses BGZF compression inside a gzip-compatible `.gz` file. The
-standard extension prevents GitHub Pages from adding HTTP compression, which
-would change the indexed byte offsets.
-The compact index contains exact allele keys, row offsets, catalogue summaries and
-SHA-256 hashes for each BGZF block. The browser matches keys locally and downloads
-only the annotation blocks needed. Catalogue builds generate the index automatically;
-`npm run data:ranges` rebuilds indexes from existing catalogues without network access.
-Its writer compresses bounded blocks and atomically replaces the destination
-after successful processing. Truncated or corrupt input, invalid options and
-missing prerequisites cause nonzero exits with an explanation.
+Each output directory contains `catalog.tsv.gz`, `catalog.meta.json` and
+`markers.json` (about 6 KB). After retaining mixed classifications and joining
+gnomAD frequencies and ClinVar citations, the current files from the cached
+2026-09-05 ClinVar release are:
+
+| Build  | Records | Catalogue (compressed MB) | Metadata (bytes) |
+| ------ | ------: | ------------------------: | ---------------: |
+| GRCh38 | 511,286 |                    28.061 |            3,749 |
+| GRCh37 | 511,282 |                    26.883 |            3,753 |
+
+MB is decimal (1,000,000 bytes). The uncompressed catalogue text is 165.174 MB
+for GRCh38 and 160.833 MB for GRCh37; this is not a measurement of browser memory.
+The browser uses only the selected build. Sorted VCF matching streams its complete
+catalogue through one GET, compares it progressively with the genome, keeps
+matches and releases processed blocks. It does not retain a complete catalogue
+payload map or personal variant-key set. Unsorted VCFs restart with a compact
+public-identity lookup and additional passes. Consumer matching uses two catalogue
+passes for identities and matching payloads, plus a compressed rsID lookup of
+about 2.609 MB. HTTP caching can reduce repeat transfer but is not required.
+Publication labels, teaching markers and application assets are separate.
+
+The catalogue uses BGZF compression inside a gzip-compatible `.gz` file. Serve
+its original bytes without HTTP content transformations. Metadata holds the
+compressed-file SHA-256 and size, chromosome order, record/class/star counts,
+header, six sample rows and three curated teaching examples. It contains no
+complete allele-key index or block/row locators. Catalogue builds generate this
+summary automatically; `npm run data:metadata` regenerates it without network
+access. The browser verifies the complete stream's byte length and SHA-256 before
+accepting matching results, in addition to per-block CRC and decoded-size checks.
+
+The writer compresses bounded blocks and atomically replaces its destination
+after successful processing. Catalogue rows must have contiguous chromosome
+sections, nondecreasing positions within each section and unique exact allele
+keys. The builder checks these before committing generated catalogue data; the
+metadata validator checks them again against the published file. Truncated or
+corrupt input, invalid options and missing prerequisites fail explicitly.
 
 GRCh37 frequencies are joined by ClinVar AlleleID to their **GRCh38 gnomAD v4.1
 source record**. The original gnomAD coordinate is retained in the catalogue.
@@ -145,6 +176,9 @@ npm run data:catalog -- --build GRCh37 --out-dir /tmp/genomewalk-ref
 its allele-ID join in `--data-dir`. Use both options when isolating all writes.
 There is no deployment or publication step in these commands. Validation is per
 artifact; the whole two-build pipeline is not a multi-file atomic transaction.
+After changing selection rules, use `data:build` to update frequency coverage,
+both catalogues and compact metadata, publication labels and consumer rsID sidecars
+together. A standalone catalogue build does not populate missing gnomAD lookups.
 
 ## ClinVar citation lists
 
@@ -202,7 +236,7 @@ metadata leaves the existing PMID links usable. No live PubMed request is made
 from the browser. Three publications are displayed, followed by an
 “All N on ClinVar” link when there are more. The count uses the imported list of
 distinct PubMed IDs. The results layout stays
-the same, as do variant matching and catalogue byte-range indexes.
+the same, as does the evidence used for variant matching.
 
 `data:build`, `data:refresh` and `data:rebuild` include this stage after catalogue
 generation. `data:inputs` and offline builds verify that incoming ClinVar references
@@ -214,12 +248,26 @@ The manifest is published last and old content-addressed shards are retained so
 an interrupted refresh cannot invalidate the previous manifest. Deploy the manifest
 and its shards together. See [deployment requirements](../docs/DEPLOYMENT.md).
 
+## Matching correctness
+
+`npm run benchmark` checks the production VCF matcher using the bundled public
+HG002 sample and a simple local reference lookup. Every result field and result
+ordering must agree. The optional `giab-grch38` suite checks seven public inputs.
+See [BENCHMARKS.md](../docs/BENCHMARKS.md) for inputs, reports and the manual GitHub
+workflow. This command checks correctness only; it does not compare download
+methods or measure speed, memory or transfer volume.
+
 ## Selection and frequency policy
 
 `lib/clinvar.ts` owns the selection used by **both** the catalogue and frequency
 builders. It retains selected pathogenic, likely pathogenic, conflicting,
 drug-response, risk, association, protective and Affects records. Benign and
-uncertain-significance entries are excluded to bound this teaching catalogue.
+uncertain-significance labels do not qualify a record on their own. Independent
+pipe-separated classifications are considered separately: `Benign|drug_response`
+and `Uncertain_significance|drug_response` are retained, along with mixed records
+carrying other supported labels. The original `CLNSIG` text is preserved. Conflicting
+and pathogenic classifications retain precedence; other supported records use code
+`O`. A standalone `Uncertain_risk_allele` remains excluded.
 This selection is not a comprehensive clinical screen. Only single alternate
 sequence alleles up to 50 bases are included; symbolic and multiallelic rows are
 not guessed into individual alleles.
@@ -284,6 +332,7 @@ in `lib/`:
 | `io/atomic.ts`, `io/lines.ts`, `io/bgzf.ts` | Atomic files, streaming lines and bounded BGZF reading/writing |
 | `util.ts`, `log.ts`                         | Small compatibility API and progress logging                   |
 | `clinvar.ts`, `catalog.ts`                  | Shared record selection, evidence fields and joins             |
+| `catalog-metadata.ts`                       | Compact summaries, sorted-order checks and catalogue digests   |
 | `frequencies.ts`                            | Resumable regions and bounded extraction jobs                  |
 | `markers.ts`                                | Verified cross-build marker identities and cached output       |
 | `validate.ts`                               | Schema, frequency, identity and evidence checks                |
@@ -337,15 +386,18 @@ The catalogue's existing GRCh38 gnomAD source key remains attached to its exact
 allele, including GRCh37 records joined by ClinVar AlleleID. This does not add
 coverage beyond the existing catalogue or five cited markers.
 
-Consumer matching selects candidates by build, chromosome and position, then
-checks reported alleles. These sidecars supply an additional rsID location check;
+Consumer matching first streams public single-base identities from the catalogue,
+selects candidates by build, chromosome and position, then checks reported alleles.
+A second catalogue pass retains evidence only for matched records. These sidecars
+supply an additional rsID location check;
 they do not limit the alleles selected at a consistent position. Known identifier
 disagreements are shown separately for review and excluded from interpretation.
 
 SHA-256 hashes bind each sidecar to the exact catalogue and marker bytes.
 Both offline validation and browser loading reject mismatched releases. Rebuild
 the sidecars after a standalone catalogue or marker rebuild; do not mix assets
-from different runs. The existing WGS file formats and matching code are unchanged.
+from different runs. Both file experiences use the same published catalogue;
+consumer interpretation and its rsID checks remain separate from VCF genotype rules.
 
 To rebuild just these sidecars from already generated public assets, without
 network access: `npm run data:consumer`. Add `-- --check` to validate

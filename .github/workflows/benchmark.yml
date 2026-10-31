@@ -22,7 +22,7 @@ jobs:
           persist-credentials: false
       - name: Build benchmark environment
         run: docker build --target benchmark -t genomewalk-benchmark .
-      - name: Compare full and selective catalogue downloads
+      - name: Verify matching correctness
         env:
           BENCHMARK_COMMIT: ${{ github.sha }}
           BENCHMARK_SUITE: ${{ inputs.suite }}

@@ -32,7 +32,7 @@ const selected = tests.filter((file) => {
   if (values.scope === "all") return true;
   if (values.scope === "data")
     return (
-      /^tests\/integration\/(?:reference-data|pipeline|catalog-ranges)\.test/.test(file) ||
+      /^tests\/integration\/(?:reference-data|pipeline)\.test/.test(file) ||
       file.startsWith("scripts/lib/") ||
       file.startsWith("scripts/consumer/") ||
       file === "src/lib/io/http-range.test.ts"

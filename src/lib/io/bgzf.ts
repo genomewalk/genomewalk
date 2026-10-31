@@ -68,100 +68,117 @@ export function blockLength(bytes: Uint8Array, at = 0) {
   );
 }
 
-/** Read bounded blocks; truncated files and corrupt blocks fail explicitly. */
-export async function* streamBlocks(source: ByteSource, chunkSize = 4 << 20, signal?: AbortSignal) {
-  let filePos = 0,
-    offset = 0,
-    bytes = new Uint8Array(0);
+/** Read a compressed stream without buffering it in full. Each yielded block is independent. */
+export async function* streamBgzfChunks(chunks: AsyncIterable<Uint8Array>, signal?: AbortSignal) {
+  let offset = 0;
+  let bytes: Uint8Array = new Uint8Array(0);
   let readingStep: ReadingDetails["readingStep"] = "decompress";
   let inputContainer: ReadingDetails["inputContainer"];
   try {
-    while (filePos < source.size || bytes.length) {
+    for await (const chunk of chunks) {
       signal?.throwIfAborted();
-      readingStep = "decompress";
-      if (!inputContainer && bytes[0] === 31 && bytes[1] === 139) inputContainer = "gzip";
-      const size = blockLength(bytes);
-      if (size > 0) inputContainer = "bgzf";
-      if (size < 0 || bytes.length < size) {
-        if (filePos >= source.size)
-          throw new AppError(
-            "VCF_TRUNCATED",
-            "The BGZF file is truncated. Choose a complete file.",
-            {
-              failureReason: "payload-incomplete",
-            },
-          );
-        readingStep = "read-bytes";
-        const chunk = await source.slice(
-          filePos,
-          Math.min(filePos + chunkSize, source.size),
-          signal,
-        );
-        if (!chunk.length)
-          throw new AppError("FILE_READ_FAILED", "The genome file could not be read completely.", {
-            failureReason: "payload-incomplete",
-          });
-        filePos += chunk.length;
-        readingStep = "decompress";
+      if (!chunk.length) continue;
+      if (bytes.length) {
         const merged = new Uint8Array(bytes.length + chunk.length);
         merged.set(bytes);
         merged.set(chunk, bytes.length);
         bytes = merged;
-        continue;
-      }
-      const block = bytes.subarray(0, size);
-      const footer = new DataView(block.buffer, block.byteOffset + size - 8, 8);
-      // fflate uses ISIZE when allocating output; validate it before decoding.
-      if (footer.getUint32(4, true) > 65536)
-        throw new AppError(
-          "VCF_BLOCK_INVALID",
-          "The BGZF block exceeds its maximum decoded size.",
-          {
-            failureReason: "decoded-size-invalid",
-          },
-        );
-      let data: Uint8Array<ArrayBuffer>;
-      try {
-        data = gunzipSync(block);
-      } catch (error) {
-        // Only classify fflate data errors; unexpected exceptions remain application failures.
-        if (
-          error instanceof Error &&
-          "code" in error &&
-          typeof error.code === "number" &&
-          [0, 1, 2, 3, 6].includes(error.code)
-        )
+      } else bytes = chunk;
+      while (bytes.length) {
+        signal?.throwIfAborted();
+        readingStep = "decompress";
+        if (!inputContainer && bytes[0] === 31 && bytes[1] === 139) inputContainer = "gzip";
+        const size = blockLength(bytes);
+        if (size > 0) inputContainer = "bgzf";
+        if (size < 0 || bytes.length < size) break;
+        const block = bytes.subarray(0, size);
+        const footer = new DataView(block.buffer, block.byteOffset + size - 8, 8);
+        // fflate uses ISIZE when allocating output; validate it before decoding.
+        if (footer.getUint32(4, true) > 65536)
           throw new AppError(
             "VCF_BLOCK_INVALID",
-            "A BGZF block could not be decompressed. Choose a complete, unmodified file.",
-            { failureReason: "decompression-failed" },
+            "The BGZF block exceeds its maximum decoded size.",
+            { failureReason: "decoded-size-invalid" },
           );
-        throw error;
+        let data: Uint8Array<ArrayBuffer>;
+        try {
+          data = gunzipSync(block);
+        } catch (error) {
+          // Classify only fflate data errors; unexpected failures retain their native type.
+          if (
+            error instanceof Error &&
+            "code" in error &&
+            typeof error.code === "number" &&
+            [0, 1, 2, 3, 6].includes(error.code)
+          )
+            throw new AppError(
+              "VCF_BLOCK_INVALID",
+              "A BGZF block could not be decompressed. Choose a complete, unmodified file.",
+              { failureReason: "decompression-failed" },
+            );
+          throw error;
+        }
+        readingStep = "archive-integrity";
+        const failureReason =
+          data.length > 65536
+            ? "decoded-size-invalid"
+            : data.length !== footer.getUint32(4, true)
+              ? "decoded-size-mismatch"
+              : crc32(data) !== footer.getUint32(0, true)
+                ? "checksum-mismatch"
+                : undefined;
+        if (failureReason)
+          throw new AppError(
+            "VCF_BLOCK_INVALID",
+            "A BGZF block failed its integrity check. Choose a complete, unmodified file.",
+            { failureReason },
+          );
+        yield { data, offset, blockLen: size };
+        offset += size;
+        bytes = bytes.subarray(size);
       }
-      readingStep = "archive-integrity";
-      const failureReason =
-        data.length > 65536
-          ? "decoded-size-invalid"
-          : data.length !== footer.getUint32(4, true)
-            ? "decoded-size-mismatch"
-            : crc32(data) !== footer.getUint32(0, true)
-              ? "checksum-mismatch"
-              : undefined;
-      if (failureReason)
-        throw new AppError(
-          "VCF_BLOCK_INVALID",
-          "A BGZF block failed its integrity check. Choose a complete, unmodified file.",
-          { failureReason },
-        );
-      yield { data, offset, blockLen: size };
-      offset += size;
-      bytes = bytes.subarray(size);
+      // A partial block must not retain the backing buffer of a large processed chunk.
+      bytes = bytes.slice();
     }
+    signal?.throwIfAborted();
+    if (bytes.length)
+      throw new AppError("VCF_TRUNCATED", "The BGZF file is truncated. Choose a complete file.", {
+        failureReason: "payload-incomplete",
+      });
   } catch (error) {
     throw withReadingContext(error, {
       readingStep,
       ...(inputContainer ? { inputContainer } : {}),
-      ...(source instanceof FileSource ? { readerKind: "vcf" } : {}),
     });
+  }
+}
+
+/** Local/random-access inputs use the same block decoder as sequential HTTP bodies. */
+export async function* streamBlocks(source: ByteSource, chunkSize = 4 << 20, signal?: AbortSignal) {
+  async function* chunks() {
+    let position = 0;
+    while (position < source.size) {
+      signal?.throwIfAborted();
+      let chunk: Uint8Array;
+      try {
+        chunk = await source.slice(position, Math.min(position + chunkSize, source.size), signal);
+      } catch (error) {
+        throw withReadingContext(error, { readingStep: "read-bytes" });
+      }
+      if (!chunk.length)
+        throw withReadingContext(
+          new AppError("FILE_READ_FAILED", "The genome file could not be read completely.", {
+            failureReason: "payload-incomplete",
+          }),
+          { readingStep: "read-bytes" },
+        );
+      position += chunk.length;
+      yield chunk;
+    }
+  }
+  try {
+    yield* streamBgzfChunks(chunks(), signal);
+  } catch (error) {
+    throw withReadingContext(error, source instanceof FileSource ? { readerKind: "vcf" } : {});
   }
 }

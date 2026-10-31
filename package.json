@@ -28,17 +28,18 @@
     "data:rebuild": "node scripts/build-all.ts --offline",
     "data:refresh": "node scripts/build-all.ts --fresh",
     "data:consumer": "node scripts/build-consumer.ts",
-    "data:ranges": "node scripts/build-catalog-ranges.ts",
     "test:consumer": "node scripts/test.ts --scope consumer",
     "check:release": "npm run check && npm run data:check && npm run check:deploy",
     "check:deploy": "node scripts/check-deployment.ts",
     "check:browser": "node scripts/check-browser.ts",
-    "benchmark": "node scripts/benchmark.ts"
+    "benchmark": "node scripts/benchmark.ts",
+    "data:metadata": "node scripts/build-catalog-metadata.ts"
   },
   "overrides": {
     "rolldown": "1.2.1"
   },
   "dependencies": {
+    "@noble/hashes": "2.4.0",
     "@tanstack/react-router": "1.170.18",
     "@tanstack/react-start": "1.168.32",
     "fflate": "0.8.3",

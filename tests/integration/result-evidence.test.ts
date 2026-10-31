@@ -12,6 +12,7 @@ import { findMatches } from "../../src/experiences/vcf/engine/matching.ts";
 import { matchRow } from "../../src/experiences/vcf/engine/view/results.ts";
 import { vcfSource, testDocument } from "../helpers/vcf.ts";
 import type { VcfMatch } from "../../src/experiences/vcf/types.ts";
+import { catalogFields, parseClinvar } from "../../scripts/lib/clinvar.ts";
 
 globalThis.document = testDocument();
 const record = (gt = "0/1") => [
@@ -155,6 +156,32 @@ test("categories follow source labels, including ClinVar Affects for non-disease
     ),
     ["association", "disease"],
   );
+});
+
+test("mixed benign or uncertain classifications keep their independent evidence and full labels", () => {
+  for (const [rawSig, category, summary] of [
+    ["Benign|drug_response", "drug", "drug response"],
+    ["Likely_benign|drug_response|other", "drug", "drug response"],
+    ["Benign/Likely_benign|drug_response", "drug", "drug response"],
+    ["Uncertain_significance|drug_response", "drug", "drug response"],
+    ["Benign|risk_factor", "association", "association record"],
+    ["Uncertain_significance|association", "association", "association record"],
+    ["Benign|protective", "association", "association record"],
+    ["Benign|Affects", "trait", "trait record"],
+  ]) {
+    const parsed = parseClinvar(
+      `9\t72694578\t4103\tC\tT\t.\t.\tCLNSIG=${rawSig};CLNDN=Example_condition`,
+    );
+    assert.ok(parsed, rawSig);
+    const evidence = parseCatalogEntry(catalogFields(parsed).join("\t"));
+    assert.equal(evidence.sig, "O", rawSig);
+    assert.equal(evidence.rawSig, rawSig);
+    assert.deepEqual(resultCategories(evidence), [category], rawSig);
+    assert.equal(resultSummary(evidence).label, summary, rawSig);
+    const html = render(evidence);
+    assert.ok(html.includes(rawSig!.replaceAll("_", " ").replaceAll("|", " · ")), rawSig);
+    assert.ok(!html.includes(">Pathogenic<"), rawSig);
+  }
 });
 
 test("gene names, exact variant IDs and curated marker metadata never change categories or summaries", () => {

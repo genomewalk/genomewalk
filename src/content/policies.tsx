@@ -38,8 +38,8 @@ export const privacyPolicy: PolicyDocument = {
           <p>
             You can use the public genome sample without opening a personal genome file. Genomewalk
             reads parts of that sample as needed and downloads public reference data for the guide
-            and results. Small indexes and marker files download whole; catalogue annotations use
-            requests for selected byte ranges.
+            and results. Small summaries and marker files download whole. For matching, the public
+            catalogue is downloaded sequentially and processed in small blocks.
           </p>
           <p>
             These downloads are requests for public data. Genomewalk performs the comparison
@@ -48,9 +48,9 @@ export const privacyPolicy: PolicyDocument = {
           </p>
           <p>Your browser may cache website assets and public reference files.</p>
           <p>
-            Catalogue ranges are selected using matches found locally. The host can see the byte
-            ranges requested and may log them; these can indicate which catalogue regions were
-            relevant, even though your genome file and genotype values are not uploaded.
+            The host can see public-file requests and connection metadata. Catalogue downloads do
+            not request byte ranges chosen from your matches. Your genome file and genotype values
+            remain in your browser.
           </p>
         </>
       ),

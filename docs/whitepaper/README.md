@@ -23,16 +23,8 @@ Open the local `.tex` file in Codex's LaTeX editor to edit and compile it, or ed
 source into a ZIP as `main.tex` and choose **Import archive**. No genome files,
 catalogue datasets or credentials belong in the manuscript project.
 
-The paper describes the combined gnomAD v4.1 importer. Its quantitative
-benchmark section explicitly describes an earlier reference snapshot. It is a
-technical draft, not a peer-reviewed paper or clinical validation. Prism's
-editorial review informed wording and explanation improvements; factual claims
-were checked against repository code, existing engineering results and primary
-references rather than accepted from the writing assistant.
-
-`engineering-snapshot.json` preserves the public catalogue sizes and hashes,
-recorded HG002 transfer comparison, and provenance of the prior validation run.
-It is supporting evidence, not a runnable benchmark or a release manifest.
-Before external publication, add the public repository and immutable release
-identifier, rerun validation and the transfer comparison, and update the dated
-figures if code or data have changed.
+The manuscript describes an earlier retrieval architecture and its measurements.
+It has not been revised for the current streaming matcher. The historical
+benchmark report files have been removed; the current [benchmark](../BENCHMARKS.md)
+checks matching correctness only and does not reproduce the manuscript's transfer
+comparisons. Revise the paper and its evidence before submission.

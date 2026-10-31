@@ -28,13 +28,13 @@ export const resultsChapter = {
     if (!supported) return false;
     const sn = sampleNote();
     if (sn) out.append(sn);
-    const cat = await loadCatalog(signal, onStatus); // prepares its own catalogue if chapter 8 was skipped
-    checkCurrent();
     if (!ctx.matches) {
+      const cat = await loadCatalog(signal, onStatus);
+      checkCurrent();
       onProgress?.(0);
       const matches = await findMatches(
         source!,
-        cat.map,
+        cat,
         (fraction) => {
           checkCurrent();
           onProgress?.(fraction);
@@ -66,7 +66,9 @@ export const resultsChapter = {
     out.append(
       note(`Every row comes from an exact allele lookup in this tab.
         Your genome is not sent to a server. The results cover selected ClinVar classifications;
-        benign and uncertain-significance records are not included in this compact catalogue. Failed-quality calls are excluded and incomplete genotypes are flagged; a missing
+        benign, likely benign and uncertain-significance labels do not qualify a record on their own.
+        Records with an independent supported label, such as drug response, are retained with all their original classifications.
+        Failed-quality calls are excluded and incomplete genotypes are flagged; a missing
         row is not a negative health result. One limit to know: an
         insertion or deletion can be written in more than one way, and the lookup needs an exact
         key, so a few real matches of that kind can be missed.`),

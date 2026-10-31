@@ -12,10 +12,21 @@ export function inspectDeployment(
     "privacy/index.html",
     "terms/index.html",
     ...Array.from({ length: CHAPTER_COUNT }, (_, i) => `chapter/${i + 1}/index.html`),
+    ...["GRCh37", "GRCh38"].flatMap((build) => [
+      `ref/${build}/catalog.tsv.gz`,
+      `ref/${build}/catalog.meta.json`,
+    ]),
   ];
   for (const file of required)
     if (!fs.existsSync(path.join(publicDir, file)))
-      throw new Error(`Run npm run build first; static page ${file} is missing from ${publicDir}.`);
+      throw new Error(
+        `Run npm run build first; static asset ${file} is missing from ${publicDir}.`,
+      );
+  for (const build of ["GRCh37", "GRCh38"])
+    if (fs.existsSync(path.join(publicDir, `ref/${build}/catalog.index.json.gz`)))
+      throw new Error(
+        "The deployment contains an obsolete catalogue membership index. Clean and rebuild the static output.",
+      );
   const oversized: { file: string; bytes: number }[] = [];
   let files = 0,
     bytes = 0;

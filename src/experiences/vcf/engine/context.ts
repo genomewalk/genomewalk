@@ -2,7 +2,7 @@ import type { SupportedBuild } from "../../../lib/genetics/reference-build.ts";
 import { detectBuild } from "./reference.ts";
 import type { ByteSource } from "../../../lib/io/types.ts";
 import type { MarkerData } from "../../../lib/catalogues/types.ts";
-import type { loadRangeCatalogue } from "../../../lib/catalogues/catalogue-ranges.ts";
+import type { loadCatalogue } from "../../../lib/catalogues/catalogue-stream.ts";
 import type { VcfHeader, VcfMatch, VcfMarkerHit } from "../types.ts";
 import type { scanStats } from "./statistics.ts";
 interface VcfContext {
@@ -15,7 +15,7 @@ interface VcfContext {
   selectedBuild?: SupportedBuild;
   build?: string | null;
   markers?: MarkerData;
-  catalog?: Awaited<ReturnType<typeof loadRangeCatalogue>> | undefined;
+  catalog?: Awaited<ReturnType<typeof loadCatalogue>> | undefined;
 }
 // Personal derived data stays in memory for the active file only.
 export const ctx: VcfContext = {

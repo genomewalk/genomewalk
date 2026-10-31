@@ -115,7 +115,7 @@ test("typed errors retain reviewed diagnosis without the original message or cau
   const original = new AppError("HTTP_ERROR", privateText, {
     resource: "catalogue-index",
     httpStatus: 503,
-    publicFile: "https://genomewalk.com/ref/GRCh38/catalog.index.json.gz?token=private#private",
+    publicFile: "https://genomewalk.com/ref/GRCh38/catalog.meta.json?token=private#private",
   });
   original.cause = new Error(privateText);
   original.stack = `AppError: ${privateText}\n    at read (https://genomewalk.com/assets/reference-abc.js:5:17)`;
@@ -125,7 +125,7 @@ test("typed errors retain reviewed diagnosis without the original message or cau
   assert.equal(report.error.message, errorDefinitions.HTTP_ERROR[0]);
   assert.equal(report.error.cause, undefined);
   assert.equal(report.properties["resource"], "catalogue-index");
-  assert.equal(report.properties["public_file"], "/ref/GRCh38/catalog.index.json.gz");
+  assert.equal(report.properties["public_file"], "/ref/GRCh38/catalog.meta.json");
   assert.equal(report.properties["http_status"], 503);
   assert.equal(report.properties["chapter"], 7);
   assert.match(report.error.stack!, /assets\/reference-abc\.js:5:17/);
@@ -138,7 +138,7 @@ test("error preparation excludes unknown, mismatched and private download paths"
   for (const publicFile of [
     privateText,
     `/ref/GRCh38/${privateText}`,
-    "https://private.example/ref/GRCh38/catalog.index.json.gz",
+    "https://private.example/ref/GRCh38/catalog.meta.json",
     "/samples/HG002_GRCh38.vcf.gz",
   ]) {
     const report = prepareErrorReport(
@@ -152,7 +152,7 @@ test("error preparation excludes unknown, mismatched and private download paths"
   assert.equal(
     prepareErrorReport(
       new AppError("NETWORK_FAILED", undefined, {
-        publicFile: "/ref/GRCh38/catalog.index.json.gz",
+        publicFile: "/ref/GRCh38/catalog.meta.json",
       }),
       "results",
     )?.properties["public_file"],
@@ -269,8 +269,11 @@ test("multiline exception messages cannot be mistaken for asset stack frames", (
 });
 
 test("reporting stage uses fixed vocabulary rather than arbitrary progress text", () => {
-  assert.equal(reportingStage("Loading matched catalogue entries…"), "reference-entries");
-  assert.equal(reportingStage("Loading the GRCh37 catalogue index…"), "reference-index");
-  assert.equal(reportingStage("Loading the GRCh38 catalogue index…"), "reference-index");
+  assert.equal(
+    reportingStage("Matching the genome and catalogue as they stream…"),
+    "reference-entries",
+  );
+  assert.equal(reportingStage("Loading the GRCh37 catalogue summary…"), "reference-index");
+  assert.equal(reportingStage("Loading the GRCh38 catalogue summary…"), "reference-index");
   assert.equal(reportingStage(privateText), "prepare");
 });

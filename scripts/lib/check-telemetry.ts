@@ -193,10 +193,7 @@ export async function checkTelemetry(browser: Browser, origin: string) {
     if (p["public_file"] !== undefined) {
       const publicFiles: Record<string, string[]> = {
         "public-sample": ["/samples/HG002_GRCh38.vcf.gz"],
-        "catalogue-index": [
-          "/ref/GRCh37/catalog.index.json.gz",
-          "/ref/GRCh38/catalog.index.json.gz",
-        ],
+        "catalogue-index": ["/ref/GRCh37/catalog.meta.json", "/ref/GRCh38/catalog.meta.json"],
         "catalogue-entries": ["/ref/GRCh37/catalog.tsv.gz", "/ref/GRCh38/catalog.tsv.gz"],
         "consumer-lookup": [
           "/ref/consumer-dna/GRCh37/rsids.json.gz",
@@ -352,7 +349,7 @@ export async function checkTelemetry(browser: Browser, origin: string) {
         return;
       }
       if (
-        (fault === "catalogue-index" && url.pathname === "/ref/GRCh38/catalog.index.json.gz") ||
+        (fault === "catalogue-index" && url.pathname === "/ref/GRCh38/catalog.meta.json") ||
         (fault === "catalogue" && url.pathname === "/ref/GRCh38/catalog.tsv.gz")
       ) {
         await route.fulfill({ status: 503, body: secret });
@@ -511,7 +508,7 @@ export async function checkTelemetry(browser: Browser, origin: string) {
     assert.equal(chapter["stage"], "reference-index");
     assert.equal(chapter["chapter"], 8);
     assert.equal(chapter["resource"], "catalogue-index");
-    assert.equal(chapter["public_file"], "/ref/GRCh38/catalog.index.json.gz");
+    assert.equal(chapter["public_file"], "/ref/GRCh38/catalog.meta.json");
     assert.equal(chapter["http_status"], 503);
     assert.equal(chapter["file_format"], "VCF");
     assert.equal(count("chapter_run_completed"), 1);

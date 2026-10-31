@@ -38,26 +38,19 @@ export interface Evidence {
   partialCall?: boolean;
   conflictingRecords?: boolean;
 }
-export type BlockLocator = [
-  offset: number,
-  compressedLength: number,
-  decodedLength: number,
-  sha256: string,
-];
-export type RowLocator = [key: string, block: number, offset: number, length: number];
-export interface CatalogueIndex {
-  schema: number;
+/** Small public summary; never contains the catalogue's complete key list or row locators. */
+export interface CatalogueMetadata {
+  schema: 1;
   build: string;
   source: { size: number; sha256: string };
-  blocks: BlockLocator[];
-  records: RowLocator[];
+  chromosomes: string[];
   n: number;
   header: string;
   byClass: Record<string, number>;
   byStars: Record<string, number>;
   sample: string[];
+  examples: string[];
 }
-
 export interface StudyCitation {
   label: string;
   url: string;

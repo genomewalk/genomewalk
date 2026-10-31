@@ -10,7 +10,7 @@ test("public file identifiers cover the reviewed downloads and strip URL paramet
   ];
   for (const build of ["GRCh37", "GRCh38"])
     files.push(
-      ["catalogue-index", `/ref/${build}/catalog.index.json.gz`],
+      ["catalogue-index", `/ref/${build}/catalog.meta.json`],
       ["catalogue-entries", `/ref/${build}/catalog.tsv.gz`],
       ["markers", `/ref/${build}/markers.json`],
       ["consumer-lookup", `/ref/consumer-dna/${build}/rsids.json.gz`],
@@ -24,7 +24,7 @@ test("public file identifiers cover the reviewed downloads and strip URL paramet
 });
 
 test("public file identifiers reject unknown origins, paths and resource mismatches", () => {
-  const path = "/ref/GRCh38/catalog.index.json.gz";
+  const path = "/ref/GRCh38/catalog.meta.json";
   for (const input of [
     `https://example.com${path}`,
     `https://genomewalk.com.example.com${path}`,
@@ -32,10 +32,10 @@ test("public file identifiers reject unknown origins, paths and resource mismatc
     `http://genomewalk.com${path}`,
     `//genomewalk.com${path}`,
     `/private/..${path}`,
-    `/ref/GRCh%33%38/catalog.index.json.gz`,
+    `/ref/GRCh%33%38/catalog.meta.json`,
     `/ref/GRCh38/PRIVATE_GENOME.vcf.gz`,
-    `/ref/PRIVATE/catalog.index.json.gz`,
-    `/ref/GRCh38/catalog.index.json.gz/PRIVATE`,
+    `/ref/PRIVATE/catalog.meta.json`,
+    `/ref/GRCh38/catalog.meta.json/PRIVATE`,
     `blob:https://genomewalk.com${path}`,
   ])
     assert.equal(safePublicFile(input, "catalogue-index"), undefined, input);

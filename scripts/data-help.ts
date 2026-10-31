@@ -6,9 +6,9 @@ Run from the project root; options follow npm's -- separator.
   npm run data:inputs     Check that this cache is ready for an offline rebuild
   npm run data:build      Build both references, reuse inputs, then validate
   npm run data:rebuild    Rebuild using cached inputs only; never use the network
-  npm run data:refresh    Download fresh inputs and rebuild every index
+  npm run data:refresh    Download fresh inputs and rebuild public assets
   npm run data:consumer   Rebuild only consumer rsID indexes from public assets
-  npm run data:ranges     Rebuild byte-range indexes from existing catalogues
+  npm run data:metadata   Rebuild compact summaries from existing catalogues
   npm run data:publications  Build citation labels; reuse cached PubMed metadata
   npm run data:check      Validate all existing public assets; no network or writes
   npm run test:data       Exercise the pipeline with small synthetic inputs

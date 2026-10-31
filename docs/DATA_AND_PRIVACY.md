@@ -21,9 +21,11 @@ Terms remain in `src/content/policies.tsx`.
 The browser loads the application, styles and illustrations. It also requests
 Google Fonts styles/font files through `fonts.googleapis.com` and
 `fonts.gstatic.com`. The public sample uses byte-range reads from
-`/samples/HG002_GRCh38.vcf.gz`. Evidence chapters download compact catalogue indexes
-and small marker/rsID files whole. Result matching runs locally and requests only
-needed compressed blocks from `/ref/<build>/catalog.tsv.gz`.
+`/samples/HG002_GRCh38.vcf.gz`. Evidence chapters download compact catalogue metadata
+and small marker/rsID files whole. Result matching runs locally while streaming
+the complete `/ref/<build>/catalog.tsv.gz` for the selected build. Sorted VCFs use
+one catalogue GET. Unsorted VCF fallback and consumer matching can require
+additional complete catalogue passes; HTTP caching can reduce repeated transfer.
 These public files are served by GitHub Pages through Cloudflare's proxy, from the
 same origin as the site.
 Result pages also fetch `/ref/publications/index.json` and the small static shards
@@ -32,10 +34,11 @@ in browser memory; no live PubMed API requests are made. Shard access can reveal
 which groups of public references are being displayed to the static host.
 
 A selected personal file is read through the File API. Its filename, contents,
-positions and results are not placed in request URLs or bodies. Requested Range
-headers depend on locally matched catalogue entries, so a static host can observe
-relevant catalogue regions. Do not describe this as hiding all genotype-related
-access patterns. There is no genome upload route or remote matching API.
+positions and results are not placed in request URLs or bodies. Catalogue requests
+do not include a personal key list or match-dependent Range headers. The host can
+still observe the selected reference-build URL, timing, retries and ordinary
+connection metadata. Publication-shard requests and reader-initiated source links
+can reveal additional interests. There is no genome upload route or remote matching API.
 The application includes the limited PostHog usage and error reporting described below.
 Hosting and font requests also expose ordinary connection
 metadata to their providers.
@@ -81,7 +84,7 @@ a predefined code/description/severity, fixed operation/stage/category, chapter
 number (1–9) when relevant, build identifier, and application asset URLs with
 numeric code locations. Public downloads can also include a fixed resource
 category, numeric HTTP status and a reviewed server file path (`public_file`),
-such as `/ref/GRCh38/catalog.index.json.gz`. Only known public sample/reference
+such as `/ref/GRCh38/catalog.meta.json`. Only known public sample/reference
 paths are accepted; query strings and fragments are removed. Publication label
 paths are normalized to `/ref/publications/[shard].json.gz`, so the selected
 citation shard is not reported. Grouping keys contain only reviewed diagnostic

@@ -7,7 +7,7 @@ Citation provenance reviewed 4 October 2026.
 
 Run `npm run data:citations`, then `npm run data:catalog -- --build GRCh38`
 and `npm run data:catalog -- --build GRCh37`. `npm run data:build` includes these
-steps and validates the finished indexes. See [README.md](README.md) for prerequisites.
+steps and validates the finished catalogues, metadata and sidecars. See [README.md](README.md) for prerequisites.
 The VCF release date and XML `ReleaseDate` describe different source snapshots,
 retained internally for reproducibility and omitted from the user interface.
 Use `--fresh` with the citation downloader to refresh the XML and its extracted
@@ -57,8 +57,13 @@ classification labels. It has no gene, rsID or exact-variant exception list:
 
 See https://www.ncbi.nlm.nih.gov/clinvar/docs/clinsig/ for the vocabulary.
 Categories can overlap; All results remains one row per variant. This is the
-selected catalogue, not all ClinVar: benign and uncertain-significance records
-are excluded by the catalogue builder. No comprehensive trait coverage or
+selected catalogue, not all ClinVar: benign, likely benign and uncertain-significance
+labels do not qualify a record on their own. Pipe-separated independent supported
+classifications are checked separately, so `Benign|drug_response` and
+`Uncertain_significance|drug_response` remain eligible. Their complete original
+labels are preserved; these records appear under Drug response, not Disease
+evidence, unless they also have a retained pathogenic or conflicting classification.
+No comprehensive trait coverage or
 inheritance classification is inferred from condition/gene names.
 
 The separate cited examples in chapter 7 still use `markers.json`. They are no
@@ -70,13 +75,22 @@ merged by chromosome, position, reference and alternate allele.
 The simpler detail table shows Bottom line, You & ClinVar, Conditions, Trust,
 Frequency, and Sources. The combined row shows the called allele(s) alongside the
 exact matched ClinVar allele and classification; missing/conflicting calls stay explicit. ClinVar and PubMed links come from the catalogue. Technical
-release/index dates remain in the catalogue for provenance and are not displayed.
+release and citation dates remain in the catalogue for provenance and are not displayed.
 Expanded result and chapter containers share the same vertical spacing.
 The population figures show allele-copy percentages. Very small non-zero values
 retain a minimum visual fill, disclosed next to the figures; the printed number
 is authoritative. Missing frequencies are not drawn as zero.
 
 The consumer experience owns a separate copy of its evidence renderer.
+
+Catalogue transport does not change these evidence rules. Sorted VCF matching
+compares genomic positions progressively, then checks every relevant REF/ALT at
+that position. It retains completed matches and releases processed catalogue
+blocks. An unsorted VCF restarts through a public-identity lookup; consumer files
+use that compatibility strategy directly. A second catalogue pass supplies only
+the matched evidence rows. Missing or unindexed consumer rsIDs retain their
+exact-coordinate fallback; known identifier disagreements remain excluded.
+No partial results are committed after a failed or mismatched catalogue download.
 
 ## Combined population frequencies
 

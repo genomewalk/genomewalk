@@ -23,10 +23,14 @@ function classificationCode(significance = "") {
   if (/^Pathogenic\/Likely/.test(significance)) return "PLP";
   if (/^Pathogenic/.test(significance)) return "P";
   if (/^Likely_pathogenic/.test(significance)) return "LP";
-  if (/^Benign|^Likely_benign|Uncertain/.test(significance)) return null;
-  return /(drug_response|risk_factor|risk_allele|association|protective|Affects|confers)/.test(
-    significance,
-  )
+  // Pipe-separated terms can describe independent effects (e.g. Benign|drug_response).
+  // Excluding one term must not discard another supported classification.
+  return significance.split("|").some((term) => {
+    if (/^Benign|^Likely_benign|Uncertain/.test(term)) return false;
+    return /(drug_response|risk_factor|risk_allele|association|protective|Affects|confers)/.test(
+      term,
+    );
+  })
     ? "O"
     : null;
 }

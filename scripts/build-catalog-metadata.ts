@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 import { runCli, string } from "./lib/cli.ts";
 import { BUILDS } from "./lib/config.ts";
-import { buildCatalogRanges } from "./lib/catalog-ranges.ts";
+import { buildCatalogMetadata } from "./lib/catalog-metadata.ts";
 
 await runCli(
-  "Index existing catalogues for HTTP byte-range reads. No network access.",
+  "Build compact summaries for existing streaming catalogues. No network access.",
   { only: string },
   async (options) => {
     for (const build of options.only ? [options.only] : BUILDS)
-      await buildCatalogRanges({ ...options, build });
+      await buildCatalogMetadata({ ...options, build });
   },
 );

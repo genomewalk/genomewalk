@@ -38,7 +38,7 @@ const optionHelp: Record<string, string> = {
   "dry-run": "Print ordered stages without requests or writes",
   "join-only": "Create only the GRCh38 allele-ID join needed by GRCh37",
   chrom: "Extract one chromosome to a separate partial cache: 1–22, X or Y",
-  jobs: "Concurrent frequency extractions, 1–16 (default: 6)",
+  jobs: "Concurrent frequency extractions, 1–16 (default: 3)",
   check: "Validate existing consumer indexes without writing",
 };
 

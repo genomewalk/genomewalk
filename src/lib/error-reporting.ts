@@ -62,8 +62,17 @@ function diagnostic(error: unknown, type?: string, message?: string) {
 }
 
 export function reportingStage(label: string): ErrorStage {
-  if (label === "Loading matched catalogue entries…") return "reference-entries";
-  if (/^Loading the GRCh(?:37|38) catalogue index…$/.test(label)) return "reference-index";
+  if (
+    [
+      "Matching the genome and catalogue as they stream…",
+      "Reading evidence for matched variants…",
+      "Reading catalogue variant identities…",
+      "Reading evidence for your matches…",
+      "Preparing catalogue identities for this file’s record order…",
+    ].includes(label)
+  )
+    return "reference-entries";
+  if (/^Loading the GRCh(?:37|38) catalogue summary…$/.test(label)) return "reference-index";
   return "prepare";
 }
 

@@ -10,6 +10,7 @@ import { paths, FREQUENCY_SOURCE, ROOT } from "../lib/config.ts";
 import { markerTarget } from "../lib/markers.ts";
 import { hasStudyEvidence } from "../lib/reference/study-evidence.ts";
 import { buildPlan } from "../lib/plan.ts";
+import { buildFrequencies } from "../lib/frequencies.ts";
 import { bgzfWrite } from "../lib/util.ts";
 import { CATALOG_HEADER, catalogFields, parseClinvar } from "../lib/clinvar.ts";
 import { PUBMED_SUMMARIES } from "../lib/reference/publication-metadata.ts";
@@ -56,7 +57,7 @@ function fixture(t: test.TestContext) {
 
 test("consumer stage follows both catalogue/marker builds and respects --only/removal", () => {
   for (const only of [undefined, "GRCh37", "GRCh38"]) {
-    const plan = buildPlan({ only, frequenciesExist: true });
+    const plan = buildPlan({ only });
     const index = plan.findIndex((step) => step.script === "build-consumer.ts");
     assert.ok(index > plan.findLastIndex((step) => step.script === "build-marker-freqs.ts"));
     assert.deepEqual(plan[index]!.args, only ? ["--only", only] : []);
@@ -129,16 +130,30 @@ test("validation rejects stale source releases and changed candidate mappings", 
   await assert.rejects(checkConsumerIndex(options), /stale/);
 });
 
-test("data:rebuild creates every index through the real CLI using cached synthetic inputs", (t) => {
+test("data:rebuild creates every index through the real CLI using cached synthetic inputs", async (t) => {
   const files = fixture(t);
   for (const build of ["GRCh37", "GRCh38"])
     bgzfWrite(
       "##fileDate=20260918\n#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n1\t100\t123\tC\tT\t.\t.\tCLNSIG=Pathogenic;RS=123;ALLELEID=456;CLNDN=Test;CLNDISDB=MedGen:C001\n",
       files.clinvar(build),
     );
-  fs.writeFileSync(
-    files.frequencies,
-    "#chrom\tpos\tref\talt\taf\tgrp\tafmax\tan\tac\tfilter\tdiscordancep\n1\t100\tC\tT\t0.01\tafr\t0.02\t100\t1\tPASS\t.\n",
+  await buildFrequencies(
+    { paths: files },
+    {
+      makeExtractor: () => async () => [
+        {
+          key: "1:100:C:T",
+          ac: 1,
+          an: 100,
+          af: "0.01",
+          grp: "afr",
+          afmax: "0.02",
+          filter: "PASS",
+          discordanceP: ".",
+          pops: {},
+        },
+      ],
+    },
   );
   fs.writeFileSync(
     files.citations,

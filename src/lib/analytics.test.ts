@@ -296,7 +296,7 @@ test("exception events retain useful reviewed diagnostics and rebuild exceptions
       area: "results",
       stage: "reference-index",
       resource: "catalogue-index",
-      public_file: `https://genomewalk.com/ref/GRCh38/catalog.index.json.gz?secret=${privateText}`,
+      public_file: `https://genomewalk.com/ref/GRCh38/catalog.meta.json?secret=${privateText}`,
       http_status: 503,
       chapter: 7,
       file_extension: ".vcf.gz",
@@ -328,7 +328,7 @@ test("exception events retain useful reviewed diagnostics and rebuild exceptions
   )!;
   assert.equal(clean.properties["error_code"], "HTTP_ERROR");
   assert.equal(clean.properties["http_status"], 503);
-  assert.equal(clean.properties["public_file"], "/ref/GRCh38/catalog.index.json.gz");
+  assert.equal(clean.properties["public_file"], "/ref/GRCh38/catalog.meta.json");
   assert.equal(clean.properties["file_size_band"], "1-GB-or-more");
   assert.equal(clean.properties["$exception_level"], "error");
   assert.equal(
@@ -362,10 +362,10 @@ test("exception events retain useful reviewed diagnostics and rebuild exceptions
 test("exception boundary revalidates server files without exposing private request details", () => {
   const failures = [
     privateText,
-    `https://private.example/ref/GRCh38/catalog.index.json.gz?${privateText}`,
+    `https://private.example/ref/GRCh38/catalog.meta.json?${privateText}`,
     `/ref/GRCh38/${privateText}`,
     "/samples/HG002_GRCh38.vcf.gz",
-    { path: "/ref/GRCh38/catalog.index.json.gz" },
+    { path: "/ref/GRCh38/catalog.meta.json" },
   ];
   for (const publicFile of failures) {
     const clean = sanitize(
@@ -382,7 +382,7 @@ test("exception boundary revalidates server files without exposing private reque
     sanitize(
       event("$exception", {
         error_code: "NETWORK_FAILED",
-        public_file: "/ref/GRCh38/catalog.index.json.gz",
+        public_file: "/ref/GRCh38/catalog.meta.json",
       }),
     )?.properties["public_file"],
     undefined,

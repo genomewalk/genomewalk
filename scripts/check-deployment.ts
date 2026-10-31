@@ -22,7 +22,7 @@ try {
     process.exitCode = 1;
   } else
     console.log(
-      `All ${CHAPTER_COUNT + 3} HTML pages exist. Serve this folder with HTTP byte-range support; no application server is needed.`,
+      `All ${CHAPTER_COUNT + 3} HTML pages exist. Serve catalogues as unchanged streaming files; HTTP byte ranges are needed only for the public sample. No application server is needed.`,
     );
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));

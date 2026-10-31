@@ -4,7 +4,7 @@ import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import { chromium, type Browser, type Response as BrowserResponse } from "playwright";
 import { createStaticServer } from "./lib/static-server.ts";
-import { loadRangeCatalogue } from "../src/lib/catalogues/catalogue-ranges.ts";
+import { loadCatalogue } from "../src/lib/catalogues/catalogue-stream.ts";
 import { SAMPLE } from "../src/lib/catalogues/public-sample.ts";
 import { readByteRange } from "../src/lib/io/http-range.ts";
 import type { Fetcher } from "../src/lib/io/types.ts";
@@ -21,23 +21,28 @@ async function checkReferences(origin: string, signal: AbortSignal) {
   const fetcher: Fetcher = (input, init) => {
     const url = new URL(input instanceof Request ? input.url : input, origin);
     assert.equal(url.origin, origin, "Reference checks must stay on the local static server");
+    if (/\/catalog\.tsv\.gz$/.test(url.pathname))
+      assert.equal(
+        new Headers(init?.headers).has("Range"),
+        false,
+        "Catalogue checks must use full GETs",
+      );
     return fetch(url, { ...init, signal });
   };
   const sizes = new Map<string, number>([[SAMPLE.url, SAMPLE.bytes]]);
   for (const build of ["GRCh37", "GRCh38"]) {
-    const catalogue = await loadRangeCatalogue(build, signal, undefined, fetcher);
+    const catalogue = await loadCatalogue(build, signal, undefined, fetcher);
     assert.ok(catalogue.n > 0, `${build} catalogue is empty`);
-    const keys = [...catalogue.map.keys()];
-    const representatives = [
-      ...new Set([keys[0]!, keys[Math.floor(keys.length / 2)]!, keys.at(-1)!]),
-    ];
-    // The production reader verifies block hashes, decoded sizes and allele identities.
-    const rows = await catalogue.map.readEntries(representatives, signal);
-    assert.equal(rows.size, representatives.length);
-    assert.ok(catalogue.map.bytesRead > 0, `${build} catalogue ranges were not read`);
+    // Exhaust the production stream so its SHA-256, row count and ordering are checked.
+    let rows = 0;
+    for await (const line of catalogue.rows(signal)) {
+      assert.ok(line.includes("\t"));
+      rows++;
+    }
+    assert.equal(rows, catalogue.n);
     sizes.set(`/ref/${build}/catalog.tsv.gz`, catalogue.source.size);
     stage(
-      `${build}: index and ${rows.size} representative catalogue rows verified over HTTP ranges`,
+      `${build}: metadata and all ${rows.toLocaleString()} catalogue rows verified over one GET`,
     );
   }
   const sample = await readByteRange(SAMPLE.url, 0, 65_536, {
@@ -83,7 +88,8 @@ async function checkJourney(browser: Browser, origin: string, sizes: Map<string,
   page.setDefaultTimeout(ACTION_TIMEOUT);
   page.setDefaultNavigationTimeout(ACTION_TIMEOUT);
   const ranges = new Map<string, number>();
-  const indexes = new Set<string>();
+  const metadata = new Set<string>();
+  const catalogues = new Map<string, number>();
   let fail!: (error: Error) => void;
   const failure = new Promise<never>((_, reject) => {
     fail = reject;
@@ -100,13 +106,31 @@ async function checkJourney(browser: Browser, origin: string, sizes: Map<string,
     try {
       assert.ok(response.status() < 400, `HTTP ${response.status()}: ${url.pathname}`);
       const size = sizes.get(url.pathname);
-      if (size != null) {
+      if (size != null && url.pathname === SAMPLE.url) {
         checkRangeResponse(response, size);
         ranges.set(url.pathname, (ranges.get(url.pathname) || 0) + 1);
+      } else if (size != null) {
+        assert.equal(response.status(), 200, `${url.pathname} must return the complete catalogue`);
+        assert.equal(
+          response.request().headers()["range"],
+          undefined,
+          "Catalogue must use one ordinary GET",
+        );
+        assert.equal(Number(response.headers()["content-length"]), size);
+        const encoding = response.headers()["content-encoding"];
+        assert.ok(
+          !encoding || encoding === "identity",
+          "Catalogue compressed bytes must not be transformed",
+        );
+        catalogues.set(url.pathname, (catalogues.get(url.pathname) || 0) + 1);
       }
-      if (/\/catalog\.index\.json\.gz$/.test(url.pathname)) {
-        assert.equal(response.status(), 200, `${url.pathname} index request failed`);
-        indexes.add(url.pathname);
+      assert.ok(
+        !/\/catalog\.index\.json\.gz$/.test(url.pathname),
+        "Obsolete membership index was requested",
+      );
+      if (/\/catalog\.meta\.json$/.test(url.pathname)) {
+        assert.equal(response.status(), 200, `${url.pathname} metadata request failed`);
+        metadata.add(url.pathname);
       }
     } catch (error) {
       fail(error instanceof Error ? error : new Error(String(error)));
@@ -156,10 +180,27 @@ async function checkJourney(browser: Browser, origin: string, sizes: Map<string,
     await output.locator(".match-row").first().waitFor();
     // Allow asynchronous publication metadata requests triggered by the rendered rows to finish.
     await page.waitForLoadState("networkidle");
-    assert.deepEqual([...indexes], ["/ref/GRCh38/catalog.index.json.gz"]);
+    assert.deepEqual([...metadata], ["/ref/GRCh38/catalog.meta.json"]);
     assert.ok(ranges.get(SAMPLE.url), "Browser did not request public sample ranges");
-    assert.ok(ranges.get("/ref/GRCh38/catalog.tsv.gz"), "Browser did not request catalogue ranges");
-    stage(`HG002: ${variants} results; sample and GRCh38 catalogue HTTP 206 responses verified`);
+    assert.equal(
+      catalogues.get("/ref/GRCh38/catalog.tsv.gz"),
+      1,
+      "Matching must stream the catalogue once",
+    );
+    stage(`HG002: ${variants} results; sample HTTP ranges and one complete catalogue GET verified`);
+
+    // Teaching examples come from the tiny manifest; returning to results keeps only matches.
+    await page.getByRole("link", { name: /^Chapter 8:/ }).click();
+    await page.getByRole("button", { name: "Run this chapter", exact: true }).click();
+    await page.getByRole("link", { name: "Next chapter", exact: true }).waitFor();
+    await page.getByRole("link", { name: "Just show me my results", exact: true }).click();
+    await page.locator('.results-output[aria-busy="false"] .match-row').first().waitFor();
+    await page.waitForLoadState("networkidle");
+    assert.equal(
+      catalogues.get("/ref/GRCh38/catalog.tsv.gz"),
+      1,
+      "Revisiting results must not download the catalogue again",
+    );
   };
   const visibleError = page
     .waitForFunction(

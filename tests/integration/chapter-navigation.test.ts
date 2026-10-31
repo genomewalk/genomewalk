@@ -135,7 +135,11 @@ test("the summary and results chapters report progress when opened before any co
     ctx.source = vcfSource(records);
     ctx.stats = null;
     ctx.matches = null;
-    ctx.catalog = partialFixture({ build: "GRCh38", map: new Map() });
+    ctx.catalog = partialFixture({
+      build: "GRCh38",
+      chromosomes: ["1", "X", "Y"],
+      async *rows() {},
+    });
     const percentages: number[] = [];
     const out = testElement("div");
     await STEPS[index]!.run(out, {
@@ -144,7 +148,8 @@ test("the summary and results chapters report progress when opened before any co
     assert.equal(percentages[0], 0);
     assert.equal(percentages.at(-1), 1);
     assert.ok(out.children.every((child) => child.className !== "prog"));
-    assert.equal((ctx.source as ReturnType<typeof vcfSource>).reads, 1);
+    // The fixture reverses two X positions; results retry through the unsorted compatibility path.
+    assert.equal((ctx.source as ReturnType<typeof vcfSource>).reads, index === 8 ? 2 : 1);
   }
 });
 

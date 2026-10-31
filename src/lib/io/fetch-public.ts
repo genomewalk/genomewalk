@@ -69,6 +69,48 @@ export async function readPublicBytes(response: Response, resource: ErrorResourc
   }
 }
 
+/** Pull only as the consumer advances, and release the network body on abort or early return. */
+export async function* readPublicChunks(
+  response: Response,
+  resource: ErrorResource,
+  signal?: AbortSignal,
+) {
+  const publicFile = safePublicFile(responseFiles.get(response), resource);
+  const details = {
+    resource,
+    httpStatus: response.status,
+    ...(publicFile ? { publicFile } : {}),
+  };
+  if (!response.body) throw new AppError("NETWORK_FAILED", undefined, details);
+  const reader = response.body.getReader();
+  const cancel = () => void reader.cancel(signal?.reason).catch(() => {});
+  signal?.addEventListener("abort", cancel, { once: true });
+  let complete = false;
+  try {
+    while (true) {
+      signal?.throwIfAborted();
+      const next = await reader.read();
+      signal?.throwIfAborted();
+      if (next.done) {
+        complete = true;
+        return;
+      }
+      yield next.value;
+    }
+  } catch (error) {
+    if (signal?.aborted) {
+      const reason = signal.reason;
+      if (!(reason instanceof Error && reason.name === "TimeoutError")) throw reason;
+      downloadFailure(reason, details);
+    }
+    downloadFailure(error, details);
+  } finally {
+    signal?.removeEventListener("abort", cancel);
+    if (!complete) await reader.cancel().catch(() => {});
+    reader.releaseLock();
+  }
+}
+
 /** Only public reference files use this decoder; private file parsers retain their own errors. */
 export function decodePublicJson<T>(bytes: Uint8Array, resource: ErrorResource): T {
   try {

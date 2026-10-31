@@ -1,5 +1,5 @@
 import type { ResolvedOptions } from "./types.ts";
-import { buildCatalogRanges } from "./catalog-ranges.ts";
+import { buildCatalogMetadata, catalogueOrder } from "./catalog-metadata.ts";
 import {
   CATALOG_HEADER,
   FREQUENCY_HEADER,
@@ -54,6 +54,7 @@ export async function buildCatalog({
     kept = 0,
     mapped = 0;
   const tally: Record<string, number> = {};
+  const order = catalogueOrder(build);
   try {
     catalog?.write(CATALOG_HEADER + "\n");
     alleleMap?.write(ALLELE_HEADER + "\n");
@@ -61,6 +62,9 @@ export async function buildCatalog({
       if (line.startsWith("##fileDate=")) releaseDate = line.slice(11).trim();
       const record = parseClinvar(line);
       if (!record) continue;
+      // Validate before committing either artifact, so an invalid source never
+      // replaces the previous catalogue with data the streaming join cannot read.
+      if (catalog) order.add(record.chrom, record.pos, record.ref, record.alt);
       const {
         values = MISSING_FREQUENCY,
         sourceKey = build === "GRCh38" ? record.frequencyKey : "",
@@ -84,7 +88,7 @@ export async function buildCatalog({
     if (!kept) throw new Error("No selected ClinVar rows; previous indexes preserved");
     const size = catalog?.commit();
     alleleMap?.commit();
-    if (catalog) await buildCatalogRanges({ paths, build });
+    if (catalog) await buildCatalogMetadata({ paths, build });
     if (catalog)
       log(
         `${build}: ${kept.toLocaleString()} records, ${mb(size)} → ${paths.catalog(build)}`,

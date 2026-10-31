@@ -2,8 +2,9 @@
 
 An educational field guide to a DNA data file. Open a file in your browser,
 explore the chapters in any order, or go straight to **Your results**.
-Personal DNA files are read locally. The browser downloads public indexes, matches
-locally, then fetches only the catalogue blocks needed for the annotations.
+Personal DNA files are read locally. The browser streams a public catalogue,
+matches records locally and keeps the matching results. Sorted VCFs and catalogue
+rows are compared progressively without retaining either complete dataset.
 No genome upload endpoint or remote matching API is used.
 
 ## Run locally
@@ -24,6 +25,7 @@ npm ci
 npm run dev       # http://localhost:5282
 npm run check     # tests, TypeScript, lint and production build
 npm run check:release  # full checks, public reference validation and static preflight
+npm run benchmark     # verify matching correctness with the bundled HG002 sample
 ```
 
 After moving source modules or changing dependencies, stop the running dev server
@@ -31,11 +33,15 @@ with Ctrl+C and restart it with `npm run dev -- --force`. Reload the page and
 select the file again. Use the URL printed by that server; an older process on a
 different port can keep serving stale modules. Keep one dev server per checkout.
 
+The optional [correctness benchmark](docs/BENCHMARKS.md) checks complete matching
+results against a simple reference lookup. It reports pass/fail and provenance;
+it does not compare retrieval methods or measure performance.
+
 The application uses React, TanStack Start, Vite and Three.js. **The deployable site
 is entirely static:** `npm run build` prerenders the pages into **`dist/client/`**,
 and `npm run preview` serves that folder at `http://localhost:5283`.
 GitHub Pages publishes it at `genomewalk.com`. See the
-[deployment guide](docs/DEPLOYMENT.md) for hosting, byte-range requirements,
+[deployment guide](docs/DEPLOYMENT.md) for hosting, catalogue streaming, public-sample byte ranges,
 domain setup and the deployment and reference-data workflows.
 
 ## Supported files
@@ -57,6 +63,13 @@ line-length or archive-entry-count cutoffs for supported inputs. Browser memory
 and processing time still constrain large files. In particular, consumer archives
 currently retain their decoded text in memory; VCF/gVCF data streams in blocks.
 Format-defined block sizes, checksums and completeness checks remain enforced.
+
+Sorted VCF matching retains the current genomic position and completed results
+while releasing processed catalogue blocks. Unsorted VCFs fall back to a compact
+public-identity lookup and additional catalogue passes. Consumer matching also
+uses a public-identity lookup to preserve its coordinate and rsID rules. These
+fallbacks and accumulated results still use memory; streaming is not a fixed
+ceiling on total browser memory.
 
 Catalogue matching supports **GRCh37 (hg19)** and **GRCh38 (hg38)**. Genomewalk
 checks reference names, assembly labels and chromosome lengths in VCF headers,
@@ -119,14 +132,16 @@ classification, not the accuracy of a person's genotype. Consumer exports do not
 supply sequencing depth or per-call quality, and this importer does not calculate
 ethnicity, relatives, haplogroups, imputation or polygenic scores.
 
-The included catalogue keeps selected ClinVar classifications and excludes benign
-and uncertain-significance records. It is not a complete clinical screen.
+The included catalogue keeps selected ClinVar classifications. Benign, likely benign
+and uncertain-significance labels do not qualify a record on their own, but an
+independent supported label such as drug response retains the record for matching.
+The original classifications are preserved. It is not a complete clinical screen.
 Indels require exact VCF representation; alternative equivalent representations
 can miss. [Reference-data documentation](scripts/README.md),
 [evidence rules](scripts/RESULT_EVIDENCE.md) and the
 [study source audit](scripts/STUDY_SOURCES.md) explain the choices.
 
-## Rebuild public reference indexes
+## Rebuild public reference data
 
 With Docker, run the same pipeline in the tools image:
 

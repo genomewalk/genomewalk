@@ -45,8 +45,9 @@ docker build --target export --output type=local,dest=dist/client .
 
 Before upload, Chromium opens the built site on `127.0.0.1` inside the build
 container, chooses the public HG002 sample and opens its results. The check
-requires non-empty results and successful sample/catalogue byte-range requests.
-It also checks catalogue downloads for both GRCh37 and GRCh38. External
+requires non-empty results, successful public-sample byte ranges and streamed
+catalogue downloads. It checks catalogue metadata, complete downloads and integrity
+for both GRCh37 and GRCh38. External
 networking is disabled during this check; all inputs come from the built site.
 
 A failure stops the build before artifact upload or deployment, leaving the
@@ -61,8 +62,8 @@ environment restricts deployment to `main`. The same workflow validates pull req
 separate validation workflow or container registry.
 
 An ordinary deploy uses the public reference files already committed under
-`public/`; it does not download upstream databases or rebuild them. The current
-site is approximately 107 MiB, below GitHub Pages' 1 GB published-site limit.
+`public/`; it does not download upstream databases or rebuild them. The
+published folder must remain within GitHub Pages' 1 GB published-site limit.
 See [custom Pages workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)
 and [Pages limits](https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits).
 
@@ -89,7 +90,7 @@ Error Tracking uses predefined codes in `src/lib/app-error.ts`. For example,
 `DNA_HEADER_MISSING` is an expected file-validation warning; `HTTP_ERROR` with
 `resource=catalogue-entries` and `http_status=503` identifies a failed public
 catalogue download. `public_file` identifies the reviewed server path, for example
-`/ref/GRCh38/catalog.index.json.gz`; it excludes queries, byte ranges and personal
+`/ref/GRCh38/catalog.meta.json`; it excludes queries, byte ranges and personal
 filenames. Publication labels use `/ref/publications/[shard].json.gz` without the
 selected shard. Inspect `area`, `stage`, `chapter`, and `release` to locate the
 operation. Older events do not gain this property retroactively. `UNEXPECTED_ERROR`
@@ -195,7 +196,7 @@ and [challenge compatibility](https://developers.cloudflare.com/cloudflare-chall
 
 When enabling the proxy, preserve the query string (`?v=SHA256`) in the cache key,
 and avoid HTTP compression or body transformations on `/ref/` and `/samples/`.
-Recheck byte ranges below.
+Recheck catalogue streams and public-sample byte ranges below.
 
 ## Refresh public reference data
 
@@ -216,25 +217,52 @@ push the reviewed public files. The ordinary deployment publishes that release.
 For local pipeline targets, run `npm run data` or read the
 [offline pipeline guide](../scripts/README.md).
 
+Selection-rule changes also require regenerated public files. Run `npm run data:build`
+to reuse downloaded ClinVar inputs and compatible gnomAD regions while rebuilding
+frequency coverage, both catalogues and compact metadata, publication labels and
+consumer rsID sidecars. Deploy the validated set together; changing the builder
+alone does not change the catalogue already served to browsers.
+
 ## Verify the deployed files
 
+Catalogues use ordinary **200 OK** downloads, not byte-range requests. Inspect the
+published metadata and compare its `source.sha256` with the compressed response:
+
 ```sh
-curl --silent --show-error \
+curl --fail --silent --show-error \
+  https://genomewalk.com/ref/GRCh38/catalog.meta.json
+curl --fail --silent --show-error \
+  --dump-header /tmp/genomewalk-catalog.headers \
+  https://genomewalk.com/ref/GRCh38/catalog.tsv.gz | shasum -a 256
+cat /tmp/genomewalk-catalog.headers
+```
+
+The body must contain the exact stored BGZF bytes; there must be no HTTP
+`Content-Encoding` such as `gzip`, `br` or `zstd` on the catalogue. The runtime
+checks the complete response's length and digest before accepting results. Repeat
+for GRCh37. Publish `catalog.meta.json` and `catalog.tsv.gz` together with their
+matching consumer rsID sidecars. The metadata's small public examples allow the
+ClinVar teaching chapter to open without downloading the whole catalogue.
+
+The public sample still uses byte ranges:
+
+```sh
+curl --fail --silent --show-error \
   --dump-header /tmp/genomewalk-range.headers \
   --output /tmp/genomewalk-range.bin \
   --header 'Range: bytes=0-31' \
-  https://genomewalk.com/ref/GRCh38/catalog.tsv.gz
+  https://genomewalk.com/samples/HG002_GRCh38.vcf.gz
 cat /tmp/genomewalk-range.headers
 wc -c /tmp/genomewalk-range.bin
 ```
 
-Expect **206 Partial Content**, a `Content-Range` describing bytes `0-31` and the
-catalogue's total size, and exactly **32 bytes**. There must be no HTTP
-`Content-Encoding` such as `gzip`, `br` or `zstd`. These files are already compressed
-on disk; the app validates their original bytes before decompressing them.
-Repeat for the GRCh37 catalogue and public sample. Open `/chapter/9` directly and
-test the teaching sample's results.
+Expect **206 Partial Content**, `Content-Range` describing bytes `0-31` and the
+sample's total size, exactly **32 bytes**, and no HTTP `Content-Encoding`.
+Open `/chapter/9` directly and test the teaching sample's results.
 
-Range requests reveal requested public-catalogue offsets to the hosting provider.
-They do not upload the personal genome or genotype values. The Privacy Policy
-explains this distinction.
+Sorted VCFs make one catalogue GET for the selected build. Unsorted VCF fallback
+and consumer matching may read that complete public catalogue more than once;
+browser caching can reduce repeated transfer. No catalogue request carries a
+personal variant key, genotype or match-dependent byte range. Hosting metadata
+and optional publication-shard requests remain visible to their providers, as
+described in the Privacy Policy.

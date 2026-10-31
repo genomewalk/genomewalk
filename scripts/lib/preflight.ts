@@ -9,7 +9,6 @@ export function inspectCachedInputs({ paths, only }: ResolvedOptions) {
   const builds = only ? [only] : BUILDS;
   const required = [
     ...new Set(["GRCh38", ...builds].map(paths.clinvar)),
-    paths.frequencies,
     paths.citations,
     paths.markerBase,
   ];

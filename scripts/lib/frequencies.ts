@@ -62,12 +62,7 @@ export async function collectFrequencies(
   return rows;
 }
 
-export async function buildFrequencies({
-  paths,
-  chrom,
-  jobs = "3",
-  fresh = false,
-}: ResolvedOptions) {
+async function frequencyTargets({ paths, chrom }: ResolvedOptions) {
   requireFiles(paths.clinvar("GRCh38"));
   const targets = new Map<string, Map<string, VariantIdentity>>();
   for await (const line of readLines(paths.clinvar("GRCh38"))) {
@@ -83,6 +78,54 @@ export async function buildFrequencies({
   }
   if (!targets.size)
     throw new Error("No selected ClinVar targets; frequency index was not changed");
+  return targets;
+}
+
+function regionCache(data: string, region: FrequencyRegion) {
+  const identity = JSON.stringify([
+    FREQUENCY_SOURCE,
+    region.chrom,
+    region.start,
+    region.end,
+    [...region.keys].sort(),
+  ]);
+  const hash = createHash("sha256").update(identity).digest("hex");
+  return {
+    identity,
+    file: path.join(data, FREQUENCY_SOURCE, `${region.chrom}-${region.start}-${hash}.json`),
+  };
+}
+
+function cachedRegion(cache: ReturnType<typeof regionCache>) {
+  if (!fs.existsSync(cache.file)) return undefined;
+  const saved = JSON.parse(fs.readFileSync(cache.file, "utf8"));
+  if (saved.identity !== cache.identity || !Array.isArray(saved.rows))
+    throw new Error(`Invalid joint cache: ${cache.file}`);
+  return saved.rows as JointFrequency[];
+}
+
+/** Validate exact selected targets before an offline rebuild can replace any outputs. */
+export async function requireCachedFrequencies(options: ResolvedOptions) {
+  const targets = await frequencyTargets(options);
+  const regions = clusterTargets(
+    new Map([...targets].map(([chrom, rows]) => [chrom, [...rows.values()]])),
+  );
+  let missing = 0;
+  for (const region of regions)
+    if (!cachedRegion(regionCache(options.paths.data, region))) missing++;
+  if (missing)
+    throw new Error(
+      `Offline frequency cache lacks ${missing} selected regions. Run npm run data:frequencies with this data directory first. No build stages ran.`,
+    );
+  return regions.length;
+}
+
+export async function buildFrequencies(
+  { paths, chrom, jobs = "3", fresh = false, offline = false }: ResolvedOptions,
+  { makeExtractor = jointExtractor }: { makeExtractor?: typeof jointExtractor } = {},
+) {
+  if (offline && fresh) throw new Error("--offline and --fresh cannot be combined");
+  const targets = await frequencyTargets({ paths, chrom });
   const regions = clusterTargets(
     new Map([...targets].map(([chrom, rows]) => [chrom, [...rows.values()]])),
   );
@@ -90,27 +133,15 @@ export async function buildFrequencies({
   const rows = await collectFrequencies(regions, {
     jobs: +jobs,
     makeExtractor() {
-      const extract = jointExtractor();
+      const extract = offline ? undefined : makeExtractor();
       return async (region) => {
-        const identity = JSON.stringify([
-          FREQUENCY_SOURCE,
-          region.chrom,
-          region.start,
-          region.end,
-          [...region.keys].sort(),
-        ]);
-        const hash = createHash("sha256").update(identity).digest("hex");
-        const cache = path.join(
-          paths.data,
-          FREQUENCY_SOURCE,
-          `${region.chrom}-${region.start}-${hash}.json`,
-        );
-        if (!fresh && fs.existsSync(cache)) {
-          const saved = JSON.parse(fs.readFileSync(cache, "utf8"));
-          if (saved.identity !== identity || !Array.isArray(saved.rows))
-            throw new Error(`Invalid joint cache: ${cache}`);
-          return saved.rows as JointFrequency[];
-        }
+        const cache = regionCache(paths.data, region);
+        const saved = fresh ? undefined : cachedRegion(cache);
+        if (saved) return saved;
+        if (!extract)
+          throw new Error(
+            `No compatible cached frequency region for chr${region.chrom}:${region.start}-${region.end}. Run npm run data:frequencies without --offline first.`,
+          );
         // Public-source stalls can outlast the short retries used for small downloads.
         let attempt = 0;
         const rows = await retry(
@@ -122,7 +153,7 @@ export async function buildFrequencies({
           6,
           5_000,
         );
-        writeAtomic(cache, JSON.stringify({ identity, rows }) + "\n");
+        writeAtomic(cache.file, JSON.stringify({ identity: cache.identity, rows }) + "\n");
         return rows;
       };
     },

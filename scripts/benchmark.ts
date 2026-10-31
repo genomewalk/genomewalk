@@ -3,14 +3,17 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { parseArgs } from "node:util";
 import { ROOT } from "./lib/config.ts";
-import { compareCatalogues } from "./benchmark/compare.ts";
+import { verifyMatching } from "./benchmark/verify.ts";
 import { suites } from "./benchmark/samples.ts";
 import { withSampleFile } from "./benchmark/sample-file.ts";
-import { markdownReport, savingsSummary, scope } from "./benchmark/report.ts";
+import { markdownReport, scope } from "./benchmark/report.ts";
 import type { SuiteReport } from "./benchmark/report.ts";
 
 const { values } = parseArgs({
-  options: { suite: { type: "string", default: "hg002" }, "out-dir": { type: "string" } },
+  options: {
+    suite: { type: "string", default: "hg002" },
+    "out-dir": { type: "string" },
+  },
   allowPositionals: false,
 });
 const samples = suites[values.suite];
@@ -26,7 +29,7 @@ const workingTree = process.env["BENCHMARK_COMMIT"]
     ? "modified"
     : "clean";
 const report: SuiteReport = {
-  schema: 2,
+  schema: 5,
   suite: values.suite,
   createdAt: new Date().toISOString(),
   commit,
@@ -36,12 +39,10 @@ const report: SuiteReport = {
   passed: false,
   scope,
   results: [],
-  savings: null,
 };
 async function saveReport() {
   report.passed =
     report.results.length === report.expectedSamples && report.results.every((r) => r.passed);
-  report.savings = savingsSummary(report.results);
   await fs.writeFile(path.join(output, "report.json"), JSON.stringify(report, null, 2) + "\n");
   await fs.writeFile(path.join(output, "summary.md"), markdownReport(report));
 }
@@ -50,8 +51,8 @@ const publicDirectory = path.join(ROOT, "public");
 for (const sample of samples) {
   console.log(`\n${sample.id}: ${sample.name}`);
   try {
-    const comparison = await withSampleFile(sample, publicDirectory, (sampleFile) =>
-      compareCatalogues({
+    const verification = await withSampleFile(sample, publicDirectory, (sampleFile) =>
+      verifyMatching({
         publicDirectory,
         sampleFile,
         build: sample.build,
@@ -59,17 +60,17 @@ for (const sample of samples) {
         onStatus: console.log,
       }),
     );
-    const first = report.results.find((r) => r.comparison)?.comparison;
+    const first = report.results.find((r) => r.verification)?.verification;
     if (
       first &&
-      (first.catalogue.sha256 !== comparison.catalogue.sha256 ||
-        first.index.sha256 !== comparison.index.sha256)
+      (first.catalogue.sha256 !== verification.catalogue.sha256 ||
+        first.metadata.sha256 !== verification.metadata.sha256)
     )
-      throw new Error("Catalogue or index changed between samples");
-    const passed = comparison.results.identical && comparison.results.fullCount > 0;
-    report.results.push({ sample, passed, comparison });
+      throw new Error("Catalogue or metadata changed between samples");
+    const passed = verification.results.identical && verification.results.expectedCount > 0;
+    report.results.push({ sample, passed, verification });
     console.log(
-      `${sample.id}: ${passed ? "PASS" : "FAIL"}; ${comparison.results.fullCount} / ${comparison.results.selectiveCount} matches; ${comparison.downloads.savingsPercent.toFixed(2)}% savings`,
+      `${sample.id}: ${passed ? "PASS" : "FAIL"}; ${verification.results.expectedCount} expected / ${verification.results.actualCount} actual results; all fields and ordering match: ${verification.results.identical}`,
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

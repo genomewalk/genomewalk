@@ -746,3 +746,88 @@ test("opening archives reports byte progress, while a header-only text read does
   await openConsumerFile(file(content), undefined, (fraction) => values.push(fraction));
   assert.deepEqual(values, []);
 });
+
+test("streamed catalogue matching preserves unordered calls, missing rsIDs and conflicts", async () => {
+  const input = await openConsumerFile(
+    file(text(["i123\t1\t200\tCT", "rs100\t1\t100\tCT", "rs100\t1\t100\tCC", "rs300\t1\t300\tTG"])),
+  );
+  const values = new Map([
+    ...catalog(100, 200),
+    ["1:300:C:T", entry(300, "C", "T")],
+    ["1:300:C:G", entry(300, "C", "G")],
+  ]);
+  const lookup = {
+    schema: 1,
+    build: "GRCh37",
+    sources: {},
+    aliases: {},
+    markers: {},
+    // The 200 record has no rsID, and the 300 mapping omits its G allele.
+    catalog: { rs100: ["1:100:C:T"], rs300: ["1:300:C:T"] },
+  };
+  const expected = await findMatches(input, values, undefined, undefined, lookup);
+  let passes = 0;
+  let completed = 0;
+  const streamed = {
+    async *rows(signal?: AbortSignal) {
+      passes++;
+      try {
+        for (const row of values.values()) {
+          signal?.throwIfAborted();
+          yield row;
+        }
+        completed++;
+      } finally {
+        assert.ok(completed <= passes);
+      }
+    },
+  };
+  const actual = await findMatches(input, streamed, undefined, undefined, lookup);
+  assert.deepEqual(actual, expected);
+  assert.deepEqual(
+    resultsWithoutConflicts(actual).hits.map((hit) => hit.pos),
+    [200, 300, 300],
+  );
+  assert.equal(passes, 2);
+  assert.equal(completed, 2, "both complete catalogue passes are validated before results return");
+});
+
+test("catalogue errors after the last matched row reject provisional consumer results", async () => {
+  const input = await openConsumerFile(file(text([row(100, "CT")])));
+  for (const failedPass of [1, 2]) {
+    let passes = 0;
+    const failure = new AppError(
+      "REFERENCE_INTEGRITY_FAILED",
+      "Public catalogue integrity failed",
+      { resource: "catalogue-entries" },
+    );
+    const catalogue = {
+      async *rows() {
+        const pass = ++passes;
+        yield entry(100);
+        if (pass === failedPass) throw failure;
+      },
+    };
+    await assert.rejects(findMatches(input, catalogue), (error) => error === failure);
+    assert.equal(passes, failedPass);
+  }
+});
+
+test("consumer catalogue streams cancel promptly and skip payload pass without matches", async () => {
+  const input = await openConsumerFile(file(text([row(100, "CC")])));
+  let passes = 0;
+  const catalogue = {
+    async *rows() {
+      passes++;
+      yield entry(100);
+    },
+  };
+  assert.deepEqual(await findMatches(input, catalogue), []);
+  assert.equal(passes, 1);
+  const controller = new AbortController();
+  controller.abort();
+  await assert.rejects(findMatches(input, catalogue, undefined, controller.signal), {
+    name: "AbortError",
+  });
+  assert.equal(passes, 1);
+});

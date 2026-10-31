@@ -6,10 +6,9 @@ export function buildPlan({
   only,
   fresh = false,
   offline = false,
-  frequenciesExist = false,
   consumer = true,
   jobs,
-}: BuildOptions & { frequenciesExist?: boolean; consumer?: boolean }) {
+}: BuildOptions & { consumer?: boolean }) {
   if (offline && fresh) throw new Error("--offline and --fresh cannot be combined");
   const builds = only ? [only] : BUILDS;
   const plan = [];
@@ -19,23 +18,27 @@ export function buildPlan({
       script: "download-inputs.ts",
       args: [...(only ? ["--only", only] : []), ...(fresh ? ["--fresh"] : [])],
     });
-  if (!offline && (fresh || !frequenciesExist))
-    plan.push({
-      name: "Extract gnomAD frequencies for selected ClinVar alleles",
-      script: "build-freqs.ts",
-      args: [...(jobs ? ["--jobs", jobs] : []), ...(fresh ? ["--fresh"] : [])],
-    });
+  // Re-evaluate selection every time; an existing TSV may predate new targets.
+  plan.push({
+    name: "Build gnomAD frequencies for selected ClinVar alleles (reuse matching region caches)",
+    script: "build-freqs.ts",
+    args: [
+      ...(jobs ? ["--jobs", jobs] : []),
+      ...(fresh ? ["--fresh"] : []),
+      ...(offline ? ["--offline"] : []),
+    ],
+  });
   plan.push({
     name:
       only === "GRCh37"
         ? "Prepare the GRCh38 allele-ID frequency join"
-        : "Build the GRCh38 catalogue, byte-range index and allele-ID join",
+        : "Build the GRCh38 catalogue, compact summary and allele-ID join",
     script: "build-catalog.ts",
     args: ["--build", "GRCh38", ...(only === "GRCh37" ? ["--join-only"] : [])],
   });
   if (builds.includes("GRCh37"))
     plan.push({
-      name: "Build the GRCh37 catalogue and byte-range index using the allele-ID join",
+      name: "Build the GRCh37 catalogue and compact summary using the allele-ID join",
       script: "build-catalog.ts",
       args: ["--build", "GRCh37"],
     });

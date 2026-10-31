@@ -1,67 +1,67 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { savingsSummary, markdownReport, scope } from "./report.ts";
+import { markdownReport, scope } from "./report.ts";
 import type { SampleResult, SuiteReport } from "./report.ts";
 import { bundledSample, giabGrch38 } from "./samples.ts";
 
-test("suite reports keep failures visible and calculate statistics from successful samples only", () => {
-  const success = (savingsPercent: number): SampleResult => ({
-    sample: bundledSample,
-    passed: true,
-    comparison: {
-      build: "GRCh38",
-      sample: { bytes: 10, sha256: "sample" },
-      catalogue: { size: 100, sha256: "catalogue", records: 1 },
-      index: { bytes: 10, sha256: "index" },
-      results: {
-        identical: true,
-        fullCount: 1,
-        selectiveCount: 1,
-        fullSha256: "same",
-        selectiveSha256: "same",
-      },
-      downloads: {
-        fullBytes: 100,
-        indexBytes: 10,
-        blockBytes: 10,
-        selectiveBytes: 20,
-        rangeRequests: 1,
-        savingsPercent,
-      },
-      requests: { full: [], selective: [] },
+const success: SampleResult = {
+  sample: bundledSample,
+  passed: true,
+  verification: {
+    build: "GRCh38",
+    sample: { sha256: "sample" },
+    catalogue: { sha256: "catalogue", records: 10 },
+    metadata: { sha256: "metadata" },
+    results: {
+      identical: true,
+      expectedCount: 2,
+      actualCount: 2,
+      expectedSha256: "same",
+      actualSha256: "same",
     },
-  });
-  const results = [
-    success(10),
-    success(70),
-    success(-5),
-    { sample: giabGrch38[2]!, passed: false, error: "Download failed" },
-  ];
-  assert.deepEqual(savingsSummary(results), { count: 3, min: -5, median: 10, max: 70 });
-  assert.equal(savingsSummary([success(10), success(20)])!.median, 15);
-  assert.equal(savingsSummary([]), null);
-  const report: SuiteReport = {
-    schema: 2,
-    suite: "test",
-    createdAt: "test",
-    commit: "test",
-    workingTree: "clean",
-    runtime: { node: "test", platform: "test", arch: "test" },
-    expectedSamples: 4,
-    passed: false,
-    scope,
-    results,
-    savings: savingsSummary(results),
-  };
+  },
+};
+const report: SuiteReport = {
+  schema: 5,
+  suite: "test",
+  createdAt: "test",
+  commit: "test",
+  workingTree: "clean",
+  runtime: { node: "test", platform: "test", arch: "test" },
+  expectedSamples: 1,
+  passed: true,
+  scope,
+  results: [success],
+};
+
+test("correctness report shows results without retrieval or performance measurements", () => {
   const text = markdownReport(report);
-  assert.match(text, /\*\*FAIL\*\*/);
-  assert.match(text, /HG003 \| — \| ERROR/);
-  assert.match(text, /Download failed/);
-  assert.match(text, /-5.00% minimum/);
-  assert.match(markdownReport({ ...report, expectedSamples: 7 }), /INCOMPLETE/);
-  assert.equal(giabGrch38.length, 7);
-  assert.equal(
-    giabGrch38.reduce((total, sample) => total + sample.bytes, 0),
-    953013011,
+  assert.match(text, /\*\*PASS\*\*/);
+  assert.match(text, /HG002 \| 2 \| 2 \| Yes \| PASS/);
+  assert.doesNotMatch(
+    text,
+    /Tabix|selective|baseline|savings|range requests|total bytes|latency|peak memory/i,
   );
+  assert.match(markdownReport({ ...report, expectedSamples: 7, passed: false }), /INCOMPLETE/);
+});
+
+test("mismatches and failures remain visible in correctness reports", () => {
+  const mismatch: SampleResult = {
+    ...success,
+    passed: false,
+    verification: {
+      ...success.verification!,
+      results: { ...success.verification!.results, identical: false, actualSha256: "different" },
+    },
+  };
+  const text = markdownReport({
+    ...report,
+    expectedSamples: 2,
+    passed: false,
+    results: [mismatch, { sample: giabGrch38[2]!, passed: false, error: "Cannot read sample" }],
+  });
+  assert.match(text, /\*\*FAIL\*\*/);
+  assert.match(text, /HG002 \| 2 \| 2 \| No \| FAIL/);
+  assert.match(text, /HG003 \| — \| — \| — \| ERROR/);
+  assert.match(text, /Cannot read sample/);
 });

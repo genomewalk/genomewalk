@@ -10,26 +10,27 @@ the Docker export target installs it automatically.
 
 ## Focused commands
 
-| Command                 | Coverage                                                    |
-| ----------------------- | ----------------------------------------------------------- |
-| `npm test`              | All application and offline pipeline regression tests       |
-| `npm run test:vcf`      | VCF behavior and shared integration                         |
-| `npm run test:consumer` | Consumer behavior and shared integration                    |
-| `npm run test:data`     | Synthetic offline builds, errors and cache behavior         |
-| `npm run data:check`    | Real shipped catalogue, marker and sidecar integrity        |
-| `npm run check:deploy`  | Static pages and asset inventory for the production build   |
-| `npm run check:browser` | Built-site HG002 journey and catalogue byte-range downloads |
-| `npm run data:inputs`   | Cached prerequisites for network-free reference rebuilds    |
-| `npm run data:plan`     | Named rebuild stages without writes or requests             |
+| Command                 | Coverage                                                           |
+| ----------------------- | ------------------------------------------------------------------ |
+| `npm test`              | All application and offline pipeline regression tests              |
+| `npm run test:vcf`      | VCF behavior and shared integration                                |
+| `npm run test:consumer` | Consumer behavior and shared integration                           |
+| `npm run test:data`     | Synthetic offline builds, errors and cache behavior                |
+| `npm run data:check`    | Real shipped catalogue, marker and sidecar integrity               |
+| `npm run check:deploy`  | Static pages and asset inventory for the production build          |
+| `npm run check:browser` | Built-site HG002 journey, catalogue streams and sample byte ranges |
+| `npm run data:inputs`   | Cached prerequisites for network-free reference rebuilds           |
+| `npm run data:plan`     | Named rebuild stages without writes or requests                    |
 
-## Download benchmark
+## Matching correctness benchmark
 
-`npm run benchmark` compares complete and selective catalogue downloads using the
-bundled HG002 sample. The manual **Benchmarks** GitHub workflow runs the same
-command in Docker and publishes a summary and downloadable reports. Select the
-`giab-grch38` suite to test all seven public v4.2.1 samples sequentially. See
-[BENCHMARKS.md](BENCHMARKS.md) for scope and reproducibility details. This is
-separate from ordinary release checks.
+`npm run benchmark` verifies every matching result field and the result ordering
+using the bundled HG002 sample and a simple reference lookup. The manual
+**Benchmarks** GitHub workflow runs the same command in Docker and publishes a
+pass/fail summary and provenance. Select the `giab-grch38` suite to test all seven
+public v4.2.1 samples sequentially. See [BENCHMARKS.md](BENCHMARKS.md) for details.
+This is separate from ordinary release checks. It does not compare retrieval
+methods or measure download volume, speed or memory.
 
 ## Automated coverage
 
@@ -40,6 +41,8 @@ public records and small DOM stubs. They cover:
   CRLF, a final row without a newline and cancellation.
 - VCF exact allele identity, indels, multi-allelic and incomplete genotypes,
   reference/filtered rows, repeated records, evidence categories and source links.
+- Streaming merge joins across sorted positions, multiple alleles at one locus,
+  chromosome transitions and unsorted-input fallback without accepting partial results.
 - 23andMe and Ancestry schemas, missing/I/D calls, chromosome aliases, build and
   strand conflicts, duplicate sites and source-bound rsID lookups.
 - Separate experience sessions, direct chapter access, shared scan requests,
@@ -48,14 +51,25 @@ public records and small DOM stubs. They cover:
   lessons that need no genome scan, disclosure links and chart proportions.
 - Offline option validation, dry runs, atomic output, failed downloads and
   extraction, cross-build joins, exact marker identities and cached responses.
-  Network-free rebuild tests verify a missing marker cache cannot trigger HTTP.
+  Network-free rebuild tests verify missing or outdated frequency regions and
+  missing marker caches cannot trigger HTTP or replace existing outputs.
+- Mixed ClinVar classifications retain independent drug-response, risk or trait
+  evidence alongside benign/uncertain labels, preserving the source text without
+  incorrectly categorizing these records as disease evidence.
 - Reviewed stylesheets, VCF lesson text/templates and unchanged evidence
   helpers. See [regression snapshots](#regression-snapshots).
 
-The catalogue decoder indexes bounded text blocks instead of retaining a
-full decompressed byte array, a full decoded string and a full split-line array.
-Its regression fixture checks exact keys, indels, zero frequencies, class/star
-counts and preview entries.
+The catalogue reader consumes the HTTP body incrementally, validates BGZF blocks
+and computes the complete-file SHA-256 without retaining the complete compressed
+or decoded payload. It checks final length, digest, row count and ordered records
+before returning successful results. Tests exercise split rows/UTF-8, corrupt or
+truncated streams, failed requests and cancellation. Metadata tests check summary
+counts, selected examples, chromosome order and stale or invalid digests.
+
+Sorted matching retains active loci and results. The unsorted VCF and consumer
+compatibility paths retain compact public identities and read the catalogue again
+for evidence; consumer compressed inputs also retain decoded text. Tests establish
+correctness and released-reader behavior, not a fixed maximum browser heap size.
 
 ## Regression snapshots
 
@@ -88,8 +102,8 @@ flows. Never add personal genomes or results to either fixture directory.
 The automated browser check serves the production files on loopback and uses
 Chromium to choose HG002, open chapter 1 and reach non-empty results. It fails on
 browser errors, unsuccessful local requests or invalid byte-range responses.
-It also validates both supported builds' catalogue indexes and representative
-compressed blocks through HTTP. Docker runs the check with external networking
+It also validates both supported builds' compact metadata and complete catalogue
+streams through HTTP. Docker runs the check with external networking
 disabled and fallback fonts. This is a deployment gate, not a check of the live
 CDN or every browser and file format; the broader manual procedure below remains
 useful.
@@ -128,36 +142,13 @@ These instructions are a procedure, not evidence that the checks passed.
 
 ## Reference data
 
-`npm run data:check` validates the shipped catalogue, marker, range, publication
-and consumer indexes, including their source hashes. Use its output for the
+`npm run data:check` validates the shipped catalogues, compact metadata, markers,
+publication labels and consumer rsID indexes, including their source hashes and
+catalogue ordering. Use its output for the
 current asset inventory. A fresh upstream rebuild is separate from application
 release validation; see the [pipeline guide](../scripts/README.md).
 
 These checks establish software behavior, not clinical validity or support for
 every historical provider export. Catalogue coverage and exact-representation
-limitations remain. Large files and in-memory indexes have device-dependent costs.
-
-## Historical reference measurements
-
-The following observations were recorded during September 2026 validation and
-are retained as benchmark provenance. They are not current release results or
-fixed expectations for later public-data releases. The whitepaper's
-[engineering snapshot](whitepaper/engineering-snapshot.json) retains the dated
-asset sizes, hashes and measurement provenance. Rerun checks and measurements
-before citing them for a changed implementation or catalogue.
-
-On 29 September, the static-server comparison returned all 399 HG002 results
-identical field-for-field to the full-catalogue reader. Catalogue requests
-transferred 5,154,640 index bytes plus 2,745,473 annotation bytes in 203 range
-requests, compared with the 26,640,645-byte complete GRCh38 catalogue. These
-figures exclude the public genome and application assets. Both synthetic consumer
-fixtures retained one result with identical fields; each needed 12,830 annotation
-bytes after loading its indexes. This comparison added range locators to the
-existing catalogue bytes; it did not perform a fresh upstream rebuild.
-
-Earlier September browser checks recorded 5,201,459 passing HG002 variants
-(4,233,644 SNPs and 967,815 indels), with 399 results, 253 genes and 274 records
-with publications. The 23andMe fixture had six rows at five sites; Ancestry had
-five rows at five sites. Both completed the chapter flow and returned one result.
-Desktop and 390 px layouts were visually inspected; these were not pixel-diff
-tests. Those earlier observations used the development server.
+limitations remain. Large files, compatibility lookups, accumulated results and
+consumer decoded text have device-dependent costs.

@@ -4,7 +4,6 @@ import { readHeader, streamVariants } from "../../src/experiences/vcf/engine/vcf
 import { FileSource, streamBlocks } from "../../src/lib/io/bgzf.ts";
 import { AppError } from "../../src/lib/app-error.ts";
 import { getReadingContext } from "../../src/lib/diagnostics/reading.ts";
-import { indexCatalogue } from "../../src/lib/catalogues/reference-catalogue.ts";
 import { bgzfBytes } from "../helpers/vcf.ts";
 const source = (bytes: Buffer<ArrayBuffer>) => ({
   size: bytes.length,
@@ -225,24 +224,7 @@ test("VCF row processing failures retain native identity and the records operati
   );
 });
 
-test("catalogue streaming retains exact indel keys, zero frequencies, samples and tallies", async () => {
-  const header = "#chrom\tpos\tref\talt\tsig\tstars";
-  const rows = ["1\t10\tT\tTC\tP\t2\té\t0", "1\t20\tTGGA\tT\tLP\t1\t.\t."];
-  const index = await indexCatalogue(bgzfBytes([header, ...rows].join("\r\n"), 7));
-  assert.equal(index.header, header);
-  assert.deepEqual(
-    [...index.map],
-    [
-      ["1:10:T:TC", rows[0]],
-      ["1:20:TGGA:T", rows[1]],
-    ],
-  );
-  assert.deepEqual(index.sample, rows);
-  assert.deepEqual(index.byClass, { P: 1, LP: 1 });
-  assert.equal(index.n, 2);
-});
-
-test("cancelled VCF and catalogue reads stop before touching the source", async () => {
+test("cancelled VCF reads stop before touching the source", async () => {
   const controller = new AbortController();
   controller.abort();
   const src = {
@@ -255,5 +237,4 @@ test("cancelled VCF and catalogue reads stop before touching the source", async 
     streamVariants(src, () => {}, null, controller.signal),
     { name: "AbortError" },
   );
-  await assert.rejects(indexCatalogue(bgzfBytes("x"), controller.signal), { name: "AbortError" });
 });

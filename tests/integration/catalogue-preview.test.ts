@@ -2,14 +2,12 @@ import { fixture as partialFixture } from "../helpers/fixture.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { createGunzip, gunzipSync } from "node:zlib";
+import { createGunzip } from "node:zlib";
 import { createInterface } from "node:readline";
 import {
   frequencyIndexPreview,
   clinvarIndexPreview,
 } from "../../src/lib/catalogues/catalogue-preview.ts";
-import { loadClinvarExamples } from "../../src/lib/catalogues/clinvar-examples.ts";
-import { RangeCatalogue } from "../../src/lib/catalogues/catalogue-ranges.ts";
 import { clinvarChapterHtml } from "../../src/experiences/shared/clinvar-chapter.ts";
 
 test("frequency previews use the loaded build and only three actual reference entries", () => {
@@ -64,131 +62,65 @@ test("ClinVar previews read named fields, preserve claims and escape reference t
   assert.equal(clinvarIndexPreview(partialFixture({ header: "#unsupported", sample, n: 4 })), "");
 });
 
-test("both builds render the same ClinVar examples through byte ranges as full catalogue rows", async (t) => {
+test("both builds render curated metadata examples identical to full catalogue rows without downloads", async (t) => {
+  t.mock.method(globalThis, "fetch", () => {
+    throw new Error("Teaching examples must not download the catalogue");
+  });
   for (const build of ["GRCh37", "GRCh38"]) {
+    const metadata = JSON.parse(
+      fs.readFileSync(
+        new URL(`../../public/ref/${build}/catalog.meta.json`, import.meta.url),
+        "utf8",
+      ),
+    );
+    assert.equal(metadata.examples.length, 3);
+    assert.equal("records" in metadata, false);
+    assert.equal("blocks" in metadata, false);
+    const expected = new Map<string, string>(
+      metadata.examples.map((line: string) => [line.split("\t", 4).join(":"), line]),
+    );
+    const found = new Map<string, string>();
     const stream = fs.createReadStream(
       new URL(`../../public/ref/${build}/catalog.tsv.gz`, import.meta.url),
     );
     const decoded = stream.pipe(createGunzip());
     const lines = createInterface({ input: decoded, crlfDelay: Infinity });
-    const map = new Map(),
-      sample = [];
-    let header = "",
-      columns: string | string[] = [];
     try {
       for await (const line of lines) {
-        if (line.startsWith("#")) {
-          header = line;
-          columns = line.slice(1).split("\t");
-          continue;
-        }
-        if (!line) continue;
-        if (sample.length < 6) sample.push(line);
-        const fields = line.split("\t");
-        if (["132807", "1131472", "39357"].includes(fields[columns.indexOf("variationid")]!)) {
-          map.set(fields.slice(0, 4).join(":"), line);
-          if (map.size === 3) break;
-        }
+        const key = line.split("\t", 4).join(":");
+        if (expected.has(key)) found.set(key, line);
+        if (found.size === expected.size) break;
       }
     } finally {
       lines.close();
       decoded.destroy();
       stream.destroy();
     }
-    assert.equal(map.size, 3, `example entries available for ${build}`);
-    const catalogue = { build, header, map, sample };
-    const examples = await loadClinvarExamples(catalogue);
-    const html = clinvarIndexPreview(catalogue, examples);
+    assert.equal(found.size, expected.size);
+    for (const [key, line] of expected) assert.equal(found.get(key), line);
+    const html = clinvarIndexPreview(metadata, metadata.examples);
     for (const gene of ["PIK3CD", "SAMD11", "CYP2C19"])
       assert.ok(html.includes(`<td>${gene}</td>`));
-    for (const variantKey of map.keys()) assert.ok(html.includes(variantKey));
+    for (const key of expected.keys()) assert.ok(html.includes(key));
     for (const stars of [1, 3, 4]) assert.ok(html.includes(`${stars} / 4 stars`));
     assert.match(html, /<td>Pathogenic<\/td>/);
     assert.match(html, /<td>Conflicting classifications of pathogenicity<\/td>/);
     assert.match(html, /<td>drug response<\/td>/);
     assert.match(html, /Clopidogrel response; CYP2C19: increased function/);
     assert.equal((html.match(/<tr>/g) || []).length, 4);
-    assert.doesNotMatch(html, /Not recorded/);
-
-    // Exercise the deployed locator format, not just a map of decoded TSV rows.
-    const index = JSON.parse(
-      partialFixture(
-        gunzipSync(
-          fs.readFileSync(
-            new URL(`../../public/ref/${build}/catalog.index.json.gz`, import.meta.url),
-          ),
-        ),
-      ),
-    );
-    const file = fs.openSync(
-      new URL(`../../public/ref/${build}/catalog.tsv.gz`, import.meta.url),
-      "r",
-    );
-    t.after(() => fs.closeSync(file));
-    let requests = 0;
-    const rangeMap = new RangeCatalogue(index, "/catalog.tsv.gz", async (_, { headers } = {}) => {
-      assert.match(new Headers(headers).get("Range")!, /^bytes=\d+-\d+$/);
-      const [, start, end] = /bytes=(\d+)-(\d+)/
-        .exec(new Headers(headers).get("Range")!)!
-        .map(Number);
-      const bytes = Buffer.alloc(end! - start! + 1);
-      assert.equal(fs.readSync(file, bytes, 0, bytes.length, partialFixture(start)), bytes.length);
-      requests++;
-      return new Response(bytes, {
-        status: 206,
-        headers: { "Content-Range": `bytes ${start}-${end}/${index.source.size}` },
-      });
-    });
-    const ranged = { ...index, map: rangeMap };
-    const statuses: string[] = [];
-    const rangedExamples = await loadClinvarExamples(ranged, undefined, (status) =>
-      statuses.push(status),
-    );
-    assert.deepEqual(rangedExamples, examples);
-    assert.equal(clinvarIndexPreview(ranged, rangedExamples), html);
     assert.ok(
-      clinvarChapterHtml(ranged, {
-        examples: rangedExamples,
+      clinvarChapterHtml(metadata, {
+        examples: metadata.examples,
         labels: {},
         meanings: {},
         reviewLabels: [],
       }).includes(html),
     );
-    assert.deepEqual(statuses, ["Loading catalogue examples…"]);
-    assert.ok(rangeMap.bytesRead > 0 && rangeMap.bytesRead < index.source.size / 100);
-    assert.equal(rangeMap.rows.size, 3, "only the teaching examples are decoded into rows");
-    assert.ok(
-      [...map.keys()].every((key) => Array.isArray(rangeMap.get(key))),
-      "matching locators remain intact",
-    );
-    const previousRequests = requests;
-    assert.deepEqual(await loadClinvarExamples(ranged), examples);
-    assert.equal(requests, previousRequests, "revisiting the chapter reuses cached rows");
-
-    // If an entry is unavailable, the sample still fills three distinct rows.
-    rangeMap.delete([...map.keys()][0]);
-    const fallback = clinvarIndexPreview(ranged, await loadClinvarExamples(ranged));
+    const fallback = clinvarIndexPreview(metadata, metadata.examples.slice(1));
     assert.equal((fallback.match(/<tr>/g) || []).length, 4);
     assert.equal(
-      new Set([...fallback.matchAll(/<code>([^<]+)<\/code>/g)].map((m) => m[1])).size,
+      new Set([...fallback.matchAll(/<code>([^<]+)<\/code>/g)].map((match) => match[1])).size,
       3,
     );
   }
-});
-
-test("ClinVar example loading handles missing keys, cancellation and fetch failures", async () => {
-  assert.deepEqual(await loadClinvarExamples({ build: "GRCh38", map: new Map() }), []);
-  await assert.rejects(loadClinvarExamples(partialFixture({}), AbortSignal.abort()), {
-    name: "AbortError",
-  });
-  const map = new Map([["1:9720793:G:A", []]]);
-  Object.assign(map, {
-    readEntries: async () => {
-      throw new Error("Range request failed");
-    },
-  });
-  await assert.rejects(
-    loadClinvarExamples(partialFixture({ build: "GRCh38", map })),
-    /Range request failed/,
-  );
 });

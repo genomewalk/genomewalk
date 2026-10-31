@@ -13,7 +13,7 @@ COPY . .
 ENTRYPOINT ["npm", "run"]
 CMD ["data"]
 
-# Reproducible public-sample benchmarks; reports are written to a mounted output folder.
+# Public-sample correctness checks; reports are written to a mounted output folder.
 FROM source AS benchmark
 ENTRYPOINT ["npm", "run", "benchmark", "--"]
 

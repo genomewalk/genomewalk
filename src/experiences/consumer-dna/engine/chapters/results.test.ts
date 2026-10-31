@@ -3,6 +3,7 @@ import { mockDocument, testElement } from "../../../../../tests/helpers/fixture.
 import { fixture as partialFixture } from "../../../../../tests/helpers/fixture.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
+import { gzipSync } from "fflate";
 import results from "./results.ts";
 import { ctx, selectSource } from "../context.ts";
 import { testDocument } from "../../../../../tests/helpers/vcf.ts";
@@ -17,6 +18,26 @@ test("results forward file progress to the loader and reuse completed matches", 
     ctx.catalog = previousCatalog;
   });
   let reads = 0;
+  let downloads = 0;
+  const sourceHash = "1".repeat(64);
+  t.mock.method(globalThis, "fetch", async (url: string | URL | Request) => {
+    assert.equal(url, "/ref/consumer-dna/GRCh37/rsids.json.gz");
+    downloads++;
+    return new Response(
+      gzipSync(
+        new TextEncoder().encode(
+          JSON.stringify({
+            schema: 1,
+            build: "GRCh37",
+            sources: { catalog: { sha256: sourceHash } },
+            catalog: {},
+            markers: {},
+            aliases: {},
+          }),
+        ),
+      ),
+    );
+  });
   selectSource(
     partialFixture({
       build: "GRCh37",
@@ -31,16 +52,25 @@ test("results forward file progress to the loader and reuse completed matches", 
       },
     }),
   );
-  ctx.catalog = partialFixture({ build: "GRCh37", map: new Map() });
+  ctx.catalog = partialFixture({
+    build: "GRCh37",
+    source: { sha256: sourceHash },
+    async *rows(_signal: AbortSignal, progress: (fraction: number) => void) {
+      progress(1);
+      yield* [];
+    },
+  });
   const values: number[] = [];
   const options: ChapterOptions = { onProgress: (fraction) => values.push(fraction) };
   const out = testElement("div");
   await results.run(out, options);
-  assert.deepEqual(values, [0, 0.13, 1]);
+  assert.deepEqual(values, [0, 0.2, 0.278, 0.8, 1]);
   assert.ok(out.children.every((child) => child.className !== "prog"));
   await results.run(testElement("div"), options);
   assert.equal(reads, 1);
-  assert.deepEqual(values, [0, 0.13, 1]);
+  assert.equal(downloads, 1);
+  assert.equal("lookup" in ctx.catalog!, false);
+  assert.deepEqual(values, [0, 0.2, 0.278, 0.8, 1]);
 });
 
 test("results explain omitted sites and exclude them from all summary counts", async (t) => {

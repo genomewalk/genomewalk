@@ -7,7 +7,7 @@ import type {
   RsidLookup,
 } from "../types.ts";
 import type { MarkerData } from "../../../lib/catalogues/types.ts";
-import type { loadRangeCatalogue } from "../../../lib/catalogues/catalogue-ranges.ts";
+import type { loadCatalogue } from "../../../lib/catalogues/catalogue-stream.ts";
 import type { findMatches } from "./matching.ts";
 import type { Scan } from "../../../lib/async/shared-scan.ts";
 interface ConsumerContext {
@@ -21,7 +21,7 @@ interface ConsumerContext {
   matches: Awaited<ReturnType<typeof findMatches>> | null;
   build: string | null;
   markers?: MarkerData & { lookup: RsidLookup };
-  catalog?: (Awaited<ReturnType<typeof loadRangeCatalogue>> & { lookup: RsidLookup }) | undefined;
+  catalog?: Awaited<ReturnType<typeof loadCatalogue>> | undefined;
 }
 import { consumerStats } from "./statistics.ts";
 import { sharedScan } from "../../../lib/async/shared-scan.ts";

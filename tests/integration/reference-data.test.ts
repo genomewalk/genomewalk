@@ -22,7 +22,12 @@ import {
   FREQUENCY_HEADER,
 } from "../../scripts/lib/clinvar.ts";
 import { buildCatalog } from "../../scripts/lib/catalog.ts";
-import { clusterTargets, collectFrequencies } from "../../scripts/lib/frequencies.ts";
+import {
+  buildFrequencies,
+  clusterTargets,
+  collectFrequencies,
+  requireCachedFrequencies,
+} from "../../scripts/lib/frequencies.ts";
 import { markerOutput, buildMarkers } from "../../scripts/lib/markers.ts";
 import { validateCatalogRow, checkReference } from "../../scripts/lib/validate.ts";
 
@@ -101,15 +106,15 @@ test("CLI rejects unknown, missing and invalid values before executing a step", 
 });
 
 test("GRCh37-only plan creates its prerequisite join without replacing GRCh38 output", () => {
-  const plan = buildPlan({ only: "GRCh37", frequenciesExist: true });
-  assert.ok(!plan.some((step) => step.script === "build-freqs.ts"));
+  const plan = buildPlan({ only: "GRCh37" });
+  assert.ok(plan.some((step) => step.script === "build-freqs.ts"));
   assert.deepEqual(plan.find((step) => step.script === "build-catalog.ts")!.args, [
     "--build",
     "GRCh38",
     "--join-only",
   ]);
   assert.equal(plan.filter((step) => step.script === "build-marker-freqs.ts").length, 1);
-  const fresh = buildPlan({ fresh: true, frequenciesExist: true });
+  const fresh = buildPlan({ fresh: true });
   assert.ok(fresh.some((step) => step.script === "build-freqs.ts"));
   assert.ok(
     fresh
@@ -234,6 +239,51 @@ test("frequency targets use the same selected classifications as the catalogue",
   assert.equal(parseClinvar(vcfRow(10, "Pathogenic", "", "T,G")), null);
 });
 
+test("independent supported ClinVar classifications survive benign or uncertain terms", () => {
+  for (const excluded of [
+    "Benign",
+    "Likely_benign",
+    "Benign/Likely_benign",
+    "Uncertain_significance",
+  ])
+    for (const supported of [
+      "drug_response",
+      "risk_factor",
+      "risk_allele",
+      "association",
+      "protective",
+      "Affects",
+      "confers_sensitivity",
+    ])
+      for (const significance of [`${excluded}|${supported}`, `${supported}|${excluded}`]) {
+        const record = parseClinvar(vcfRow(10, significance));
+        assert.ok(record, significance);
+        assert.equal(record.code, "O", significance);
+        assert.equal(catalogFields(record)[14], significance);
+      }
+  for (const significance of [
+    "Benign",
+    "Likely_benign",
+    "Benign/Likely_benign",
+    "Uncertain_significance",
+    "Benign|Uncertain_significance",
+    "Uncertain_risk_allele",
+    "Uncertain_significance/Uncertain_risk_allele",
+    "Benign|other",
+    "not_provided",
+    "",
+  ])
+    assert.equal(parseClinvar(vcfRow(10, significance)), null, significance);
+  for (const [significance, code] of [
+    ["Conflicting_classifications_of_pathogenicity|drug_response", "C"],
+    ["Pathogenic/Likely_pathogenic|drug_response", "PLP"],
+    ["Pathogenic|drug_response", "P"],
+    ["Likely_pathogenic|drug_response", "LP"],
+  ])
+    assert.equal(parseClinvar(vcfRow(10, significance!))?.code, code);
+  assert.equal(parseClinvar(vcfRow(10, "Benign|drug_response", "", "T,G")), null);
+});
+
 test("catalogue fields retain zero frequency, independent dates, citations and condition links", () => {
   const fields = catalogFields(partialFixture(parseClinvar(vcfRow(10, "Pathogenic"))), {
     frequency: ["0", "afr", "0", "100", "0", "PASS", "."],
@@ -279,6 +329,22 @@ test("malformed ClinVar never replaces a previously built catalogue or allele jo
   assert.deepEqual(fs.readFileSync(files.alleleFrequencies), allele);
 });
 
+test("out-of-order ClinVar input never replaces the previous streaming catalogue or summary", async (t) => {
+  const files = fixture(t);
+  await buildCatalog({ paths: files });
+  const catalogue = fs.readFileSync(files.catalog("GRCh38"));
+  const metadata = fs.readFileSync(files.catalogMetadata("GRCh38"));
+  const allele = fs.readFileSync(files.alleleFrequencies);
+  bgzfWrite(
+    [vcfRow(20, "Pathogenic"), vcfRow(10, "Pathogenic"), ""].join("\n"),
+    files.clinvar("GRCh38"),
+  );
+  await assert.rejects(buildCatalog({ paths: files }), /positions must be sorted/);
+  assert.deepEqual(fs.readFileSync(files.catalog("GRCh38")), catalogue);
+  assert.deepEqual(fs.readFileSync(files.catalogMetadata("GRCh38")), metadata);
+  assert.deepEqual(fs.readFileSync(files.alleleFrequencies), allele);
+});
+
 test("region grouping handles unordered targets and clamps chromosome starts", () => {
   const regions = clusterTargets(
     partialFixture(
@@ -315,6 +381,54 @@ test("failed joint extraction rejects and duplicate records are never silently s
   );
   const rows = await collectFrequencies(regions, { makeExtractor: () => async () => [variant] });
   assert.equal(rows.get("1:10:C:T")!.af, "0");
+});
+
+test("frequency rebuilds reuse exact target caches and detect new mixed classifications before offline writes", async (t) => {
+  const files = fixture(t);
+  const writeInput = (mixed: boolean) =>
+    bgzfWrite(
+      [
+        vcfRow(10, "Pathogenic"),
+        vcfRow(30, mixed ? "Benign|drug_response" : "Benign"),
+        vcfRow(20000, "Pathogenic"),
+        "",
+      ].join("\n"),
+      files.clinvar("GRCh38"),
+    );
+  writeInput(false);
+  let requests = 0;
+  const extractor: NonNullable<Parameters<typeof buildFrequencies>[1]> = {
+    makeExtractor: () => async (region) => {
+      requests++;
+      return [...region.keys].map((key) => ({ ...variant, key: `${region.chrom}:${key}` }));
+    },
+  };
+  await buildFrequencies({ paths: files }, extractor);
+  assert.equal(requests, 2);
+  assert.equal(await requireCachedFrequencies({ paths: files }), 2);
+  let offlineNetwork = false;
+  const noNetwork = {
+    makeExtractor: () => {
+      offlineNetwork = true;
+      throw new Error("offline must not construct a network reader");
+    },
+  };
+  await buildFrequencies({ paths: files, offline: true }, noNetwork);
+  const previous = fs.readFileSync(files.frequencies, "utf8");
+  writeInput(true);
+  await assert.rejects(requireCachedFrequencies({ paths: files }), /lacks 1 selected regions/);
+  await assert.rejects(
+    buildFrequencies({ paths: files, offline: true }, noNetwork),
+    /No compatible cached frequency region/,
+  );
+  assert.equal(offlineNetwork, false);
+  assert.equal(fs.readFileSync(files.frequencies, "utf8"), previous);
+  await buildFrequencies({ paths: files }, extractor);
+  assert.equal(requests, 3, "only the region with a new target is fetched again");
+  assert.match(fs.readFileSync(files.frequencies, "utf8"), /\n1\t30\tC\tT\t/);
+  assert.equal(await requireCachedFrequencies({ paths: files }), 2);
+  await buildFrequencies({ paths: files, offline: true }, noNetwork);
+  assert.equal(offlineNetwork, false);
 });
 
 test("marker building requires exact IDs and valid counts rather than guessing an rsID alternative", () => {

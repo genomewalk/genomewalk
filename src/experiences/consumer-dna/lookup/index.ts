@@ -43,7 +43,7 @@ export async function validateLookup(
   kind: "catalog" | "markers",
   sourceBytes: Uint8Array<ArrayBuffer> | { sha256: string },
 ) {
-  // Range-index source hashes bind the sidecar; each fetched block is verified separately.
+  // Metadata binds this sidecar to the catalogue; the complete catalogue stream verifies its hash.
   const sourceHash =
     sourceBytes instanceof Uint8Array ? await sha256(sourceBytes) : sourceBytes?.sha256;
   if (

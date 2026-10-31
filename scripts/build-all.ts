@@ -6,6 +6,7 @@ import { runCli, string, boolean } from "./lib/cli.ts";
 import { buildPlan } from "./lib/plan.ts";
 import { requireCachedInputs } from "./lib/preflight.ts";
 import { requireCachedPublications } from "./lib/publications.ts";
+import { requireCachedFrequencies } from "./lib/frequencies.ts";
 import { log } from "./lib/util.ts";
 
 await runCli(
@@ -21,12 +22,12 @@ await runCli(
     const started = Date.now();
     if (options.offline && !options["dry-run"]) {
       requireCachedInputs(options);
+      await requireCachedFrequencies(options);
       await requireCachedPublications(options);
     }
     const plan = buildPlan({
       ...options,
       consumer: fs.existsSync(new URL("consumer/index.ts", import.meta.url)),
-      frequenciesExist: fs.existsSync(options.paths.frequencies),
     });
     for (const [index, step] of plan.entries()) {
       log(`[${index + 1}/${plan.length}] ${step.name}`);

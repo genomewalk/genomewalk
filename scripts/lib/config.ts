@@ -27,7 +27,7 @@ export function paths(options: BuildOptions = {}) {
     frequencies: path.join(data, "freqs.gnomad-v4.1-joint.tsv"),
     alleleFrequencies: path.join(data, "freqs.gnomad-v4.1-joint.by-alleleid.tsv"),
     catalog: (build: string) => path.join(output, build, "catalog.tsv.gz"),
-    catalogIndex: (build: string) => path.join(output, build, "catalog.index.json.gz"),
+    catalogMetadata: (build: string) => path.join(output, build, "catalog.meta.json"),
     markers: (build: string) => path.join(output, build, "markers.json"),
     markerBase: path.join(ROOT, "scripts/markers.base.json"),
   };

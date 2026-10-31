@@ -14,15 +14,16 @@ const temp = (t: test.TestContext) => {
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
   return dir;
 };
-test("offline plan excludes every network stage and requires cached marker responses", () => {
+test("offline plan excludes downloads and requires exact cached frequencies, markers and publications", () => {
   const plan = buildPlan({ offline: true });
   assert.ok(plan.every((stage) => stage.name));
-  assert.ok(
-    plan.every((stage) => !["download-inputs.ts", "build-freqs.ts"].includes(stage.script)),
-  );
+  assert.ok(plan.every((stage) => stage.script !== "download-inputs.ts"));
+  assert.equal(plan[0]!.script, "build-freqs.ts");
   assert.ok(
     plan
-      .filter((stage) => stage.script === "build-marker-freqs.ts")
+      .filter((stage) =>
+        ["build-freqs.ts", "build-marker-freqs.ts", "build-publications.ts"].includes(stage.script),
+      )
       .every((stage) => stage.args.includes("--offline")),
   );
   assert.throws(() => buildPlan({ offline: true, fresh: true }), /cannot be combined/);
@@ -69,7 +70,8 @@ test("data targets are discoverable and offline plan works from outside the chec
   );
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /Validate every generated artifact/);
-  assert.doesNotMatch(result.stdout, /download-inputs|build-freqs/);
+  assert.doesNotMatch(result.stdout, /download-inputs/);
+  assert.match(result.stdout, /build-freqs\.ts.*--offline/);
   assert.deepEqual(fs.readdirSync(directory), []);
   const help = spawnSync(process.execPath, [path.join(ROOT, "scripts/data-help.ts")], {
     encoding: "utf8",
@@ -96,7 +98,10 @@ test("offline preflight reports all missing prerequisites before any stage can w
     "GRCh37 needs the GRCh38 join input",
   );
   assert.ok(report.issues.some((issue) => issue.includes("clinvar.GRCh37")));
-  assert.ok(report.issues.some((issue) => issue.includes("freqs.gnomad-v4.1-joint.tsv")));
+  assert.ok(
+    !report.required.includes(files.frequencies),
+    "the TSV is regenerated from region caches",
+  );
   assert.ok(report.issues.some((issue) => issue.includes("markers/gnomad-v4.1-joint-")));
   assert.ok(!report.required.some((file) => file.includes("markers/GRCh38-")));
   assert.throws(() => requireCachedInputs({ paths: files }), /No build stages ran/);

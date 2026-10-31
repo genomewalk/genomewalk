@@ -1,4 +1,4 @@
-import type { CatalogueIndex } from "../../lib/catalogues/types.ts";
+import type { CatalogueMetadata } from "../../lib/catalogues/types.ts";
 import { clinvarIndexPreview } from "../../lib/catalogues/catalogue-preview.ts";
 import { splitBar } from "../../components/diagrams/share-chart.ts";
 import { teachingTable } from "../../lib/view/teaching-table.ts";
@@ -21,7 +21,7 @@ const section = (
 
 // Catalogue fields mean the same thing for VCF and consumer DNA files.
 export function clinvarChapterHtml(
-  catalogue: Pick<CatalogueIndex, "header" | "sample" | "build" | "n" | "byClass" | "byStars">,
+  catalogue: Pick<CatalogueMetadata, "header" | "sample" | "build" | "n" | "byClass" | "byStars">,
   {
     labels,
     meanings,
@@ -78,9 +78,9 @@ export function clinvarChapterHtml(
         `
         <p>The classification is the <b>submitted interpretation</b> — from <b>Pathogenic</b> through <b>Uncertain significance</b> to <b>Benign</b> — for a particular condition and inheritance context. ClinVar also includes drug-response, trait and association records.</p>
         <p>A classification applies to the variant in that context; it is not a diagnosis of the person carrying it. Read it together with the <b>condition</b> and <b>review status</b>.</p>
-        <p>Classifications across the <b>${fmt(catalogue.n)}</b> entries covered by this catalogue index:</p>
+        <p>Classifications across the <b>${fmt(catalogue.n)}</b> entries covered by this catalogue:</p>
         ${classificationCounts}
-        <p><b>What was left out, and why.</b> ClinVar classifies over four million variants. About 2.3 million are <em>Uncertain significance</em> and over a million are <em>Benign</em> — together they would need more memory than a browser tab should use. This compact catalogue keeps selected classification types and is not a complete clinical screen. It also preserves exact variant identifiers, review text, source dates and publication links, with gnomAD allele frequencies as a separate evidence layer.</p>`,
+        <p><b>Which records are included.</b> This compact catalogue keeps selected classification types and is not a complete clinical screen. Benign, likely benign and uncertain-significance labels do not qualify a record on their own. A record is still included when it also has an independent supported classification, such as drug response. The original classifications, exact variant identifiers, review text, source dates and publication links are preserved, with gnomAD allele frequencies as a separate evidence layer.</p>`,
       )}
       ${section(
         "clinvar-condition",

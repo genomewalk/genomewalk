@@ -8,6 +8,7 @@ import { matchList } from "../view/result-list.ts";
 import { matchingIssues } from "../view/matching.ts";
 import { resultsDisclaimer } from "../../../shared/results-disclaimer.ts";
 import type { LookupIssue } from "../../types.ts";
+import { loadLookup } from "../../lookup/index.ts";
 
 export default {
   title: "Your results",
@@ -33,20 +34,23 @@ export default {
           `Your ${source!.label} export provides genotype calls without per-call quality measurements. ClinVar stars describe the classification, not the accuracy of your call. This release compares complete autosomal single-base calls; other chromosomes and I/D codes are not interpreted.`,
         ),
       );
-    const cat = await loadCatalog(signal, onStatus); // prepares its own catalogue if chapter 8 was skipped
-    checkCurrent();
     if (!ctx.matches) {
+      const cat = await loadCatalog(signal, onStatus);
+      checkCurrent();
+      onStatus?.("Checking marker identifiers…");
+      const lookup = await loadLookup(cat.build, "catalog", cat.source, signal);
+      checkCurrent();
       const issues: LookupIssue[] = [];
       onProgress?.(0);
       const matches = await findMatches(
         source!,
-        cat.map,
+        cat,
         (fraction: number) => {
           checkCurrent();
           onProgress?.(fraction);
         },
         signal,
-        cat.lookup,
+        lookup,
         (issue) => issues.push(issue),
         onStatus,
       );
@@ -95,7 +99,8 @@ export default {
     out.append(
       note(`Every row comes from an exact allele lookup in this tab.
         Your genome is not sent to a server. The results cover selected ClinVar classifications;
-        benign and uncertain-significance records are not included in this compact catalogue.
+        benign, likely benign and uncertain-significance labels do not qualify a record on their own.
+        Records with an independent supported label, such as drug response, are retained with all their original classifications.
         Population frequencies, where available, belong to the matched allele.
         Incomplete calls, sites with inconsistent repeated calls and identifier disagreements are excluded from these results;
         a missing result is not a negative health result.`),

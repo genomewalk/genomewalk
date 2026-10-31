@@ -25,7 +25,7 @@ src/
   lib/
     io/                   # Local/BGZF readers, checksums and HTTP ranges
     async/                # Cooperative scheduling and shared scans
-    catalogues/           # Reference contracts, indexes and public downloads
+    catalogues/           # Reference contracts, metadata and catalogue streaming
     genetics/             # Shared frequency calculations and presentation data
     intake/               # File selection and progress
     navigation/           # Chapter navigation
@@ -68,12 +68,12 @@ Local file chooser → use-genome-intake → experiences/index.ts
   ├─ vcf/index.ts          → BGZF blocks → VCF rows → VCF scans/matches
   └─ consumer-dna/index.ts → TXT/ZIP/gzip → provider calls → consumer scans/matches
 
-Public key index → local matching → HTTP ranges for matching catalogue blocks
-                                      → result evidence → result HTML
+Compact public metadata + streamed catalogue
+  → local genome/catalogue matching → retained result evidence → result HTML
 ```
 
 The consumer experience never imports VCF processing. Both may use neutral
-infrastructure in `src/lib/`: BGZF decoding, scheduling, catalogue indexing and
+infrastructure in `src/lib/`: BGZF decoding, scheduling, catalogue streaming and
 shared contracts. Educational diagrams live in `src/components/diagrams/`. Neither runtime imports `scripts/`. The offline
 builders retain their own readers, so removing either browser experience does
 not break data production.
@@ -145,21 +145,55 @@ limits and optional-feature removal.
 
 ## Catalogue memory and rendering
 
-Both experiences use `src/lib/catalogues/catalogue-ranges.ts`: a compact public key/offset index
-is downloaded first, matching runs locally, and only BGZF blocks needed for matching
-annotations are requested. Adjacent blocks share a request; up to four requests run
-concurrently. Every block is checked against its indexed SHA-256 hash, and every
-returned row is checked against its exact allele key. The consumer rsID sidecar is
-bound to the same catalogue source hash. Small marker/rsID files still download whole.
+Each build publishes a BGZF `catalog.tsv.gz` and a plain `catalog.meta.json`
+summary of about 3.7 KB. The summary contains the header, counts, chromosome order,
+a few public examples, compressed-file size and SHA-256. It contains no complete
+key list or block/row locators. Teaching chapters use this small summary without
+reading a genome or downloading the complete catalogue.
 
-`src/lib/io/http-range.ts` requires correct HTTP 206 responses and unchanged byte ranges;
-it rejects hosts that ignore Range or decode BGZF as HTTP gzip. The public sample uses
-this source, reading just its header initially. Full-genome chapters still scan all
-sample bytes in bounded ranges. Personal files continue using the local File API.
+The sorted VCF path streams the catalogue through one ordinary GET and reads the
+local genome progressively. At each shared chromosome/position it compares exact
+REF/ALT alleles, preserves the existing genotype, quality and duplicate-call
+rules, and retains results. Passed rows and decoded blocks are released. The two
+streams must follow the catalogue's chromosome order and nondecreasing positions;
+all alleles at a position are considered together. Rows crossing BGZF boundaries
+are reassembled before parsing.
 
-`src/lib/catalogues/reference-catalogue.ts` retains the complete-file decoder for regression
-comparisons. The offline builder creates `catalog.index.json.gz` alongside each
-unchanged catalogue. `data:ranges` can rebuild these locators independently.
+An input-order violation discards the incomplete merge result and restarts through
+a compatibility path: stream the catalogue to retain compact public identities,
+scan the input for matching calls, then stream the catalogue again for their
+payloads. Consumer matching uses this two-pass identity/payload strategy because
+provider exports need not follow catalogue order. It also retains its source-bound
+rsID sidecar; missing or unindexed rsIDs still permit the existing exact-coordinate
+fallback. Additional GETs may be served by the browser's HTTP cache, but caching is
+not required for correctness.
+
+Catalogue response bodies are streamed rather than materialized with
+`arrayBuffer()`. The existing `fflate` decoder processes bounded BGZF blocks and
+checks CRC/decoded size; `@noble/hashes` computes SHA-256 incrementally over the
+compressed stream. Successful results are committed only after the complete
+catalogue matches its published length and digest. Aborts and failed downloads
+release the reader; partial results do not enter the active session.
+
+This bounds the sorted join's working buffers, not the whole application's RAM.
+The current locus, long unfinished lines, accumulated results, UI state and other
+scans still consume memory. Compatibility paths retain compact public identities;
+consumer compressed exports also retain decoded input text. No complete catalogue
+payload map or complete personal variant-key set is built for the sorted join.
+Completed results and the small metadata summary can be reused without rereading
+the catalogue when revisiting the results view.
+
+`src/lib/io/http-range.ts` remains necessary for the public HG002 sample. It
+requires correct HTTP 206 responses and unchanged byte ranges, reading just the
+sample header initially. Full-genome chapters scan its bytes in bounded ranges.
+Personal files use the local File API; catalogue downloads do not send Range
+headers. Both paths require the stored compressed bytes to remain unchanged.
+
+The offline builder creates the compact metadata automatically and validates
+contiguous chromosome sections, nondecreasing positions and unique variant keys.
+`data:metadata` rebuilds summaries from existing catalogues. A separate development
+check verifies the production matcher's results against a simple local reference
+lookup; see [matching correctness](BENCHMARKS.md).
 
 `scripts/lib/reference/clinvar-citations.ts` streams the offline ClinVar VCV XML
 release into a compact, dated VariationID-to-PMID table. It reads only the aggregate
@@ -214,6 +248,13 @@ reference identity, and missing values. See [VALIDATION.md](VALIDATION.md).
 The offline entry points delegate to `scripts/lib/`. `plan.ts` describes ordered
 stages, `cli.ts` validates options, and separate modules own downloads, file I/O,
 ClinVar selection, frequency extraction, joins, markers and validation.
+Independent pipe-separated ClinVar classifications are evaluated separately, so
+benign or uncertain labels do not discard a separate supported drug-response,
+risk, association or trait label. Both genome experiences use the rebuilt catalogue;
+the complete original labels remain available in their results.
+Frequency extraction revisits current targets on each reference build and reuses
+only region caches whose exact allele keys match. Selection changes therefore
+propagate to frequencies, catalogues, compact metadata and consumer rsID sidecars.
 `preflight.ts` checks offline prerequisites before any stage writes files.
 Each public command has one entry point; `build-consumer.ts` handles the optional
 consumer sidecar and skips it when that module is absent. Start

@@ -2,7 +2,7 @@ import type { ErrorResource } from "./app-error.ts";
 
 const publicFiles: Record<ErrorResource, RegExp> = {
   "public-sample": /^\/samples\/HG002_GRCh38\.vcf\.gz$/,
-  "catalogue-index": /^\/ref\/GRCh(?:37|38)\/catalog\.index\.json\.gz$/,
+  "catalogue-index": /^\/ref\/GRCh(?:37|38)\/catalog\.meta\.json$/,
   "catalogue-entries": /^\/ref\/GRCh(?:37|38)\/catalog\.tsv\.gz$/,
   "consumer-lookup": /^\/ref\/consumer-dna\/GRCh(?:37|38)\/rsids\.json\.gz$/,
   markers: /^\/ref\/GRCh(?:37|38)\/markers\.json$/,

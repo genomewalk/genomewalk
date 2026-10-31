@@ -4,12 +4,10 @@ import { createCandidates } from "../lookup/index.ts";
 import { streamCalls, callSignature, isAutosome } from "./calls.ts";
 import { varKey } from "./identity.ts";
 import { parseCatalogEntry, RESULT_ORDER, resultSummary } from "../../../lib/results/evidence.ts";
-import {
-  type CatalogueMap,
-  readCatalogueEntries,
-} from "../../../lib/catalogues/catalogue-ranges.ts";
+import { catalogueRows, type CatalogueRows } from "../../../lib/catalogues/rows.ts";
 import type { Progress, Status } from "../../../lib/io/types.ts";
 import type { CallSource, LookupIssue } from "../types.ts";
+import { AppError } from "../../../lib/app-error.ts";
 
 // Preserve conflicting observations for inspection, but do not present an
 // interpretation for any allele at a site with inconsistent file calls.
@@ -22,24 +20,26 @@ export function resultsWithoutConflicts(matches: ConsumerMatch[]) {
   };
 }
 
-export async function findMatches(
+/** Consumer exports need not be sorted. Keep public identities, never all file calls or catalogue payloads. */
+async function observeCalls(
   source: CallSource,
-  map: CatalogueMap,
-  onProgress?: Progress | null,
-  signal?: AbortSignal,
-  lookup: RsidLookup | null = null,
-  onIssue?: (issue: LookupIssue) => void,
-  onStatus?: Status,
+  catalogue: CatalogueRows,
+  lookup: RsidLookup | null,
+  onIssue: ((issue: LookupIssue) => void) | undefined,
+  onProgress: Progress | null | undefined,
+  signal: AbortSignal | undefined,
+  onStatus: Status | undefined,
 ) {
-  if (source.capabilities?.matching === false) return [];
-  // Index lightweight identities; parse the full annotation only for candidates
-  // observed in this file, rather than duplicating the whole catalogue in memory.
-  const records = [];
-  for (const [key, line] of map) {
-    const [chrom, pos, ref, alt] = key.split(":") as [string, string, string, string];
+  onStatus?.("Reading catalogue variant identities…");
+  const records: VariantIdentity[] = [];
+  for await (const line of catalogueRows(catalogue, signal, (fraction) =>
+    onProgress?.(fraction * 0.2),
+  )) {
+    const [chrom, pos, ref, alt] = line.split("\t", 4) as [string, string, string, string];
     if (/^[ACGT]$/.test(ref) && /^[ACGT]$/.test(alt) && ref !== alt)
-      records.push({ chrom, pos: +pos, ref, alt, line });
+      records.push({ chrom, pos: +pos, ref, alt });
   }
+  // Coordinates remain authoritative even when the catalogue has no rsID for an allele.
   const candidatesFor = createCandidates(records, lookup, "catalog", source.build, onIssue);
   const positions = new Set(records.map((entry) => `${entry.chrom}:${entry.pos}`));
   const siteCalls = new Map<string, Set<string>>();
@@ -52,6 +52,7 @@ export async function findMatches(
       carried: ConsumerCall | null;
     }
   >();
+  onStatus?.("Matching your DNA file locally…");
   await streamCalls(
     source,
     (call) => {
@@ -64,8 +65,7 @@ export async function findMatches(
       const candidates = candidatesFor(call);
       const allowed = new Set(candidates.flatMap((entry) => [entry.ref, entry.alt]));
       const compatible = call.alleles.every((allele) => allowed.has(allele!));
-      for (const candidate of candidates) {
-        const entry = candidate;
+      for (const entry of candidates) {
         const key = varKey(entry.chrom, entry.pos, entry.ref, entry.alt);
         let observation = observed.get(key);
         if (!observation) {
@@ -83,19 +83,75 @@ export async function findMatches(
           observation.carried ||= call;
       }
     },
-    onProgress,
+    (fraction) => onProgress?.(0.2 + fraction * 0.6),
     signal,
   );
-  const entries = await readCatalogueEntries(
-    map,
-    [...observed].filter(([, value]) => value.carried).map(([key]) => key),
+  // Returning only carried observations releases the candidate lookup and unused calls
+  // before the second catalogue pass. Rejected calls still contribute site conflicts.
+  const carried = new Map<
+    string,
+    {
+      call: ConsumerCall;
+      recordCount: number;
+      sourceCalls: string[][];
+      conflictingRecords: boolean;
+    }
+  >();
+  for (const [key, { entry, calls, recordCount, carried: call }] of observed) {
+    if (!call) continue;
+    carried.set(key, {
+      call,
+      recordCount,
+      sourceCalls: [...calls.values()].map((c) => c.fields),
+      conflictingRecords: siteCalls.get(`${entry.chrom}:${entry.pos}`)!.size > 1,
+    });
+  }
+  return carried;
+}
+
+export async function findMatches(
+  source: CallSource,
+  catalogue: CatalogueRows,
+  onProgress?: Progress | null,
+  signal?: AbortSignal,
+  lookup: RsidLookup | null = null,
+  onIssue?: (issue: LookupIssue) => void,
+  onStatus?: Status,
+) {
+  signal?.throwIfAborted();
+  if (source.capabilities?.matching === false) return [];
+  const observed = await observeCalls(
+    source,
+    catalogue,
+    lookup,
+    onIssue,
+    onProgress,
     signal,
     onStatus,
   );
+  lookup = null;
+  if (!observed.size) {
+    onProgress?.(1);
+    return [];
+  }
+  onStatus?.("Reading evidence for your matches…");
+  const entries = new Map<string, ReturnType<typeof parseCatalogEntry>>();
+  // Finish the stream even after all matches are found: its final hash validates the release.
+  for await (const line of catalogueRows(catalogue, signal, (fraction) =>
+    onProgress?.(0.8 + fraction * 0.2),
+  )) {
+    const key = line.split("\t", 4).join(":");
+    if (observed.has(key)) entries.set(key, parseCatalogEntry(line));
+  }
   const hits: ConsumerMatch[] = [];
-  for (const [key, { calls, recordCount, carried: call }] of observed) {
-    if (!call) continue;
-    const entry = parseCatalogEntry(entries.get(key)!);
+  for (const [key, { call, recordCount, sourceCalls, conflictingRecords }] of observed) {
+    const entry = entries.get(key);
+    if (!entry)
+      throw new AppError(
+        "REFERENCE_INTEGRITY_FAILED",
+        "A matched catalogue record is missing. Try again after refreshing the page.",
+        { resource: "catalogue-entries" },
+      );
     hits.push({
       ...entry,
       call,
@@ -103,13 +159,13 @@ export async function findMatches(
       ploidy: call.ploidy,
       gt: call.gt,
       partialCall: call.status !== "called",
-      // Even a row rejected by its rsID or ploidy can disagree at this site.
-      conflictingRecords: siteCalls.get(`${entry.chrom}:${entry.pos}`)!.size > 1,
+      conflictingRecords,
       recordCount,
-      sourceCalls: [...calls.values()].map((c) => c.fields),
+      sourceCalls,
     });
   }
   const rank = (hit: Evidence) => RESULT_ORDER.indexOf(resultSummary(hit).label);
+  onProgress?.(1);
   return hits.sort(
     (a, b) =>
       rank(a) - rank(b) || b.stars - a.stars || (a.afmax ?? Infinity) - (b.afmax ?? Infinity),

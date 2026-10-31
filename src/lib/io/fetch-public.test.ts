@@ -67,7 +67,7 @@ test("network errors and interrupted response bodies never retain raw exception 
 });
 
 test("public fetch and body capacity failures retain safe public download context", async () => {
-  const publicFile = "/ref/GRCh38/catalog.index.json.gz";
+  const publicFile = "/ref/GRCh38/catalog.meta.json";
   for (const [failure, code] of [
     [
       new RangeError("Array buffer allocation failed", { cause: new Error(secret) }),
@@ -192,7 +192,7 @@ test("invalid public JSON and gzip expose only a fixed reference decoding diagno
 });
 
 test("failed public downloads identify the requested file without request parameters", async () => {
-  const publicFile = "/ref/GRCh38/catalog.index.json.gz";
+  const publicFile = "/ref/GRCh38/catalog.meta.json";
   for (const [fetcher, code, extra] of [
     [
       async () => {

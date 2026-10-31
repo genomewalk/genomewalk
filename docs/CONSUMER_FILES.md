@@ -116,6 +116,13 @@ It checks the source-file hash before using the lookup with a catalogue or marke
 file. Requests are for fixed public files; no personal rsIDs or genotypes are
 sent to an API.
 
+The matcher first streams the public catalogue to retain its single-base candidate
+identities. After scanning the consumer calls, it streams the catalogue again and
+keeps only matched evidence rows. This permits arbitrary provider row ordering
+without retaining the complete catalogue payload. The compact public candidates,
+rsID lookup, matched calls and results still use memory; compressed consumer input
+currently retains its decoded text too.
+
 The file's build, chromosome and position select **all** candidate alleles.
 Complete reported letters must fit those candidates, and a ClinVar result requires
 the alternate allele to be reported. Internal or unindexed IDs do not prevent a
@@ -130,7 +137,8 @@ gnomAD example views use this rule; selecting a new file clears these issues.
 Multiple carried alleles can produce separate results. Duplicate checks include
 every row at a candidate position, even if its rsID or ploidy prevents it from
 matching on its own. Frequencies remain attached to exact
-matched alleles, not to an rsID in isolation. The VCF experience is unchanged.
+matched alleles, not to an rsID in isolation. The VCF experience applies its own
+genotype rules through the streaming merge or unsorted-input compatibility path.
 
 This remains forward-strand GRCh37/GRCh38 matching. The index does not guess
 unknown builds, flip strands, lift coordinates, or interpret I/D encodings.
