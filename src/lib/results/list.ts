@@ -2,14 +2,14 @@ import type { ListOptions, IndexedSuggestion } from "./types.ts";
 import { el, fmt, escape } from "../view/html.ts";
 import { createResultIndex, filterResults, highlightMatch } from "./search.ts";
 import { hydratePublicationLinks } from "./publication-links.ts";
-import { resultFilterOptions } from "./filters.ts";
+import { classificationFilterOptions } from "./filters.ts";
 
 export function resultList<T>(
   hits: T[],
   {
     categories,
     categoriesOf,
-    filtersOf,
+    classificationsOf,
     priorityOf,
     textOf,
     suggestionsOf,
@@ -24,7 +24,7 @@ export function resultList<T>(
     categoriesOf,
     suggestionsOf,
   });
-  const filterValues = new Map(hits.map((hit) => [hit, filtersOf(hit)]));
+  const filterValues = new Map(hits.map((hit) => [hit, classificationsOf(hit)]));
   box.innerHTML = `
     <div class="ml-categories" role="group" aria-label="Filter results by evidence type">${categories
       .filter((c) => (c.id === "all" ? hits.length : counts.get(c.id) || 0) > 0)
@@ -41,7 +41,6 @@ export function resultList<T>(
         <div class="ml-sug" hidden></div>
       </div>
       <label class="ml-filter"><span>Classification</span><select class="ml-classification" aria-label="ClinVar classification"></select></label>
-      <label class="ml-filter"><span>ClinVar stars</span><select class="ml-stars" aria-label="ClinVar stars"></select></label>
       <span class="ml-count"></span>
     </div>
     <p class="ml-review-note">Stars describe classification review, not disease severity. This order does not estimate your personal health risk.</p>
@@ -54,15 +53,13 @@ export function resultList<T>(
   const prev = box.querySelector<HTMLButtonElement>(".ml-prev")!,
     next = box.querySelector<HTMLButtonElement>(".ml-next")!,
     pageLbl = box.querySelector<HTMLElement>(".ml-page")!,
-    classificationSelect = box.querySelector<HTMLSelectElement>(".ml-classification")!,
-    starsSelect = box.querySelector<HTMLSelectElement>(".ml-stars")!;
+    classificationSelect = box.querySelector<HTMLSelectElement>(".ml-classification")!;
   let page = 0,
     shown = index,
     picks: IndexedSuggestion[] = [],
     cursor = -1,
     category = "all",
-    classification = "all",
-    stars = "all";
+    classification = "all";
   const render = () => {
     const pages = Math.max(1, Math.ceil(shown.length / PAGE));
     page = Math.min(page, pages - 1);
@@ -96,51 +93,30 @@ export function resultList<T>(
         el(
           "p",
           "s-why",
-          "No results match these filters. Try another classification, star count, evidence category or search.",
+          "No results match these filters. Try another classification, evidence category or search.",
         ),
       );
   };
   const filter = () => {
     const matches = filterResults(index, q.value, category);
-    const matchesClass = ({ h }: (typeof index)[number]) =>
-      classification === "all" || filterValues.get(h)!.classifications.includes(classification);
-    const matchesStars = ({ h }: (typeof index)[number]) =>
-      stars === "all" || filterValues.get(h)!.stars === stars;
-    shown = matches.filter((row) => matchesClass(row) && matchesStars(row));
+    shown = matches.filter(
+      ({ h }) => classification === "all" || filterValues.get(h)!.includes(classification),
+    );
     // Search or category changes must not leave an invisible active filter.
-    if (!shown.length && (classification !== "all" || stars !== "all")) {
-      classification = stars = "all";
+    if (!shown.length && classification !== "all") {
+      classification = "all";
       shown = matches;
     }
-    const classScope = matches.filter(matchesStars);
-    const starScope = matches.filter(matchesClass);
-    const classOptions = resultFilterOptions(classScope.map(({ h }) => filterValues.get(h)!));
-    const starOptions = resultFilterOptions(starScope.map(({ h }) => filterValues.get(h)!));
-    const setOptions = (
-      select: HTMLSelectElement,
-      options: typeof classOptions.classifications,
-      selected: string,
-      label: string,
-      total: number,
-    ) => {
-      select.innerHTML =
-        `<option value="all">${label} (${fmt(total)})</option>` +
-        options
-          .map(
-            (option) =>
-              `<option value="${escape(option.value)}">${escape(option.label)} (${fmt(option.count)})</option>`,
-          )
-          .join("");
-      select.value = selected;
-    };
-    setOptions(
-      classificationSelect,
-      classOptions.classifications,
-      classification,
-      "All classifications",
-      classScope.length,
-    );
-    setOptions(starsSelect, starOptions.stars, stars, "All stars", starScope.length);
+    const options = classificationFilterOptions(matches.map(({ h }) => filterValues.get(h)!));
+    classificationSelect.innerHTML =
+      `<option value="all">All classifications (${fmt(matches.length)})</option>` +
+      options
+        .map(
+          (option) =>
+            `<option value="${escape(option.value)}">${escape(option.label)} (${fmt(option.count)})</option>`,
+        )
+        .join("");
+    classificationSelect.value = classification;
     page = 0;
     render();
   };
@@ -197,11 +173,6 @@ export function resultList<T>(
   });
   classificationSelect.addEventListener("change", () => {
     classification = classificationSelect.value;
-    sug.hidden = true;
-    filter();
-  });
-  starsSelect.addEventListener("change", () => {
-    stars = starsSelect.value;
     sug.hidden = true;
     filter();
   });

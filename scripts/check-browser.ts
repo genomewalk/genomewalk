@@ -194,9 +194,11 @@ async function checkJourney(browser: Browser, origin: string, sizes: Map<string,
       name: "ClinVar classification",
       exact: true,
     });
-    const stars = output.getByRole("combobox", { name: "ClinVar stars", exact: true });
+    assert.equal(
+      await output.getByRole("combobox", { name: "ClinVar stars", exact: true }).count(),
+      0,
+    );
     assert.equal(await classification.inputValue(), "all");
-    assert.equal(await stars.inputValue(), "all");
     await classification.selectOption("likely pathogenic");
     assert.ok(await output.locator(".match-row").count());
     for (const badge of await output.locator(".match-row summary .mh > code").all()) {
@@ -207,23 +209,16 @@ async function checkJourney(browser: Browser, origin: string, sizes: Map<string,
     }
     assert.ok(await output.locator(".mh-priority-reason").first().innerText());
     await classification.selectOption("all");
-    await stars.selectOption("2");
-    for (const review of await output.locator(".match-row summary .stars").all())
-      assert.equal(await review.innerText(), "★★☆☆");
     const search = output.getByRole("searchbox");
     await search.fill("no-such-result-for-browser-check");
     assert.equal(await classification.locator("option").count(), 1);
-    assert.equal(await stars.locator("option").count(), 1);
     await search.fill("");
     assert.equal(await classification.inputValue(), "all");
-    assert.equal(await stars.inputValue(), "all");
     assert.match(
       await output.locator(".ml-review-note").innerText(),
       /Stars describe classification review/,
     );
-    stage(
-      "Classification and exact-star filters, empty-choice hiding and search recovery verified",
-    );
+    stage("Classification filtering, empty-choice hiding and search recovery verified");
 
     // Teaching examples come from the tiny manifest; returning to results keeps only matches.
     await page.getByRole("link", { name: /^Chapter 8:/ }).click();

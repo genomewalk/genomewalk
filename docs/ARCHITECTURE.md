@@ -166,10 +166,11 @@ between ClinVar submissions. Stars describe classification review, not disease
 severity or the accuracy of the personal call; the ordering does not estimate
 personal health risk.
 
-The shared result list keeps evidence-category pills and places classification and
-exact ClinVar star-count dropdown filters beside search. Both filters start at
-**All**, and options with no available results are hidden. There is no separate
-review-group selector. Filtering leaves the existing reading order unchanged;
+The shared result list keeps evidence-category pills and places a classification
+dropdown filter beside search. It starts at **All**, and options with no available
+results are hidden. There is no separate review-group or star-count filter;
+review stars remain visible on individual records. Filtering leaves the existing
+reading order unchanged;
 each row explains its placement, and pagination repeats the relevant group heading
 when a group spans pages. This ordering is an application choice, not a ClinVar
 recommendation for prioritizing personal health risks.
@@ -179,8 +180,8 @@ original rows. They omit classification, stars, copy count, conditions and
 frequency interpretation. Summary tiles and interpreted variant counts use
 unambiguous matches only. Verification records have no evidence categories or
 medical search terms; they remain in the **Needs verification** section under
-**All results** with both dropdown filters set to **All**. Selecting a specific
-classification or star count excludes these cards. The existing complete, diploid,
+**All results** with the classification filter set to **All**. Selecting a specific
+classification excludes these cards. The existing complete, diploid,
 autosomal single-base eligibility rules remain unchanged, and no missing calls
 are imputed.
 

@@ -1,5 +1,3 @@
-import type { EvidenceFilterValues } from "./filters.ts";
-
 export interface ResultCategory {
   id: string;
   label: string;
@@ -24,7 +22,7 @@ export interface IndexOptions<T> {
 }
 export interface ListOptions<T> extends IndexOptions<T> {
   categories: ResultCategory[];
-  filtersOf(hit: T): EvidenceFilterValues;
+  classificationsOf(hit: T): string[];
   priorityOf(hit: T): ResultCategory;
   renderRow(hit: T): HTMLElement;
 }

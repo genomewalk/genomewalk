@@ -138,8 +138,9 @@ classifications with 0–1 stars next, then additional context such as conflicti
 classifications, drug responses, associations and traits. Matched records with
 incomplete or contradictory file calls appear separately under **Needs verification**.
 Group headings and each row's explanation make this ordering visible. Evidence-category
-pills remain available, with classification and exact ClinVar star-count filters beside
-search. Both filters start at **All**; options with no available results are hidden.
+pills remain available, with a classification filter beside search. It starts at
+**All**; options with no available results are hidden. Review stars remain visible
+on individual records rather than serving as a separate filter.
 Within the disease groups, review stars precede classification; allele frequency
 does not affect the order. This is a reading order, not a personal health-risk
 score, and stars describe review rather than disease severity.
@@ -148,8 +149,8 @@ For consumer files, a contradictory site with an otherwise eligible catalogue
 match is shown only as a verification card with its location, reason and original
 rows. It contributes no interpreted variant count, classification, review stars,
 copy count or medical associations. Find it in the **Needs verification** section
-under **All results**, with both filters set to **All**. Verification cards are excluded
-when filtering for a specific classification or star count. Incomplete-only consumer
+under **All results**, with the classification filter set to **All**. Verification cards
+are excluded when filtering for a specific classification. Incomplete-only consumer
 calls remain in file exploration; the app does not impute missing alleles or turn
 them into matches.
 

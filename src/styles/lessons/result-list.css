@@ -29,7 +29,7 @@ table.fmt .fd .mini {
 }
 .ml-bar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 240px) minmax(0, 145px) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 240px) auto;
   align-items: end;
   gap: 12px;
 }
@@ -57,16 +57,14 @@ table.fmt .fd .mini {
 }
 @container match-list (max-width: 850px) {
   .ml-bar {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 145px);
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 10px;
   }
-  .ml-search,
-  .ml-bar .ml-count {
+  .ml-search {
     grid-column: 1 / -1;
   }
   .ml-count {
     justify-self: end;
-    line-height: 24px;
   }
 }
 .ml-icon {
