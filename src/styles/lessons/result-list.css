@@ -45,7 +45,22 @@ table.fmt .fd .mini {
   font-size: 12px;
 }
 .ml-filter select {
-  padding: 9px 12px;
+  appearance: none;
+  padding: 9px 40px 9px 12px;
+  cursor: pointer;
+}
+.ml-select {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+.ml-select svg {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--wgs-faint);
+  pointer-events: none;
 }
 @container match-list (max-width: 850px) {
   .ml-bar {

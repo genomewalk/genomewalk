@@ -154,7 +154,7 @@ comparator and short row explanations for both VCF and consumer results:
 1. **Review first:** pathogenic, pathogenic/likely pathogenic or likely pathogenic
    classifications with 2–4 ClinVar review stars.
 2. **Less-reviewed disease claims:** the same classifications with 0–1 stars.
-3. **Additional context:** conflicting ClinVar classifications, drug responses,
+3. **Other ClinVar matches:** conflicting ClinVar classifications, drug responses,
    traits, associations and other records.
 4. **Needs verification:** matched records with incomplete or contradictory
    personal file calls, regardless of the catalogue classification.

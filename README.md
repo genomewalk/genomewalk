@@ -134,7 +134,7 @@ ethnicity, relatives, haplogroups, imputation or polygenic scores.
 
 Both file experiences use the same reading order: pathogenic or
 likely pathogenic classifications with 2–4 ClinVar stars first, the same
-classifications with 0–1 stars next, then additional context such as conflicting
+classifications with 0–1 stars next, then **Other ClinVar matches** such as conflicting
 classifications, drug responses, associations and traits. Matched records with
 incomplete or contradictory file calls appear separately under **Needs verification**.
 Group headings and each row's explanation make this ordering visible. Evidence-category

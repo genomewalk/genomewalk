@@ -40,7 +40,7 @@ export function resultList<T>(
         <input class="ml-q" type="search" aria-label="Search results by gene, condition, rsID or position" placeholder="Search a gene, condition, rsID or position…" autocomplete="off" spellcheck="false">
         <div class="ml-sug" hidden></div>
       </div>
-      <label class="ml-filter"><span>Classification</span><select class="ml-classification" aria-label="ClinVar classification"></select></label>
+      <label class="ml-filter"><span>Classification</span><span class="ml-select"><select class="ml-classification" aria-label="ClinVar classification"></select><svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></label>
       <span class="ml-count"></span>
     </div>
     <p class="ml-review-note">Stars describe classification review, not disease severity. This order does not estimate your personal health risk.</p>

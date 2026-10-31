@@ -14,7 +14,7 @@ export const RESULT_PRIORITY_GROUPS = [
   },
   {
     id: "context",
-    label: "Additional context",
+    label: "Other ClinVar matches",
     description:
       "Conflicting classifications, drug responses, associations, traits and other records.",
   },
