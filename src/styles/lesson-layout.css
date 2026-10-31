@@ -189,7 +189,8 @@ table.fmt thead th {
 .kvx-body > .sub:not(:first-child) {
   padding-top: var(--wgs-space-content);
 }
-.ml-q {
+.ml-q,
+.ml-filter select {
   border-radius: 4px;
   padding-block: 12px;
 }

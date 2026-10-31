@@ -45,15 +45,7 @@ table.fmt .fd .mini {
   font-size: 12px;
 }
 .ml-filter select {
-  width: 100%;
-  min-width: 0;
-  min-height: 44px;
-  padding: 9px 8px;
-  border: 1px solid var(--wgs-line-soft);
-  border-radius: 3px;
-  background: var(--wgs-card);
-  color: var(--wgs-ink);
-  font: 13px var(--wgs-sans);
+  padding: 9px 12px;
 }
 @container match-list (max-width: 850px) {
   .ml-bar {
@@ -76,10 +68,12 @@ table.fmt .fd .mini {
   pointer-events: none;
   display: inline-grid;
 }
-.ml-q {
+.ml-q,
+.ml-filter select {
   width: 100%;
   min-width: 0;
-  padding: 9px 12px 9px 36px;
+  height: 44px;
+  min-height: 44px;
   font: var(--wgs-text-body) var(--wgs-sans);
   color: var(--wgs-ink);
   background: color-mix(in srgb, var(--wgs-bg-deep) 60%, transparent);
@@ -87,7 +81,11 @@ table.fmt .fd .mini {
   border-radius: 0;
   outline: none;
 }
-.ml-q:focus {
+.ml-q {
+  padding: 9px 12px 9px 36px;
+}
+.ml-q:focus,
+.ml-filter select:focus {
   border-color: color-mix(in srgb, var(--wgs-accent) 55%, transparent);
 }
 .ml-q:focus ~ .ml-icon,
