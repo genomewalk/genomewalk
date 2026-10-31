@@ -132,6 +132,23 @@ classification, not the accuracy of a person's genotype. Consumer exports do not
 supply sequencing depth or per-call quality, and this importer does not calculate
 ethnicity, relatives, haplogroups, imputation or polygenic scores.
 
+Both file experiences group results by **Priority for review**: pathogenic or
+likely pathogenic classifications with 2–4 ClinVar stars first, the same
+classifications with 0–1 stars next, then additional context such as conflicting
+classifications, drug responses, associations and traits. Matched records with
+incomplete or contradictory file calls appear separately under **Needs verification**.
+The review-group filter and each row's explanation make this ordering visible.
+Within the disease groups, review stars precede classification; allele frequency
+does not affect the order. This is a reading order, not a personal health-risk
+score, and stars describe review rather than disease severity.
+
+For consumer files, a contradictory site with an otherwise eligible catalogue
+match is shown only as a verification card with its location, reason and original
+rows. It contributes no interpreted variant count, classification, review stars,
+copy count or medical associations. Select **All results → Needs verification**
+to inspect it. Incomplete-only consumer calls remain in file exploration; the
+app does not impute missing alleles or turn them into matches.
+
 The included catalogue keeps selected ClinVar classifications. Benign, likely benign
 and uncertain-significance labels do not qualify a record on their own, but an
 independent supported label such as drug response retains the record for matching.

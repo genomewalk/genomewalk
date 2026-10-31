@@ -41,6 +41,9 @@ public records and small DOM stubs. They cover:
   CRLF, a final row without a newline and cancellation.
 - VCF exact allele identity, indels, multi-allelic and incomplete genotypes,
   reference/filtered rows, repeated records, evidence categories and source links.
+- Shared review-priority ordering, including star/classification precedence,
+  frequency-independent placement, mixed ClinVar labels and a separate group for
+  incomplete or contradictory personal calls.
 - Streaming merge joins across sorted positions, multiple alleles at one locus,
   chromosome transitions and unsorted-input fallback without accepting partial results.
 - 23andMe and Ancestry schemas, missing/I/D calls, chromosome aliases, build and
@@ -129,6 +132,9 @@ data out of screenshots.
 1. Check the landing illustration and its zoom controls, then load HG002.
 2. Visit results directly before running another chapter. Verify only the results
    chapter completes, expand a result and check its raw row, genotype and source links.
+   Combine search with evidence-category and review-group filters. Check group
+   counts, row explanations and headings across page boundaries; use synthetic
+   incomplete/conflicting calls to check **Needs verification** separately.
 3. Run the remaining chapters. Check header disclosures, column links, genotype examples,
    sampled row types, full counts, summary, gnomAD and ClinVar previews.
 4. Navigate away and back. Completed output and result disclosures should survive.

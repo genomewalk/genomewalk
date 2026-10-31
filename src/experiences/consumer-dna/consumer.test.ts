@@ -511,12 +511,13 @@ test("identical duplicates are combined and a later reference or missing call ex
   }
 });
 
-test("agreeing repeats produce one result; inconsistent sites stay in counts but not displayed results", async () => {
+test("agreeing repeats produce one result; inconsistent sites are separated for verification", async () => {
   const agreeing = await openConsumerFile(file(text([row(100, "CT"), row(100, "TC")])));
   const combined = resultsWithoutConflicts(await findMatches(agreeing, catalog(100)));
   assert.equal(combined.hits.length, 1);
   assert.equal(combined.hits[0]!.recordCount, 2);
   assert.equal(combined.skippedSites, 0);
+  assert.deepEqual(combined.needsVerification, []);
   for (const other of ["CC", "--", "C-", "II", "C"]) {
     for (const calls of [
       ["CT", other],
@@ -528,7 +529,7 @@ test("agreeing repeats produce one result; inconsistent sites stay in counts but
       const stats = await consumerStats(input);
       assert.equal(stats.records, 3);
       assert.equal(stats.conflicts, 1);
-      const { hits, skippedSites } = resultsWithoutConflicts(
+      const { hits, needsVerification, skippedSites } = resultsWithoutConflicts(
         await findMatches(input, catalog(100, 200)),
       );
       assert.deepEqual(
@@ -536,11 +537,16 @@ test("agreeing repeats produce one result; inconsistent sites stay in counts but
         [200],
       );
       assert.equal(skippedSites, 1);
+      assert.deepEqual(
+        needsVerification.map((h) => h.pos),
+        [100],
+      );
+      assert.ok(needsVerification.every((h) => h.conflictingRecords));
     }
   }
 });
 
-test("multiple allele matches at one inconsistent position count as one omitted site", async () => {
+test("site-level verification protects every allele without modifying the original matches", async () => {
   const input = await openConsumerFile(file(text([row(100, "CT"), row(100, "CG")])));
   const multiAllelic = new Map([
     ["1:100:C:T", entry(100, "C", "T")],
@@ -548,7 +554,14 @@ test("multiple allele matches at one inconsistent position count as one omitted 
   ]);
   const matches = await findMatches(input, multiAllelic);
   assert.equal(matches.length, 2);
-  assert.deepEqual(resultsWithoutConflicts(matches), { hits: [], skippedSites: 1 });
+  // Even an unflagged sibling at the same site must not receive an interpretation.
+  matches[1]!.conflictingRecords = false;
+  assert.deepEqual(resultsWithoutConflicts(matches), {
+    hits: [],
+    needsVerification: matches.map((hit) => ({ ...hit, conflictingRecords: true })),
+    skippedSites: 1,
+  });
+  assert.equal(matches[1]!.conflictingRecords, false);
 });
 
 test("frequency markers retain no-call and absent states without reference assumptions", async () => {
@@ -679,6 +692,29 @@ test("consumer result rendering uses literal letters and original provider colum
   assert.match(html, /genotype/);
   assert.match(html, /100 · CT/);
   assert.doesNotMatch(html, /from mother|from father|undefined|NaN/);
+});
+
+test("consumer verification cards expose only locus, reason and original file calls", async () => {
+  globalThis.document = mockDocument();
+  const source = await openConsumerFile(file(text([row(100, "CT"), row(100, "CC")])));
+  ctx.header = source.header;
+  const [hit] = await findMatches(source, catalog(100));
+  assert.ok(hit);
+  for (const flags of [
+    { conflictingRecords: true, partialCall: false },
+    { conflictingRecords: false, partialCall: true },
+  ]) {
+    const html = matchRow({ ...hit, ...flags }).innerHTML;
+    assert.match(html, /Needs verification/);
+    assert.match(html, /chr1:100/);
+    assert.match(html, /verify the original call/);
+    assert.match(html, /rs100\s+1\s+100\s+CT/);
+    assert.match(html, /rs100\s+1\s+100\s+CC/);
+    assert.doesNotMatch(
+      html,
+      /Pathogenic|EXAMPLE|Illustrative condition|ClinVar|stars|copies|mh-z|Frequency|You &amp; ClinVar|You & ClinVar/,
+    );
+  }
 });
 
 test("an aborted import or scan does not finish", async () => {

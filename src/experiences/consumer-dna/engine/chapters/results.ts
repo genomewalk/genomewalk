@@ -9,6 +9,7 @@ import { matchingIssues } from "../view/matching.ts";
 import { resultsDisclaimer } from "../../../shared/results-disclaimer.ts";
 import type { LookupIssue } from "../../types.ts";
 import { loadLookup } from "../../lookup/index.ts";
+import { compareReviewPriority } from "../../../../lib/results/priority.ts";
 
 export default {
   title: "Your results",
@@ -58,11 +59,12 @@ export default {
       ctx.matches = matches;
       ctx.matchIssues = issues;
     }
-    const { hits, skippedSites } = resultsWithoutConflicts(ctx.matches);
+    const { hits, needsVerification, skippedSites } = resultsWithoutConflicts(ctx.matches);
+    const displayed = [...hits, ...needsVerification].sort(compareReviewPriority);
     if (skippedSites)
       out.append(
         note(
-          `<b>${fmt(skippedSites)} ${skippedSites === 1 ? "site was" : "sites were"} left out because repeated file calls were inconsistent.</b> We do not choose one call over another. The rows remain included in your file counts; see <a href="/chapter/3">Rows and sites in chapter 3</a>.`,
+          `<b>${fmt(skippedSites)} ${skippedSites === 1 ? "site was" : "sites were"} separated for verification because repeated file calls were inconsistent.</b> We do not choose one call over another. These records are excluded from the result totals below and show only the original calls in “Needs verification”; see <a href="/chapter/3">Rows and sites in chapter 3</a>.`,
         ),
       );
     out.append(
@@ -86,7 +88,7 @@ export default {
       ),
     );
     if (ctx.matchIssues.length) out.append(matchingIssues(ctx.matchIssues, ctx.header!.columns));
-    if (!hits.length) {
+    if (!displayed.length) {
       out.append(
         note(
           "No unambiguous supported allele remains to show from this catalogue. This is not a negative health result.",
@@ -94,15 +96,21 @@ export default {
       );
       return true;
     }
-    out.append(el("div", "sub", `Explore ${fmt(hits.length)} results:`));
-    out.append(matchList(hits));
+    out.append(
+      el(
+        "div",
+        "sub",
+        `Explore ${fmt(hits.length)} ${hits.length === 1 ? "result" : "results"}${needsVerification.length ? ` and ${fmt(needsVerification.length)} ${needsVerification.length === 1 ? "record" : "records"} needing verification` : ""}:`,
+      ),
+    );
+    out.append(matchList(displayed));
     out.append(
       note(`Every row comes from an exact allele lookup in this tab.
         Your genome is not sent to a server. The results cover selected ClinVar classifications;
         benign, likely benign and uncertain-significance labels do not qualify a record on their own.
         Records with an independent supported label, such as drug response, are retained with all their original classifications.
         Population frequencies, where available, belong to the matched allele.
-        Incomplete calls, sites with inconsistent repeated calls and identifier disagreements are excluded from these results;
+        Incomplete calls and identifier disagreements are excluded from matching. Sites with inconsistent repeated calls are separated for verification without an interpretation;
         a missing result is not a negative health result.`),
     );
     return true;

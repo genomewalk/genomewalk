@@ -1,9 +1,10 @@
-import type { Evidence, VariantIdentity } from "../../../lib/catalogues/types.ts";
+import type { VariantIdentity } from "../../../lib/catalogues/types.ts";
 import type { ConsumerCall, ConsumerMatch, RsidLookup } from "../types.ts";
 import { createCandidates } from "../lookup/index.ts";
 import { streamCalls, callSignature, isAutosome } from "./calls.ts";
 import { varKey } from "./identity.ts";
-import { parseCatalogEntry, RESULT_ORDER, resultSummary } from "../../../lib/results/evidence.ts";
+import { parseCatalogEntry } from "../../../lib/results/evidence.ts";
+import { compareReviewPriority } from "../../../lib/results/priority.ts";
 import { catalogueRows, type CatalogueRows } from "../../../lib/catalogues/rows.ts";
 import type { Progress, Status } from "../../../lib/io/types.ts";
 import type { CallSource, LookupIssue } from "../types.ts";
@@ -16,6 +17,9 @@ export function resultsWithoutConflicts(matches: ConsumerMatch[]) {
   const skippedSites = new Set(matches.filter((hit) => hit.conflictingRecords).map(site));
   return {
     hits: matches.filter((hit) => !skippedSites.has(site(hit))),
+    needsVerification: matches
+      .filter((hit) => skippedSites.has(site(hit)))
+      .map((hit) => ({ ...hit, conflictingRecords: true })),
     skippedSites: skippedSites.size,
   };
 }
@@ -164,10 +168,6 @@ export async function findMatches(
       sourceCalls,
     });
   }
-  const rank = (hit: Evidence) => RESULT_ORDER.indexOf(resultSummary(hit).label);
   onProgress?.(1);
-  return hits.sort(
-    (a, b) =>
-      rank(a) - rank(b) || b.stars - a.stars || (a.afmax ?? Infinity) - (b.afmax ?? Infinity),
-  );
+  return hits.sort(compareReviewPriority);
 }

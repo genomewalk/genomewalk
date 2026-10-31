@@ -50,12 +50,21 @@ A/C/G/T. No genotype is inferred from a missing row.
 
 Duplicate rows are counted separately from distinct sites. Agreeing calls are
 combined; allele order does not matter. If calls differ (including a called row
-paired with a missing or I/D-coded row), the site is omitted from the displayed
+paired with a missing or I/D-coded row), the site is omitted from interpreted
 ClinVar results and no personal reading is assigned in the gnomAD examples.
-The results page reports how many candidate sites were omitted. These records
-remain in the file counts; a difference between call encodings is not necessarily
-a contradiction between measurements. Heterozygosity is descriptive of the
-exported panel only and is omitted from the summary when records conflict.
+When at least one otherwise eligible call matches the catalogue, the site remains
+accessible as a **Needs verification** card showing its location, the discrepancy
+and original rows. These cards show no classification, review stars, copy count,
+conditions or frequency interpretation, and do not contribute to interpreted
+variant counts or summary tiles. They are available under **All results** and the
+**Needs verification** review filter, without evidence-category assignments or
+medical search terms. Incomplete-only calls remain in file exploration and do not
+produce matched verification cards; missing alleles are never imputed.
+The results page reports how many candidate sites were omitted from interpretation.
+These records remain in the file counts; a difference between call encodings is
+not necessarily a contradiction between measurements. Heterozygosity is
+descriptive of the exported panel only and is omitted from the summary when
+records conflict.
 
 Chapter 4 shares a responsive chromosome illustration gallery and disclosure styles
 with VCF. The gallery shows exact counts beneath banded chromosome symbols; height
@@ -106,8 +115,9 @@ row meets the matching rules, not that a catalogue entry was found.
 Chapter 4 performs the full count independently of that preview. It distinguishes
 rows from sites and explains eligibility, missing calls and coded alleles in
 collapsed summaries. Agreeing repeats combine into one result; differing records
-at a candidate site are omitted from results. Preview caches never substitute
-for full-file statistics.
+at a candidate site are excluded from interpreted results and, when an eligible
+catalogue match exists, shown separately for verification. Preview caches never
+substitute for full-file statistics.
 
 ## Coordinate matching and rsID cross-checks
 

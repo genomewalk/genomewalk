@@ -178,7 +178,11 @@ test("an rsID-rejected duplicate cannot hide disagreement at a matched position"
   ]) {
     const input = await source(rows);
     const matches = await findMatches(input, map, undefined, partialFixture(null), lookup);
-    assert.deepEqual(resultsWithoutConflicts(matches), { hits: [], skippedSites: 1 });
+    assert.deepEqual(resultsWithoutConflicts(matches), {
+      hits: [],
+      needsVerification: matches.map((hit) => ({ ...hit, conflictingRecords: true })),
+      skippedSites: 1,
+    });
     const hits = await findMarkers(input, partialFixture(markers), undefined, undefined, lookup);
     assert.equal(hits["rs1"]!.conflicting, true);
     assert.equal(hits["rs1"]!.usable, false);

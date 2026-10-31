@@ -6,7 +6,8 @@ import type { VcfMatch } from "../../src/experiences/vcf/types.ts";
 import { streamVariants } from "../../src/experiences/vcf/engine/vcf.ts";
 import { gtIdx, varKey } from "../../src/experiences/vcf/engine/identity.ts";
 import { addUniqueMatch } from "../../src/experiences/vcf/engine/match-identity.ts";
-import { parseCatalogEntry, RESULT_ORDER, resultSummary } from "../../src/lib/results/evidence.ts";
+import { parseCatalogEntry } from "../../src/lib/results/evidence.ts";
+import { compareReviewPriority } from "../../src/lib/results/priority.ts";
 
 /**
  * Test-only expected answers from a straightforward local lookup.
@@ -49,9 +50,5 @@ export async function expectedMatches(catalogueFile: string, source: ByteSource)
       });
     });
   });
-  const rank = (hit: VcfMatch) => RESULT_ORDER.indexOf(resultSummary(hit).label);
-  return [...unique.values()].sort(
-    (a, b) =>
-      rank(a) - rank(b) || b.stars - a.stars || (a.afmax ?? Infinity) - (b.afmax ?? Infinity),
-  );
+  return [...unique.values()].sort(compareReviewPriority);
 }

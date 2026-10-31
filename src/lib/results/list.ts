@@ -5,7 +5,15 @@ import { hydratePublicationLinks } from "./publication-links.ts";
 
 export function resultList<T>(
   hits: T[],
-  { categories, categoriesOf, textOf, suggestionsOf, renderRow }: ListOptions<T>,
+  {
+    categories,
+    categoriesOf,
+    priorities,
+    priorityOf,
+    textOf,
+    suggestionsOf,
+    renderRow,
+  }: ListOptions<T>,
 ) {
   const PAGE = 25,
     SUGGEST = 8;
@@ -23,6 +31,14 @@ export function resultList<T>(
       )
       .join("")}</div>
     <p class="ml-category-description">${categories[0]!.description}</p>
+    <div class="ml-priority">
+      <label><span>Priority for review</span><select class="ml-priority-select" aria-label="Priority for review">
+        <option value="all">All groups</option>${priorities
+          .map((group) => `<option value="${group.id}">${escape(group.label)}</option>`)
+          .join("")}
+      </select></label>
+      <p>Ordered by ClinVar classification and review. Stars describe review, not disease severity. This order does not estimate your personal health risk.</p>
+    </div>
     <div class="ml-bar">
       <span class="ml-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg></span>
       <input class="ml-q" type="search" aria-label="Search results by gene, condition, rsID or position" placeholder="Search a gene, condition, rsID or position…" autocomplete="off" spellcheck="false">
@@ -37,7 +53,8 @@ export function resultList<T>(
     sug = box.querySelector<HTMLElement>(".ml-sug")!;
   const prev = box.querySelector<HTMLButtonElement>(".ml-prev")!,
     next = box.querySelector<HTMLButtonElement>(".ml-next")!,
-    pageLbl = box.querySelector<HTMLElement>(".ml-page")!;
+    pageLbl = box.querySelector<HTMLElement>(".ml-page")!,
+    prioritySelect = box.querySelector<HTMLSelectElement>(".ml-priority-select")!;
   let page = 0,
     shown = index,
     picks: IndexedSuggestion[] = [],
@@ -46,9 +63,22 @@ export function resultList<T>(
   const render = () => {
     const pages = Math.max(1, Math.ceil(shown.length / PAGE));
     page = Math.min(page, pages - 1);
-    rows.replaceChildren(
-      ...shown.slice(page * PAGE, (page + 1) * PAGE).map(({ h }) => renderRow(h)),
-    );
+    rows.replaceChildren();
+    let previousGroup = "";
+    for (const { h } of shown.slice(page * PAGE, (page + 1) * PAGE)) {
+      const group = priorityOf(h);
+      if (group.id !== previousGroup) {
+        const heading = el(
+          "div",
+          "ml-priority-heading",
+          `<h3>${escape(group.label)}</h3><p>${escape(group.description)}</p>`,
+        );
+        heading.dataset["priority"] = group.id;
+        rows.append(heading);
+        previousGroup = group.id;
+      }
+      rows.append(renderRow(h));
+    }
     void hydratePublicationLinks(rows);
     count.textContent =
       shown.length === hits.length
@@ -60,11 +90,29 @@ export function resultList<T>(
     box.querySelector<HTMLElement>(".ml-pager")!.hidden = pages === 1;
     if (!shown.length)
       rows.append(
-        el("p", "s-why", "Nothing matches that. Try a gene name, part of a condition, or an rsID."),
+        el(
+          "p",
+          "s-why",
+          "No results match these filters. Try another review group, evidence category or search.",
+        ),
       );
   };
   const filter = () => {
-    shown = filterResults(index, q.value, category);
+    const matches = filterResults(index, q.value, category);
+    const groupCounts = new Map<string, number>();
+    for (const { h } of matches) {
+      const id = priorityOf(h).id;
+      groupCounts.set(id, (groupCounts.get(id) || 0) + 1);
+    }
+    for (const option of prioritySelect.options) {
+      const group = priorities.find((group) => group.id === option.value);
+      option.textContent = group
+        ? `${group.label} (${fmt(groupCounts.get(group.id) || 0)})`
+        : `All groups (${fmt(matches.length)})`;
+    }
+    shown = matches.filter(
+      ({ h }) => prioritySelect.value === "all" || priorityOf(h).id === prioritySelect.value,
+    );
     page = 0;
     render();
   };
@@ -119,6 +167,7 @@ export function resultList<T>(
     filter();
     suggest();
   });
+  prioritySelect.addEventListener("change", filter);
   q.addEventListener("keydown", (e: { key: string; preventDefault: () => void }) => {
     if (sug.hidden) return;
     if (e.key === "ArrowDown") {
@@ -159,6 +208,6 @@ export function resultList<T>(
     render();
     box.scrollIntoView({ block: "start", behavior: "smooth" });
   });
-  render();
+  filter();
   return box;
 }

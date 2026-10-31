@@ -2,6 +2,7 @@ import { frequencySourceNote } from "../../../../lib/genetics/frequency-source.t
 import type { ConsumerMatch } from "../../types.ts";
 import { resultSources } from "../../../../lib/results/sources.ts";
 import { copyIllustration } from "../../../../lib/results/copy-illustration.ts";
+import { reviewPriorityReason } from "../../../../lib/results/priority.ts";
 import { calledLetters } from "../calls.ts";
 import { conditionUrl } from "../../../../lib/results/condition-links.ts";
 import { ctx } from "../context.ts";
@@ -18,13 +19,30 @@ import { SOURCES, escape, ext, fmt, kvx, rawBlock } from "./html.ts";
 import { pct, personDefs, personFigure } from "./population.ts";
 
 export function matchRow(h: ConsumerMatch) {
+  if (h.partialCall || h.conflictingRecords) {
+    const location = variantLocation(
+      h,
+      h.conflictingRecords ? "conflicting calls" : "partial call",
+    );
+    const row = kvx(
+      `<span class="mh-title">Needs verification</span><span class="mh-location">${escape(location)}</span><span class="mh-priority-reason">${escape(reviewPriorityReason(h))}</span>`,
+      "",
+      rawBlock([
+        "#" + ctx.header!.columns.join("\t"),
+        ...(h.sourceCalls || [h.call.fields]).map((f) => f.join("\t")),
+      ]),
+    );
+    row.classList.add("match-row", "match-verification");
+    row.dataset["variantKey"] = matchKey(h);
+    row.querySelector<HTMLElement>(".mh-location")!.title = location;
+    row.querySelector<HTMLElement>(".kvx-caret")!.setAttribute("aria-hidden", "true");
+    return row;
+  }
   const v = resultSummary(h),
     conds = condList(h.conditions);
   const called = calledLetters(h.call);
   // Compact SNP genotypes (CT, TT); keep sequence alleles separated for indels.
-  const genotype = h.conflictingRecords
-    ? "conflicting calls"
-    : called.join(called.every((l) => /^[ACGT?]$/i.test(l)) ? "" : " / ");
+  const genotype = called.join(called.every((l) => /^[ACGT?]$/i.test(l)) ? "" : " / ");
   const letters = called
     .map((l) =>
       l === "?"
@@ -32,15 +50,7 @@ export function matchRow(h: ConsumerMatch) {
         : `<span class="${l === h.ref ? "o0" : "o1"}">${escape(l)}</span>`,
     )
     .join(" and ");
-  const zyg = h.conflictingRecords
-    ? "check calls"
-    : h.partialCall
-      ? "partial call"
-      : h.ploidy === 1
-        ? "single copy"
-        : h.copies === 1
-          ? "one copy"
-          : "two copies";
+  const zyg = h.ploidy === 1 ? "single copy" : h.copies === 1 ? "one copy" : "two copies";
   const rs =
     (h.rsIds || "")
       .split("|")
@@ -81,14 +91,14 @@ export function matchRow(h: ConsumerMatch) {
     <span class="mini">Colour shows the share of allele copies. Tiny non-zero values use a minimum fill; the number gives the percentage. ${gnomad}</span>`
     : `No usable frequency in this catalogue. ${gnomad}`;
   const row = kvx(
-    `<span class="mh-title"><span class="mh-gene">${escape(h.gene || "(no gene named)")}</span>${rs ? `<span class="mh-id">${escape(rs)}</span>` : ""}</span><span class="mh-condition mut">${escape(condTitle(h.conditions))}</span><span class="mh-location">${escape(location)}</span>`,
+    `<span class="mh-title"><span class="mh-gene">${escape(h.gene || "(no gene named)")}</span>${rs ? `<span class="mh-id">${escape(rs)}</span>` : ""}</span><span class="mh-condition mut">${escape(condTitle(h.conditions))}</span><span class="mh-location">${escape(location)}</span><span class="mh-priority-reason">${escape(reviewPriorityReason(h))}</span>`,
     `<span class="mh"><code title="${escape(fullClass)}">${escape(shortClass)}</code><span class="stars" title="${escape(reviewText(h))}">${stars(h.stars)}</span><span class="mh-z">${zyg}${copyIllustration(h)}</span></span>`,
-    `${h.recordCount > 1 ? `<p class="match-record-note">${fmt(h.recordCount)} file records for this variant are shown as one result.${h.conflictingRecords ? " They contain different genotypes." : " The called alleles agree."}</p>` : ""}
+    `${h.recordCount > 1 ? `<p class="match-record-note">${fmt(h.recordCount)} file records for this variant are shown as one result. The called alleles agree.</p>` : ""}
      <div class="raw-first">${rawBlock(["#" + ctx.header!.columns.join("\t"), ...(h.sourceCalls || [h.call.fields]).map((f) => f.join("\t"))])}</div>
      <div class="table-scroll" role="region" aria-label="Variant evidence" tabindex="0"><table class="fmt fmt-result"><tbody>
        <tr><td class="fk">Bottom line</td><td class="fd">${escape(v.why)}</td></tr>
        <tr><td class="fk">You & ClinVar</td><td class="fd">
-         <p>${h.conflictingRecords ? "Your file reports conflicting allele calls. See the original lines above." : `Your ${called.length === 1 ? "allele" : "alleles"}: <b>${letters}</b>${h.partialCall ? " (incomplete call)" : ""}.`}</p>
+         <p>Your ${called.length === 1 ? "allele" : "alleles"}: <b>${letters}</b>.</p>
          <p>ClinVar allele: <b class="flag">${escape(h.alt)}</b> — <b>${escape(fullClass)}</b>.</p>
        </td></tr>
        <tr><td class="fk">Condition${conds.length === 1 ? "" : "s"}</td><td class="fd">${

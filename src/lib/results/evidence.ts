@@ -103,21 +103,6 @@ export function reviewText(h: Evidence) {
   );
 }
 
-export const RESULT_ORDER = [
-  "conflicting file calls",
-  "incomplete call",
-  "review context",
-  "limited review",
-  "frequency unknown",
-  "conflicting claims",
-  "drug response",
-  "trait record",
-  "association record",
-  "other record",
-  "frequency context",
-  "common variant",
-];
-
 export function resultSummary(h: Evidence) {
   if (h.conflictingRecords)
     return {

@@ -53,22 +53,24 @@ test("reference answers preserve exact alleles, calls, duplicates and result ord
   assert.deepEqual(
     hits.map((hit) => [hit.chrom, hit.pos, hit.alt]),
     [
-      ["1", 10, "TC"],
-      ["1", 50, "T"],
       ["MT", 1, "G"],
       ["1", 20, "G"],
+      ["1", 10, "TC"],
+      ["1", 50, "T"],
     ],
   );
-  assert.equal(hits[0]!.recordCount, 2);
-  assert.equal(hits[0]!.conflictingRecords, true);
-  assert.equal(hits[0]!.sourceCalls.length, 2);
-  assert.equal(hits[0]!.gene, "Gène");
-  assert.equal(hits[0]!.af, 0);
-  assert.equal(hits[0]!.afmax, 0);
-  assert.equal(hits[1]!.partialCall, true);
-  assert.equal(hits[1]!.copies, 1);
-  assert.equal(hits[2]!.ploidy, 1);
-  assert.equal(hits[3]!.gt, "0/2");
+  // Complete calls precede the separate verification group, with stable ties.
+  const [haploid, multiallelic, conflicting, partial] = hits;
+  assert.equal(conflicting!.recordCount, 2);
+  assert.equal(conflicting!.conflictingRecords, true);
+  assert.equal(conflicting!.sourceCalls.length, 2);
+  assert.equal(conflicting!.gene, "Gène");
+  assert.equal(conflicting!.af, 0);
+  assert.equal(conflicting!.afmax, 0);
+  assert.equal(partial!.partialCall, true);
+  assert.equal(partial!.copies, 1);
+  assert.equal(haploid!.ploidy, 1);
+  assert.equal(multiallelic!.gt, "0/2");
 });
 
 test("reference refuses ambiguous catalogues and incomplete compressed input", async (t) => {

@@ -9,11 +9,14 @@ import {
   resultSummary,
 } from "../../../../lib/results/evidence.ts";
 import { matchRow } from "./results.ts";
+import { RESULT_PRIORITY_GROUPS, reviewPriority } from "../../../../lib/results/priority.ts";
 
 export function matchList(hits: VcfMatch[]) {
   return resultList<VcfMatch>(hits, {
     categories: RESULT_CATEGORIES,
     categoriesOf: resultCategories,
+    priorities: RESULT_PRIORITY_GROUPS,
+    priorityOf: reviewPriority,
     renderRow: matchRow,
     textOf: (h) =>
       `${h.gene || ""} ${condList(h.conditions).join(" ")} ${h.f[2] || ""} ${(h.rsIds || "")

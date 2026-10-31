@@ -137,11 +137,47 @@ Matching remains limited to complete, diploid, forward-strand autosomal
 single-base calls on GRCh37 or GRCh38. Coordinates select candidate entries;
 literal alleles determine a match. The separate rsID sidecar cross-checks known
 identifiers against coordinates, without rejecting missing or unindexed IDs.
-Conflicting repeated calls remain separate from interpreted results.
+Conflicting repeated calls remain separate from interpreted results. If an
+otherwise eligible call matches the catalogue, its contradictory site is retained
+for raw-record verification rather than medical interpretation. Incomplete-only
+consumer calls remain in file exploration and do not produce matching cards.
 
 The sidecars are bound to catalogue and marker bytes by SHA-256. A release with
 mismatched files is rejected. See [CONSUMER_FILES.md](CONSUMER_FILES.md) for format
 limits and optional-feature removal.
+
+## Result ordering
+
+`src/lib/results/priority.ts` supplies the shared **Priority for review** groups,
+comparator and short row explanations for both VCF and consumer results:
+
+1. **Review first:** pathogenic, pathogenic/likely pathogenic or likely pathogenic
+   classifications with 2–4 ClinVar review stars.
+2. **Less-reviewed disease claims:** the same classifications with 0–1 stars.
+3. **Additional context:** conflicting ClinVar classifications, drug responses,
+   traits, associations and other records.
+4. **Needs verification:** matched records with incomplete or contradictory
+   personal file calls, regardless of the catalogue classification.
+
+Within the first two groups, review stars sort descending, followed by pathogenic,
+combined pathogenic/likely pathogenic, then likely pathogenic. Allele frequency
+does not affect the order. File-call problems are distinct from disagreement
+between ClinVar submissions. Stars describe classification review, not disease
+severity or the accuracy of the personal call; the ordering does not estimate
+personal health risk.
+
+The shared result list renders group headings and a review-group filter alongside
+the existing evidence categories and search. Group counts reflect the current
+category and search, and each row explains its placement. Pagination preserves
+the ordering and repeats the relevant group heading when a group spans pages.
+
+Consumer verification cards show only the locus, the file-call problem and
+original rows. They omit classification, stars, copy count, conditions and
+frequency interpretation. Summary tiles and interpreted variant counts use
+unambiguous matches only. Verification records have no evidence categories or
+medical search terms; they are accessible through **All results** and the
+**Needs verification** review filter. The existing complete, diploid, autosomal
+single-base eligibility rules remain unchanged, and no missing calls are imputed.
 
 ## Catalogue memory and rendering
 

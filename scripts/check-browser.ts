@@ -189,6 +189,25 @@ async function checkJourney(browser: Browser, origin: string, sizes: Map<string,
     );
     stage(`HG002: ${variants} results; sample HTTP ranges and one complete catalogue GET verified`);
 
+    const reviewGroup = output.getByLabel("Priority for review", { exact: true });
+    await reviewGroup.selectOption("context");
+    assert.equal(
+      await output.locator(".ml-priority-heading h3").first().innerText(),
+      "Additional context",
+    );
+    assert.ok(await output.locator(".mh-priority-reason").first().innerText());
+    await reviewGroup.selectOption("reviewed");
+    assert.equal(
+      await output.locator(".ml-priority-heading h3").first().innerText(),
+      "Review first",
+    );
+    await reviewGroup.selectOption("all");
+    assert.match(
+      await output.locator(".ml-priority").innerText(),
+      /does not estimate your personal health risk/,
+    );
+    stage("Review groups and per-result explanations verified");
+
     // Teaching examples come from the tiny manifest; returning to results keeps only matches.
     await page.getByRole("link", { name: /^Chapter 8:/ }).click();
     await page.getByRole("button", { name: "Run this chapter", exact: true }).click();

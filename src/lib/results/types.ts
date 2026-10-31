@@ -22,5 +22,7 @@ export interface IndexOptions<T> {
 }
 export interface ListOptions<T> extends IndexOptions<T> {
   categories: ResultCategory[];
+  priorities: readonly ResultCategory[];
+  priorityOf(hit: T): ResultCategory;
   renderRow(hit: T): HTMLElement;
 }

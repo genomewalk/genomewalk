@@ -7,7 +7,8 @@ import type { VcfMatch } from "../types.ts";
 import { streamVariants } from "./vcf.ts";
 import { gtIdx, normChrom, varKey } from "./identity.ts";
 import { addUniqueMatch } from "./match-identity.ts";
-import { parseCatalogEntry, RESULT_ORDER, resultSummary } from "../../../lib/results/evidence.ts";
+import { parseCatalogEntry } from "../../../lib/results/evidence.ts";
+import { compareReviewPriority } from "../../../lib/results/priority.ts";
 
 // Internal control flow only: never include coordinates or file text in diagnostics.
 class DifferentRecordOrder extends Error {}
@@ -35,13 +36,8 @@ function* observations(f: string[], has: (key: string) => boolean) {
 }
 
 type Observation = ReturnType<typeof observations> extends Generator<infer T> ? T : never;
-const sortMatches = (unique: Map<string, VcfMatch>) => {
-  const rank = (h: VcfMatch) => RESULT_ORDER.indexOf(resultSummary(h).label);
-  return [...unique.values()].sort(
-    (a, b) =>
-      rank(a) - rank(b) || b.stars - a.stars || (a.afmax ?? Infinity) - (b.afmax ?? Infinity),
-  );
-};
+const sortMatches = (unique: Map<string, VcfMatch>) =>
+  [...unique.values()].sort(compareReviewPriority);
 const add = (unique: Map<string, VcfMatch>, row: string, hit: Observation) => {
   const { f, copies, gt, ploidy, partialCall } = hit;
   addUniqueMatch(unique, { ...parseCatalogEntry(row), f, copies, gt, ploidy, partialCall });
