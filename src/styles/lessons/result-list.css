@@ -28,10 +28,46 @@ table.fmt .fd .mini {
   gap: var(--wgs-space-content);
 }
 .ml-bar {
-  position: relative;
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 240px) minmax(0, 145px) auto;
+  align-items: end;
   gap: 12px;
+}
+.ml-search {
+  position: relative;
+  min-width: 0;
+}
+.ml-filter {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+  color: var(--wgs-mut);
+  font-size: 12px;
+}
+.ml-filter select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 9px 8px;
+  border: 1px solid var(--wgs-line-soft);
+  border-radius: 3px;
+  background: var(--wgs-card);
+  color: var(--wgs-ink);
+  font: 13px var(--wgs-sans);
+}
+@container match-list (max-width: 850px) {
+  .ml-bar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 145px);
+    gap: 10px;
+  }
+  .ml-search,
+  .ml-bar .ml-count {
+    grid-column: 1 / -1;
+  }
+  .ml-count {
+    justify-self: end;
+    line-height: 24px;
+  }
 }
 .ml-icon {
   position: absolute;
@@ -43,7 +79,7 @@ table.fmt .fd .mini {
   display: inline-grid;
 }
 .ml-q {
-  flex: 1 1 auto;
+  width: 100%;
   min-width: 0;
   padding: 9px 12px 9px 36px;
   font: var(--wgs-text-body) var(--wgs-sans);
@@ -57,7 +93,7 @@ table.fmt .fd .mini {
   border-color: color-mix(in srgb, var(--wgs-accent) 55%, transparent);
 }
 .ml-q:focus ~ .ml-icon,
-.ml-bar:focus-within .ml-icon {
+.ml-search:focus-within .ml-icon {
   color: var(--wgs-accent);
 }
 .ml-q::placeholder {
@@ -118,8 +154,10 @@ table.fmt .fd .mini {
   color: var(--wgs-faint);
 }
 .ml-count {
+  align-self: end;
   flex: none;
   font: var(--wgs-text-small) var(--wgs-mono);
+  line-height: 44px;
   color: var(--wgs-mut);
   white-space: nowrap;
 }

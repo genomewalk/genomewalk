@@ -9,14 +9,15 @@ import {
   resultSummary,
 } from "../../../../lib/results/evidence.ts";
 import { matchRow } from "./results.ts";
-import { RESULT_PRIORITY_GROUPS, reviewPriority } from "../../../../lib/results/priority.ts";
+import { reviewPriority } from "../../../../lib/results/priority.ts";
+import { evidenceFilterValues } from "../../../../lib/results/filters.ts";
 
 export function matchList(hits: ConsumerMatch[]) {
   const needsVerification = (h: ConsumerMatch) => h.partialCall || h.conflictingRecords;
   return resultList<ConsumerMatch>(hits, {
     categories: RESULT_CATEGORIES,
     categoriesOf: (h) => (needsVerification(h) ? [] : resultCategories(h)),
-    priorities: RESULT_PRIORITY_GROUPS,
+    filtersOf: evidenceFilterValues,
     priorityOf: reviewPriority,
     renderRow: matchRow,
     textOf: (h) =>

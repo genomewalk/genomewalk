@@ -9,13 +9,14 @@ import {
   resultSummary,
 } from "../../../../lib/results/evidence.ts";
 import { matchRow } from "./results.ts";
-import { RESULT_PRIORITY_GROUPS, reviewPriority } from "../../../../lib/results/priority.ts";
+import { reviewPriority } from "../../../../lib/results/priority.ts";
+import { evidenceFilterValues } from "../../../../lib/results/filters.ts";
 
 export function matchList(hits: VcfMatch[]) {
   return resultList<VcfMatch>(hits, {
     categories: RESULT_CATEGORIES,
     categoriesOf: resultCategories,
-    priorities: RESULT_PRIORITY_GROUPS,
+    filtersOf: evidenceFilterValues,
     priorityOf: reviewPriority,
     renderRow: matchRow,
     textOf: (h) =>

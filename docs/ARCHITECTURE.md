@@ -148,7 +148,7 @@ limits and optional-feature removal.
 
 ## Result ordering
 
-`src/lib/results/priority.ts` supplies the shared **Priority for review** groups,
+`src/lib/results/priority.ts` supplies the shared reading-order groups,
 comparator and short row explanations for both VCF and consumer results:
 
 1. **Review first:** pathogenic, pathogenic/likely pathogenic or likely pathogenic
@@ -166,20 +166,23 @@ between ClinVar submissions. Stars describe classification review, not disease
 severity or the accuracy of the personal call; the ordering does not estimate
 personal health risk.
 
-The shared result list renders group headings and selectable review-group cells alongside
-the existing evidence categories and search. Group counts reflect the current
-category and search. Empty groups and globally empty evidence categories are hidden;
-if a selected group becomes empty, the filter resets to All groups. Each row
-explains its placement. Pagination preserves
-the ordering and repeats the relevant group heading when a group spans pages.
+The shared result list keeps evidence-category pills and places classification and
+exact ClinVar star-count dropdown filters beside search. Both filters start at
+**All**, and options with no available results are hidden. There is no separate
+review-group selector. Filtering leaves the existing reading order unchanged;
+each row explains its placement, and pagination repeats the relevant group heading
+when a group spans pages. This ordering is an application choice, not a ClinVar
+recommendation for prioritizing personal health risks.
 
 Consumer verification cards show only the locus, the file-call problem and
 original rows. They omit classification, stars, copy count, conditions and
 frequency interpretation. Summary tiles and interpreted variant counts use
 unambiguous matches only. Verification records have no evidence categories or
-medical search terms; they are accessible through **All results** and the
-**Needs verification** review filter. The existing complete, diploid, autosomal
-single-base eligibility rules remain unchanged, and no missing calls are imputed.
+medical search terms; they remain in the **Needs verification** section under
+**All results** with both dropdown filters set to **All**. Selecting a specific
+classification or star count excludes these cards. The existing complete, diploid,
+autosomal single-base eligibility rules remain unchanged, and no missing calls
+are imputed.
 
 ## Catalogue memory and rendering
 

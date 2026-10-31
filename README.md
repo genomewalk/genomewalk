@@ -132,13 +132,14 @@ classification, not the accuracy of a person's genotype. Consumer exports do not
 supply sequencing depth or per-call quality, and this importer does not calculate
 ethnicity, relatives, haplogroups, imputation or polygenic scores.
 
-Both file experiences group results by **Priority for review**: pathogenic or
+Both file experiences use the same reading order: pathogenic or
 likely pathogenic classifications with 2–4 ClinVar stars first, the same
 classifications with 0–1 stars next, then additional context such as conflicting
 classifications, drug responses, associations and traits. Matched records with
 incomplete or contradictory file calls appear separately under **Needs verification**.
-Selectable review-group cells and each row's explanation make this ordering visible.
-Evidence categories and review groups with zero results are hidden.
+Group headings and each row's explanation make this ordering visible. Evidence-category
+pills remain available, with classification and exact ClinVar star-count filters beside
+search. Both filters start at **All**; options with no available results are hidden.
 Within the disease groups, review stars precede classification; allele frequency
 does not affect the order. This is a reading order, not a personal health-risk
 score, and stars describe review rather than disease severity.
@@ -146,9 +147,11 @@ score, and stars describe review rather than disease severity.
 For consumer files, a contradictory site with an otherwise eligible catalogue
 match is shown only as a verification card with its location, reason and original
 rows. It contributes no interpreted variant count, classification, review stars,
-copy count or medical associations. Select **All results → Needs verification**
-to inspect it. Incomplete-only consumer calls remain in file exploration; the
-app does not impute missing alleles or turn them into matches.
+copy count or medical associations. Find it in the **Needs verification** section
+under **All results**, with both filters set to **All**. Verification cards are excluded
+when filtering for a specific classification or star count. Incomplete-only consumer
+calls remain in file exploration; the app does not impute missing alleles or turn
+them into matches.
 
 The included catalogue keeps selected ClinVar classifications. Benign, likely benign
 and uncertain-significance labels do not qualify a record on their own, but an

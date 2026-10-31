@@ -189,41 +189,41 @@ async function checkJourney(browser: Browser, origin: string, sizes: Map<string,
     );
     stage(`HG002: ${variants} results; sample HTTP ranges and one complete catalogue GET verified`);
 
-    const reviewGroup = output.getByRole("group", { name: "Priority for review", exact: true });
-    await reviewGroup.getByRole("button", { name: /^Additional context/ }).click();
-    assert.equal(
-      await output.locator(".ml-priority-heading h3").first().innerText(),
-      "Additional context",
-    );
+    assert.equal(await output.locator(".ml-priority-options").count(), 0);
+    const classification = output.getByRole("combobox", {
+      name: "ClinVar classification",
+      exact: true,
+    });
+    const stars = output.getByRole("combobox", { name: "ClinVar stars", exact: true });
+    assert.equal(await classification.inputValue(), "all");
+    assert.equal(await stars.inputValue(), "all");
+    await classification.selectOption("likely pathogenic");
+    assert.ok(await output.locator(".match-row").count());
+    for (const badge of await output.locator(".match-row summary .mh > code").all()) {
+      const labels = ((await badge.getAttribute("title")) || (await badge.innerText()))
+        .toLowerCase()
+        .split(" · ");
+      assert.ok(labels.includes("likely pathogenic"));
+    }
     assert.ok(await output.locator(".mh-priority-reason").first().innerText());
-    await reviewGroup.getByRole("button", { name: /^Review first/ }).click();
-    assert.equal(
-      await output.locator(".ml-priority-heading h3").first().innerText(),
-      "Review first",
-    );
-    assert.equal(
-      await reviewGroup.getByRole("button", { name: /^Review first/ }).getAttribute("aria-pressed"),
-      "true",
-    );
+    await classification.selectOption("all");
+    await stars.selectOption("2");
+    for (const review of await output.locator(".match-row summary .stars").all())
+      assert.equal(await review.innerText(), "★★☆☆");
     const search = output.getByRole("searchbox");
     await search.fill("no-such-result-for-browser-check");
-    assert.equal(await reviewGroup.getByRole("button").count(), 0);
+    assert.equal(await classification.locator("option").count(), 1);
+    assert.equal(await stars.locator("option").count(), 1);
     await search.fill("");
-    assert.equal(
-      await reviewGroup.getByRole("button", { name: /^All groups/ }).getAttribute("aria-pressed"),
-      "true",
-      "An empty selected group must reset so clearing search restores all results",
-    );
-    assert.equal(
-      await reviewGroup.getByRole("button", { name: /^Needs verification/ }).count(),
-      0,
-      "Empty review groups must be hidden",
-    );
+    assert.equal(await classification.inputValue(), "all");
+    assert.equal(await stars.inputValue(), "all");
     assert.match(
-      await output.locator(".ml-priority").innerText(),
-      /does not estimate your personal health risk/,
+      await output.locator(".ml-review-note").innerText(),
+      /Stars describe classification review/,
     );
-    stage("Review groups and per-result explanations verified");
+    stage(
+      "Classification and exact-star filters, empty-choice hiding and search recovery verified",
+    );
 
     // Teaching examples come from the tiny manifest; returning to results keeps only matches.
     await page.getByRole("link", { name: /^Chapter 8:/ }).click();
