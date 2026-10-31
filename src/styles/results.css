@@ -80,6 +80,17 @@
   font-size: 13px;
   white-space: nowrap;
 }
+.ml-rows .match-row .mh-z {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.ml-rows .match-row .mh-copies {
+  display: block;
+  flex: none;
+  color: var(--wgs-accent);
+}
 .ml-rows .match-row::details-content,
 .ml-rows .match-row > .kvx-body {
   grid-column: 1 / -1;

@@ -1,6 +1,7 @@
 import { frequencySourceNote } from "../../../../lib/genetics/frequency-source.ts";
 import type { ConsumerMatch } from "../../types.ts";
 import { resultSources } from "../../../../lib/results/sources.ts";
+import { copyIllustration } from "../../../../lib/results/copy-illustration.ts";
 import { calledLetters } from "../calls.ts";
 import { conditionUrl } from "../../../../lib/results/condition-links.ts";
 import { ctx } from "../context.ts";
@@ -81,7 +82,7 @@ export function matchRow(h: ConsumerMatch) {
     : `No usable frequency in this catalogue. ${gnomad}`;
   const row = kvx(
     `<span class="mh-title"><span class="mh-gene">${escape(h.gene || "(no gene named)")}</span>${rs ? `<span class="mh-id">${escape(rs)}</span>` : ""}</span><span class="mh-condition mut">${escape(condTitle(h.conditions))}</span><span class="mh-location">${escape(location)}</span>`,
-    `<span class="mh"><code title="${escape(fullClass)}">${escape(shortClass)}</code><span class="stars" title="${escape(reviewText(h))}">${stars(h.stars)}</span><span class="mh-z">${zyg}</span></span>`,
+    `<span class="mh"><code title="${escape(fullClass)}">${escape(shortClass)}</code><span class="stars" title="${escape(reviewText(h))}">${stars(h.stars)}</span><span class="mh-z">${zyg}${copyIllustration(h)}</span></span>`,
     `${h.recordCount > 1 ? `<p class="match-record-note">${fmt(h.recordCount)} file records for this variant are shown as one result.${h.conflictingRecords ? " They contain different genotypes." : " The called alleles agree."}</p>` : ""}
      <div class="raw-first">${rawBlock(["#" + ctx.header!.columns.join("\t"), ...(h.sourceCalls || [h.call.fields]).map((f) => f.join("\t"))])}</div>
      <div class="table-scroll" role="region" aria-label="Variant evidence" tabindex="0"><table class="fmt fmt-result"><tbody>
