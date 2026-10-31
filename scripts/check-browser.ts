@@ -189,19 +189,36 @@ async function checkJourney(browser: Browser, origin: string, sizes: Map<string,
     );
     stage(`HG002: ${variants} results; sample HTTP ranges and one complete catalogue GET verified`);
 
-    const reviewGroup = output.getByLabel("Priority for review", { exact: true });
-    await reviewGroup.selectOption("context");
+    const reviewGroup = output.getByRole("group", { name: "Priority for review", exact: true });
+    await reviewGroup.getByRole("button", { name: /^Additional context/ }).click();
     assert.equal(
       await output.locator(".ml-priority-heading h3").first().innerText(),
       "Additional context",
     );
     assert.ok(await output.locator(".mh-priority-reason").first().innerText());
-    await reviewGroup.selectOption("reviewed");
+    await reviewGroup.getByRole("button", { name: /^Review first/ }).click();
     assert.equal(
       await output.locator(".ml-priority-heading h3").first().innerText(),
       "Review first",
     );
-    await reviewGroup.selectOption("all");
+    assert.equal(
+      await reviewGroup.getByRole("button", { name: /^Review first/ }).getAttribute("aria-pressed"),
+      "true",
+    );
+    const search = output.getByRole("searchbox");
+    await search.fill("no-such-result-for-browser-check");
+    assert.equal(await reviewGroup.getByRole("button").count(), 0);
+    await search.fill("");
+    assert.equal(
+      await reviewGroup.getByRole("button", { name: /^All groups/ }).getAttribute("aria-pressed"),
+      "true",
+      "An empty selected group must reset so clearing search restores all results",
+    );
+    assert.equal(
+      await reviewGroup.getByRole("button", { name: /^Needs verification/ }).count(),
+      0,
+      "Empty review groups must be hidden",
+    );
     assert.match(
       await output.locator(".ml-priority").innerText(),
       /does not estimate your personal health risk/,

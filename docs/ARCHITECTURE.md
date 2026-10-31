@@ -166,9 +166,11 @@ between ClinVar submissions. Stars describe classification review, not disease
 severity or the accuracy of the personal call; the ordering does not estimate
 personal health risk.
 
-The shared result list renders group headings and a review-group filter alongside
+The shared result list renders group headings and selectable review-group cells alongside
 the existing evidence categories and search. Group counts reflect the current
-category and search, and each row explains its placement. Pagination preserves
+category and search. Empty groups and globally empty evidence categories are hidden;
+if a selected group becomes empty, the filter resets to All groups. Each row
+explains its placement. Pagination preserves
 the ordering and repeats the relevant group heading when a group spans pages.
 
 Consumer verification cards show only the locus, the file-call problem and

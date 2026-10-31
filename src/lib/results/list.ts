@@ -25,6 +25,7 @@ export function resultList<T>(
   });
   box.innerHTML = `
     <div class="ml-categories" role="group" aria-label="Filter results by evidence type">${categories
+      .filter((c) => (c.id === "all" ? hits.length : counts.get(c.id) || 0) > 0)
       .map(
         (c) =>
           `<button type="button" data-category="${c.id}" aria-pressed="${c.id === "all"}">${c.label}<span>${fmt(c.id === "all" ? hits.length : counts.get(c.id) || 0)}</span></button>`,
@@ -32,11 +33,15 @@ export function resultList<T>(
       .join("")}</div>
     <p class="ml-category-description">${categories[0]!.description}</p>
     <div class="ml-priority">
-      <label><span>Priority for review</span><select class="ml-priority-select" aria-label="Priority for review">
-        <option value="all">All groups</option>${priorities
-          .map((group) => `<option value="${group.id}">${escape(group.label)}</option>`)
+      <h3 class="ml-priority-title">Priority for review</h3>
+      <div class="ml-categories ml-priority-options" role="group" aria-label="Priority for review">
+        <button type="button" data-review-group="all" aria-pressed="true">All groups<span></span></button>${priorities
+          .map(
+            (group) =>
+              `<button type="button" data-review-group="${group.id}" aria-pressed="false">${escape(group.label)}<span></span></button>`,
+          )
           .join("")}
-      </select></label>
+      </div>
       <p>Ordered by ClinVar classification and review. Stars describe review, not disease severity. This order does not estimate your personal health risk.</p>
     </div>
     <div class="ml-bar">
@@ -54,12 +59,13 @@ export function resultList<T>(
   const prev = box.querySelector<HTMLButtonElement>(".ml-prev")!,
     next = box.querySelector<HTMLButtonElement>(".ml-next")!,
     pageLbl = box.querySelector<HTMLElement>(".ml-page")!,
-    prioritySelect = box.querySelector<HTMLSelectElement>(".ml-priority-select")!;
+    priorityOptions = box.querySelector<HTMLElement>(".ml-priority-options")!;
   let page = 0,
     shown = index,
     picks: IndexedSuggestion[] = [],
     cursor = -1,
-    category = "all";
+    category = "all",
+    priority = "all";
   const render = () => {
     const pages = Math.max(1, Math.ceil(shown.length / PAGE));
     page = Math.min(page, pages - 1);
@@ -104,15 +110,16 @@ export function resultList<T>(
       const id = priorityOf(h).id;
       groupCounts.set(id, (groupCounts.get(id) || 0) + 1);
     }
-    for (const option of prioritySelect.options) {
-      const group = priorities.find((group) => group.id === option.value);
-      option.textContent = group
-        ? `${group.label} (${fmt(groupCounts.get(group.id) || 0)})`
-        : `All groups (${fmt(matches.length)})`;
+    // Changing evidence category or search must not leave an invisible active filter.
+    if (priority !== "all" && !groupCounts.get(priority)) priority = "all";
+    for (const button of priorityOptions.querySelectorAll<HTMLButtonElement>("button")) {
+      const id = button.dataset["reviewGroup"]!;
+      const total = id === "all" ? matches.length : groupCounts.get(id) || 0;
+      button.hidden = total === 0;
+      button.setAttribute("aria-pressed", String(id === priority));
+      button.querySelector("span")!.textContent = fmt(total);
     }
-    shown = matches.filter(
-      ({ h }) => prioritySelect.value === "all" || priorityOf(h).id === prioritySelect.value,
-    );
+    shown = matches.filter(({ h }) => priority === "all" || priorityOf(h).id === priority);
     page = 0;
     render();
   };
@@ -167,7 +174,13 @@ export function resultList<T>(
     filter();
     suggest();
   });
-  prioritySelect.addEventListener("change", filter);
+  priorityOptions.addEventListener("click", (e) => {
+    const button = (e.target as Element).closest<HTMLButtonElement>("button[data-review-group]");
+    if (!button) return;
+    priority = button.dataset["reviewGroup"]!;
+    sug.hidden = true;
+    filter();
+  });
   q.addEventListener("keydown", (e: { key: string; preventDefault: () => void }) => {
     if (sug.hidden) return;
     if (e.key === "ArrowDown") {

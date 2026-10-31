@@ -88,12 +88,10 @@ function listDocument() {
     const selected = new Map<string, TestElement>();
     Object.assign(element, {
       value: "",
-      options: [],
       addEventListener() {},
       querySelector(selector: string) {
         if (!selected.has(selector)) {
           const child = partialFixture<TestElement>(doc.createElement("div"));
-          if (selector === ".ml-priority-select") Object.assign(child, { value: "all" });
           selected.set(selector, child);
         }
         return selected.get(selector);

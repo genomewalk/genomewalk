@@ -137,7 +137,8 @@ likely pathogenic classifications with 2–4 ClinVar stars first, the same
 classifications with 0–1 stars next, then additional context such as conflicting
 classifications, drug responses, associations and traits. Matched records with
 incomplete or contradictory file calls appear separately under **Needs verification**.
-The review-group filter and each row's explanation make this ordering visible.
+Selectable review-group cells and each row's explanation make this ordering visible.
+Evidence categories and review groups with zero results are hidden.
 Within the disease groups, review stars precede classification; allele frequency
 does not affect the order. This is a reading order, not a personal health-risk
 score, and stars describe review rather than disease severity.
