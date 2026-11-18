@@ -1,0 +1,138 @@
+{
+  "captured_date": "2026-11-16",
+  "timezone": "America/Los_Angeles",
+  "source": "Locally served Genomewalk application at http://127.0.0.1:5282/",
+  "selected_file": "HG002_GRCh38_v5.0q_smvar.vcf.gz",
+  "device_scale_factor": 2,
+  "image_processing": "None: full viewport screenshots, uncropped, no pointer overlay",
+  "screenshots": [
+    {
+      "chapter": 1,
+      "title": "The file introduces itself",
+      "viewport": {
+        "width": 1440,
+        "height": 1080
+      },
+      "desktopWidth": 1328,
+      "scrollY": 0,
+      "filename": "chapter-01-desktop.png",
+      "sha256": "726b5e2bd3639a859c3b3d73faf6d5aab34a243c4680d2c2464069189d592b57",
+      "pixelWidth": 2880,
+      "pixelHeight": 2160
+    },
+    {
+      "chapter": 2,
+      "title": "Lets learn to read a variant line",
+      "viewport": {
+        "width": 1440,
+        "height": 1080
+      },
+      "desktopWidth": 1328,
+      "scrollY": 0,
+      "filename": "chapter-02-desktop.png",
+      "sha256": "23eedc14ab32b92a24ba6d699ce8943dfcc8bf2ffb1af20be73cbeda62e62f81",
+      "pixelWidth": 2880,
+      "pixelHeight": 2160
+    },
+    {
+      "chapter": 3,
+      "title": "A closer look at different types of variants",
+      "viewport": {
+        "width": 1440,
+        "height": 1080
+      },
+      "desktopWidth": 1328,
+      "scrollY": 0,
+      "filename": "chapter-03-desktop.png",
+      "sha256": "a7ab94f8d625a3f135ba818ce3bb747c9c88b96d1fbd8d671a4a441688763c91",
+      "pixelWidth": 2880,
+      "pixelHeight": 2160
+    },
+    {
+      "chapter": 4,
+      "title": "Count everything (one full pass)",
+      "viewport": {
+        "width": 1440,
+        "height": 1080
+      },
+      "desktopWidth": 1328,
+      "scrollY": 0,
+      "filename": "chapter-04-desktop.png",
+      "sha256": "d0e7d0119a79164573757cb9b6ba217f7b7f63e19fd4a37d5401a926e12bf360",
+      "pixelWidth": 2880,
+      "pixelHeight": 2160
+    },
+    {
+      "chapter": 5,
+      "title": "What the file just told us",
+      "viewport": {
+        "width": 1440,
+        "height": 1080
+      },
+      "desktopWidth": 1328,
+      "scrollY": 0,
+      "filename": "chapter-05-desktop.png",
+      "sha256": "d2333e0cf4d3452c2e08f43c143394ff7c0339c9896a4a5c934024cfe221f517",
+      "pixelWidth": 2880,
+      "pixelHeight": 2160
+    },
+    {
+      "chapter": 6,
+      "title": "Where would meaning come from?",
+      "viewport": {
+        "width": 1440,
+        "height": 1080
+      },
+      "desktopWidth": 1328,
+      "scrollY": 0,
+      "filename": "chapter-06-desktop.png",
+      "sha256": "8ce45c7473827068ded6c4fba58d0c79327b18797c519e960851a11c0f378386",
+      "pixelWidth": 2880,
+      "pixelHeight": 2160
+    },
+    {
+      "chapter": 7,
+      "title": "How common is it? \u2014 gnomAD",
+      "viewport": {
+        "width": 1440,
+        "height": 1080
+      },
+      "desktopWidth": 1328,
+      "scrollY": 0,
+      "filename": "chapter-07-desktop.png",
+      "sha256": "45d66148dd3fbfcb3c4ce05f9e7dc28252ec3531cab92ffee15806869ef95007",
+      "pixelWidth": 2880,
+      "pixelHeight": 2160
+    },
+    {
+      "chapter": 8,
+      "title": "Has anyone linked it to a condition? \u2014 ClinVar",
+      "viewport": {
+        "width": 1440,
+        "height": 1080
+      },
+      "desktopWidth": 1328,
+      "scrollY": 0,
+      "filename": "chapter-08-desktop.png",
+      "sha256": "626fc8b3c05258b1e48da9281fdc5379f8c2383c96ecbad377a0b2ad1687fe5a",
+      "pixelWidth": 2880,
+      "pixelHeight": 2160
+    },
+    {
+      "chapter": 9,
+      "title": "Your results",
+      "viewport": {
+        "width": 1440,
+        "height": 1200
+      },
+      "desktopWidth": 1328,
+      "scrollY": 969,
+      "interaction": "Search rs4673993 and expand ATIC match",
+      "capturedResult": "chr2:215347616 T>C, HG002 genotype 0|1",
+      "filename": "chapter-09-desktop.png",
+      "sha256": "7d971181068e193e916840370f07957787fb58400cb5c3fd654d32d3976a4897",
+      "pixelWidth": 2880,
+      "pixelHeight": 2400
+    }
+  ]
+}

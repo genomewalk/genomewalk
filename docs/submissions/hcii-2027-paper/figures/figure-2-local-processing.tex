@@ -1,0 +1,104 @@
+% Adapted from the architecture figure in the original Genomewalk whitepaper.
+% Build from this directory: pdflatex figure-2-local-processing.tex
+% The manuscript includes the resulting vector PDF at text width.
+\documentclass{article}
+\usepackage[T1]{fontenc}
+\usepackage{tgheros}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+\usepackage[paperwidth=18.65cm,paperheight=8.55cm,margin=.15cm]{geometry}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\definecolor{accent}{HTML}{244D40}
+\definecolor{tint}{HTML}{EDF2EF}
+\definecolor{midgray}{HTML}{626B66}
+\definecolor{inkblue}{HTML}{275D7C}
+\definecolor{bluetint}{HTML}{EDF4F8}
+\definecolor{copper}{HTML}{96502C}
+\definecolor{warmtint}{HTML}{F8EFE5}
+\definecolor{linegray}{HTML}{CFD9D6}
+\newcommand{\diagramtext}{\sffamily\fontsize{9.5}{12.4}\selectfont}
+\newcommand{\diagramheading}{\sffamily\bfseries\fontsize{11}{13.2}\selectfont}
+\begin{document}
+\noindent
+\begin{tikzpicture}[x=1cm,y=1cm,font=\diagramtext,
+  flow/.style={-{Stealth[length=2mm]},line width=.8pt,draw=inkblue},
+  local/.style={-{Stealth[length=1.7mm]},line width=.8pt,draw=accent},
+  stage/.style={draw=accent!55,fill=white,rounded corners=3pt,
+    minimum width=3.90cm,align=center,inner xsep=8pt,inner ysep=6pt}]
+% A subtle outer container keeps the complete diagram together on the page.
+\path[draw=linegray,fill=accent!2!white,line width=.5pt,rounded corners=6pt]
+  (-.40,-.40) rectangle (17.85,7.65);
+% Retain the original three environments and green/blue/copper palette.
+\node[anchor=west,font=\diagramheading,text=accent] at (0,7.08) {Prepare public references};
+\node[anchor=west,font=\diagramheading,text=inkblue] at (5.25,7.08) {Serve static files};
+\node[anchor=west,font=\diagramheading,text=accent] at (10.50,7.08) {Read and explain locally};
+\fill[rounded corners=5pt,tint] (0,0) rectangle (4.35,6.50);
+\node[stage,minimum height=.95cm] (select) at (2.175,5.65) {\textbf{1\quad Filter ClinVar}};
+\node[stage,minimum height=1.65cm] (enrich) at (2.175,3.95)
+  {\textbf{2\quad Enrich records}\\[5pt]gnomAD frequencies\\[2pt]PubMed references};
+\node[stage,minimum height=1.30cm] (save) at (2.175,2.05)
+  {\textbf{3\quad Save catalogues}\\[5pt]GRCh37 / GRCh38};
+\draw[local,shorten <=2pt,shorten >=2pt] (select.south)--(enrich.north);
+\draw[local,shorten <=2pt,shorten >=2pt] (enrich.south)--(save.north);
+\node[align=center,text=midgray] at (2.175,.61) {Periodic updates\\from public sources};
+\draw[flow,shorten <=2pt] (save.east)--node[above=3pt]{deploy}(5.20,2.05);
+% Static files; no per-allele matching index is distributed.
+\fill[rounded corners=5pt,bluetint] (5.25,0) rectangle (8.55,6.50);
+\foreach \x/\y in {5.89/3.50,5.73/3.35,5.57/3.20} {
+  \path[fill=white,draw=inkblue!60,rounded corners=1pt] (\x,\y) rectangle +(2.38,1.85);
+}
+\draw[inkblue!50] (5.57,4.70)--(7.95,4.70);
+\foreach \x in {5.78,5.93,6.08} {\fill[inkblue!55] (\x,4.87) circle (.035);}
+\node[anchor=west,inner sep=0pt,font=\diagramtext\bfseries,text=inkblue] at (5.90,4.30) {Website};
+\node[anchor=west,inner sep=0pt] at (5.90,3.73) {Catalogue};
+\node[align=center,text=midgray] at (6.90,.75) {Static hosting\\No analysis server};
+% One public catalogue stream, independent of the personal variant matches.
+\draw[flow] (8.55,4.40)--(10.50,4.40);
+\node[align=center] at (9.525,5.25) {Complete\\filtered\\catalogue};
+\node[align=center,text=inkblue] at (9.525,3.67) {Streamed\\download};
+% Browser chrome and locally read personal file, reusing the original motifs.
+\draw[accent!65,fill=white,rounded corners=5pt,line width=.8pt]
+  (10.50,0) rectangle (17.45,6.50);
+\fill[accent!8] (10.52,5.95) rectangle (17.43,6.35);
+\draw[linegray] (10.52,5.94)--(17.43,5.94);
+\foreach \x in {10.80,11.01,11.22} {\fill[accent!40] (\x,6.21) circle (.045);}
+\node[anchor=west,text=accent] at (11.49,6.20) {genomewalk.com};
+\begin{scope}[yshift=1.8cm]
+\path[draw=copper,fill=warmtint,line width=.7pt]
+  (10.97,2.10)--(10.97,3.33)--(11.68,3.33)--(11.97,3.04)--(11.97,2.10)--cycle;
+\draw[copper] (11.68,3.33)--(11.68,3.04)--(11.97,3.04);
+\draw[copper,line width=.8pt] plot[smooth] coordinates
+  {(11.20,2.97)(11.60,2.75)(11.20,2.53)(11.60,2.31)};
+\draw[copper,line width=.8pt] plot[smooth] coordinates
+  {(11.60,2.97)(11.20,2.75)(11.60,2.53)(11.20,2.31)};
+\foreach \y in {2.89,2.75,2.61,2.47} {\draw[copper!60] (11.26,\y)--(11.55,\y);}
+\node[text=copper] at (11.47,1.40) {Your DNA};
+\draw[local] (12.10,2.71)--(12.78,2.71);
+\draw[accent,line width=1.2pt] (13.37,2.89) circle (.30);
+\draw[accent,line width=1.4pt] (13.59,2.67)--(13.88,2.38);
+\node[align=center] at (13.40,1.40) {Match in\\the browser};
+\draw[local] (14.12,2.71)--(14.68,2.71);
+\draw[linegray,fill=tint,rounded corners=2pt] (14.89,1.56) rectangle (17.02,3.56);
+\node[inner sep=0pt,font=\diagramtext\bfseries,text=accent] at (15.955,3.18) {Evidence};
+\foreach \y in {2.72,2.28,1.84} {
+  \fill[accent!70] (15.25,\y) circle (.055);
+  \draw[accent!35,line width=1.5pt] (15.52,\y)--(16.67,\y);
+}
+\end{scope}
+% Center the icon and both lines as a single unit within the browser panel.
+\node[text=accent,inner sep=0pt] at (13.975,1.05) {
+  \begin{tikzpicture}[font=\diagramtext]
+    \node[text=accent,align=center,inner sep=0pt] (privacytext) at (0,0)
+      {Personal file and results\\[2pt]stay on your device};
+    \node[anchor=east,inner sep=0pt] at ([xshift=-7pt]privacytext.west) {
+      \begin{tikzpicture}
+        \draw[accent!60,rounded corners=1pt] (0,0) rectangle (.24,.22);
+        \draw[accent!60] (.04,.22)--(.04,.32)
+          arc[start angle=180,end angle=0,radius=.08]--(.20,.22);
+      \end{tikzpicture}
+    };
+  \end{tikzpicture}
+};
+\end{tikzpicture}
+\end{document}
