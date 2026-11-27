@@ -200,8 +200,8 @@ Recheck catalogue streams and public-sample byte ranges below.
 
 ## Refresh public reference data
 
-Run **Actions → Build reference data → Run workflow** when you want fresh public
-inputs. The [manual workflow](../.github/workflows/reference-data.yml) builds the tools image,
+Run **Actions → Build reference data → Run workflow** on **main** when you want fresh public
+inputs and automatic publication. The [manual workflow](../.github/workflows/reference-data.yml) builds the tools image,
 runs pipeline tests with container networking disabled, then runs `data:refresh`
 with network access and an isolated output directory. Locally, the equivalent is:
 
@@ -210,10 +210,25 @@ docker compose run --build --rm tools data:refresh -- --jobs 4
 ```
 
 The pipeline validates its generated artifacts and saves **reference-data** for
-seven days. It does not publish or commit them. Download that artifact, replace
-local `public/ref/` with its contents, run
-`docker compose run --build --rm tools data:check` (or `npm run data:check`), then commit and
-push the reviewed public files. The ordinary deployment publishes that release.
+seven days. After a successful build on `main`, a separate publication job installs
+the complete generated `public/ref/` tree and runs the full release checks and
+browser tests before committing. It commits and pushes only changed reference
+files, then explicitly starts **Deploy site**. The new references become live only
+after that deployment succeeds. No commit is created for unchanged data, but
+deployment is still requested so a retry can recover a failed deployment.
+
+Refresh runs are serialized per branch. Publication stops if `main` changed since
+the build started; rerun on the latest `main` rather than rebasing stale generated
+data. Pushes never use force. Builds on other branches produce an artifact but do
+not commit or deploy it. Failed builds or pre-publication checks leave the
+repository and live references unchanged. Only the publication job has repository
+and Actions write permission; GitHub's workflow token needs no additional secret.
+The explicit deployment request is required because commits pushed by that token
+do not trigger the normal push workflow.
+
+For a local refresh, validate the updated `public/ref/` with
+`docker compose run --build --rm tools data:check` (or `npm run data:check`), then
+commit and push it. The ordinary deployment publishes that release.
 For local pipeline targets, run `npm run data` or read the
 [offline pipeline guide](../scripts/README.md).
 
