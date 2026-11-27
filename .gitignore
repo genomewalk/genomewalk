@@ -19,6 +19,8 @@ dist-ssr
 /tmp/
 /output/
 /coverage/
+# Paper and poster drafts stay local for now
+/docs/whitepaper/
 *.tmp
 *.part
 *.bak

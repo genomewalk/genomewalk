@@ -7,15 +7,6 @@ matches records locally and keeps the matching results. Sorted VCFs and catalogu
 rows are compared progressively without retaining either complete dataset.
 No genome upload endpoint or remote matching API is used.
 
-## Paper
-
-The current HCII 2027 poster short-paper draft is available as a
-[PDF](docs/submissions/hcii-2027-paper/Genomewalk-HCII-2027-Short-Paper.pdf), with
-[editable LaTeX source](docs/submissions/hcii-2027-paper/main.tex) and
-[build instructions and supporting figures](docs/submissions/hcii-2027-paper/README.md).
-It describes the current catalogue-streaming design and replaces the earlier
-generic whitepaper. This is a working draft, not a published proceedings paper.
-
 ## Run locally
 
 With Docker installed and running, build and open the static site with one command:

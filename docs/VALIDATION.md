@@ -132,7 +132,7 @@ data out of screenshots.
 1. Check the landing illustration and its zoom controls, then load HG002.
 2. Visit results directly before running another chapter. Verify only the results
    chapter completes, expand a result and check its raw row, genotype and source links.
-   Combine search with evidence-category and review-group filters. Check group
+   Combine search with evidence-category pills and the classification filter. Check group
    counts, row explanations and headings across page boundaries; use synthetic
    incomplete/conflicting calls to check **Needs verification** separately.
 3. Run the remaining chapters. Check header disclosures, column links, genotype examples,

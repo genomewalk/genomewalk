@@ -56,9 +56,10 @@ When at least one otherwise eligible call matches the catalogue, the site remain
 accessible as a **Needs verification** card showing its location, the discrepancy
 and original rows. These cards show no classification, review stars, copy count,
 conditions or frequency interpretation, and do not contribute to interpreted
-variant counts or summary tiles. They are available under **All results** and the
-**Needs verification** review filter, without evidence-category assignments or
-medical search terms. Incomplete-only calls remain in file exploration and do not
+variant counts or summary tiles. They appear in the **Needs verification** section
+under **All results** with the classification filter set to **All**, without
+evidence-category assignments or medical search terms. Selecting a specific
+classification excludes them. Incomplete-only calls remain in file exploration and do not
 produce matched verification cards; missing alleles are never imputed.
 The results page reports how many candidate sites were omitted from interpretation.
 These records remain in the file counts; a difference between call encodings is
